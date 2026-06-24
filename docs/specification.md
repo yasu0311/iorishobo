@@ -12,8 +12,8 @@
 | プロジェクト名 | いおり書房 EC サイト（iorishobo） |
 | DBMS | MySQL 8.x |
 | 関連ドキュメント | [テーブル定義書](./table-definition.md) |
-| バージョン | 0.40（草案） |
-| 最終更新日 | 2026-06-22 |
+| バージョン | 0.45（草案） |
+| 最終更新日 | 2026-06-24 |
 
 ---
 
@@ -24,12 +24,14 @@
 | 移行元 | カラーミーショップ |
 | 商品数 | 約 72 品目（親商品＋オプション組み合わせ含む） |
 | 決済 | Stripe・代金引換・銀行振込（**Amazon Pay は新サイトでは廃止**。過去注文は移行のみ） |
-| 会員 | ゲスト購入可 + 任意ログイン |
+| 会員 | ゲスト購入可 + 任意ログイン（**顧客マスタは会員・非会員とも保持**。§3.20） |
 | 配送 | クリックポスト系 / ゆうパック（**全国一律送料**） |
 | データ移行 | 商品・顧客・注文を CSV から移行 |
 | 旧 URL | カラーミー商品 ID（`?pid=`）→ `/products/{slug}` へ 301。`slug` は ID ベース（§3.21） |
 | 金額 | 整数・円単位・税込（内税・小数不使用） |
 | 消費税 | **10% 固定**・全商品同一・軽減税率なし |
+| 文字コード・照合順序 | `utf8mb4` / `utf8mb4_unicode_ci` |
+| タイムゾーン | **Asia/Tokyo**（アプリ。移行 CSV の日時も JST として取り込む） |
 
 ---
 
@@ -131,14 +133,15 @@ Laravel の DB 列は **購入フォーム（address1/address2）に合わせる
   coupons                ← クーポン（新規サイト専用）
 
 【顧客・認証】
-  users                 ← Laravel 標準 + is_admin（会員ログイン兼管理者）
-  customers             ← 顧客プロフィール（customer.csv 相当）
+  users                 ← Laravel 標準 + is_admin（ログインできる会員のみ）
+  customers             ← 顧客マスタ（会員・非会員。customer.csv 相当。§3.20）
 
 【トランザクション】
   carts / cart_items    ← チェックアウト前の買い物かご（新規サイト専用）
   orders                ← 購入者 + 配送先スナップショット（sales_all.csv 相当）
   order_items
   refunds               ← 返金記録（管理画面）
+  watchlist_entries     ← 要注意リスト（管理画面警告。§3.22）
 
 【将来追加】
   payments
@@ -155,8 +158,19 @@ Laravel の DB 列は **購入フォーム（address1/address2）に合わせる
 | 明細 | `cart_items.product_variant_id` + `quantity` |
 | クーポン | `carts.coupon_id`（チェックアウト前に適用。1 カート 1 クーポン） |
 | 単価 | カートには保存しない。チェックアウト時に `product_variants.price` を参照 |
-| ログイン時 | ゲストカートをユーザーカートへマージ（アプリ側） |
+| ログイン時マージ | ゲストカート → 会員カート（下記） |
 | 注文確定後 | カート明細を削除（またはカートごと削除） |
+| 会員カート掃除 | **行わない**（期限なし） |
+| ゲストカート掃除 | `user_id IS NULL` かつ **90 日以上** `updated_at` が更新されていない行を定期削除 |
+
+**ログイン時マージ**（`stock_managed` 商品はマージ後も在庫チェックはチェックアウト時）:
+
+| 項目 | ルール |
+|------|--------|
+| 同一バリアント | **数量を合算** |
+| ゲストのみの明細 | 会員カートへ移動 |
+| クーポン | 会員カートに `coupon_id` があれば優先。なければゲストから引き継ぐ |
+| マージ後 | ゲストカート行を削除。会員カートの `session_id = NULL` |
 
 ### 3.2 配送・送料
 
@@ -165,7 +179,7 @@ Laravel の DB 列は **購入フォーム（address1/address2）に合わせる
 | 送料計算 | **全国一律**（都道府県別・重量別の料金表は持たない） |
 | 配送方法 | クリックポスト / ゆうパック等、方法ごとに `shipping_methods` 1 レコード |
 | 基本送料 | `shipping_methods.base_fee` |
-| 送料無料 | `shipping_methods.free_shipping_threshold`（商品合計税込がこの金額以上で 0 円。NULL = なし） |
+| 送料無料 | `shipping_methods.free_shipping_threshold`（**クーポン適用後**の商品合計 `subtotal - discount` がこの金額以上で 0 円。NULL = なし） |
 | 個別送料 | **使わない**（カラーミーの商品別送料は移行対象外） |
 
 ### 3.3 商品画像
@@ -174,7 +188,7 @@ Laravel の DB 列は **購入フォーム（address1/address2）に合わせる
 |------|------|
 | 保存先 | `product_images`（1 商品に複数行） |
 | メイン画像 | `sort_order = 0` |
-| 移行 | product.csv の「商品画像 URL」→ 0、「その他画像 1〜9 URL」→ 1〜9（空欄はスキップ） |
+| 移行 | product.csv の「商品画像 URL」→ 0、「その他画像 1〜9 URL」→ 1〜9（空欄はスキップ）。**移行時に自サーバーへダウンロード**し `path` はローカルパスを保存 |
 
 ### 3.4 住所の持ち方
 
@@ -189,7 +203,7 @@ Laravel の DB 列は **購入フォーム（address1/address2）に合わせる
 
 | テーブル | 用途 |
 |---------|------|
-| customers | 顧客マスタ |
+| customers | 顧客マスタ（会員・非会員。§3.20） |
 | orders | 購入者（buyer_*）・配送先（shipping_*）のスナップショット |
 
 ### 3.5 氏名・フリガナの必須/任意
@@ -226,6 +240,12 @@ orders
 | 配送先 | あり（フリガナ任意） | `shipping_*` |
 | 会員の保存配送先 | **CSV なし** | **不要**（§3.19） |
 
+**`orders.buyer_email`**: その注文の購入者メールのスナップショット。注文確認メール・領収書の宛先は **常に `buyer_email`**（会員・ゲスト共通）。ログイン用の `users.email` やプロフィールの `customers.email` とは別。
+
+**`orders.customer_id` / `orders.user_id`**: 顧客マスタ・マイページへの参照。詳細は §3.20。
+
+**`orders.device`**: 新規注文は User-Agent から PC / モバイル等を記録。移行は sales CSV 列 2。
+
 ### 3.7 商品とバリアント
 
 カラーミー「オプション ID」1 件 = `product_variants` 1 レコード。  
@@ -237,7 +257,7 @@ orders
 | `true` | 在庫管理する | `product_variants.stock` を見る。0 なら売り切れ |
 | `false` | 在庫管理しない | 在庫数は無視。常に購入可（掲載中かつ有効なら） |
 
-オプションが1つもない商品（単品のみ）は、`product_variants` に **1 行だけ** 登録する（表示名は商品名と同じ、または「標準」など）。
+オプションが1つもない商品（単品のみ）は、`product_variants` に **1 行だけ** 登録する。`name` は **親商品名と同じ**（移行・新規とも）。
 
 ### 3.7.6 在庫管理
 
@@ -248,8 +268,19 @@ orders
 | オン/オフ | 親商品の `products.stock_managed` |
 | 適正在庫数 | **使わない**（CSV 列はスキップ） |
 | 売切れ時の表示設定 | **持たない**。`stock_managed = true` かつ `stock = 0` で売り切れ扱い |
-| カート中の在庫確保 | **しない** |
-| 注文確定時 | `stock_managed = true` の明細のみ在庫を減算 |
+| カート中の在庫確保 | **しない**（同時購入でオーバーセルしうる。小規模ショップ想定） |
+| カート表示時 | `stock_managed = true` かつ `quantity > stock` なら **警告表示**し、**チェックアウトをブロック** |
+| 在庫チェック | カート追加時・カート表示時・チェックアウト送信時 |
+| 在庫減算 | 決済方法により異なる（下表） |
+| 未発送キャンセル時 | 減算済み明細のみ在庫を戻す |
+
+**在庫減算のタイミング**（`stock_managed = true` の明細のみ）:
+
+| 決済方法 | タイミング |
+|----------|------------|
+| `stripe` | `payment_status = paid`（Webhook 後） |
+| `bank_transfer` | `payment_status = paid`（入金確認後） |
+| `cod` | チェックアウト送信時（`pending`。未入金でも発送するため） |
 
 **移行（product.csv）**
 
@@ -396,12 +427,13 @@ orders
 | point_discount | ショップポイントによる割引金額 | 0 |
 | external_point_discount | 外部ポイントによる割引金額 | 0 |
 | shipping_method_name | 配送先 配送会社名 | NULL |
+| shipping_method_id | — | **NULL**（移行はスナップショット名のみ。マスタ FK は新規注文用） |
 | shipped_at | 発送日時 | NULL |
 | order_number | 売上 ID | 文字列化して `colorme_sales_id` と同値 |
 | payment_method | 決済方法 | マッピング（§3.12） |
 | payment_status | 入金状態 | マッピング（§3.12） |
 | shipping_status | 発送状態 | マッピング（§3.12） |
-| customer_id | 購入者 顧客ID | §3.20（移行会員に一致するときのみ。それ以外 NULL） |
+| customer_id | 購入者 顧客ID | §3.20（移行済み `customers.colorme_customer_id` と一致するときセット） |
 | user_id | — | **NULL**（移行注文はマイページに出さない。§3.20） |
 
 新規注文では `payment_fee`・ポイント割引は 0（代引き除く）、`discount_name` は NULL でよい。
@@ -409,6 +441,8 @@ orders
 `sales_all.csv` の「8% 対象合計金額」「消費税(8% 対象)」「10% 対象…」列は **取り込まない**（本ショップは 10% のみ。DB にも税率別内訳列は持たない）。移行時に 8% 列に値が入っていれば product.csv の軽減税率設定を再確認すること。
 
 熨斗・メッセージカード・ラッピング関連の列（手数料合計、配送先ののし種類等）も **取り込まない**（§3.16）。
+
+**移行時の異常行**: 必須列（氏名・住所・メール等）が空の行は **スキップ**し、移行ログに記録する（後で手動対応）。
 
 ### 3.11 消費税
 
@@ -436,7 +470,13 @@ orders
 | 項目 | 方針 |
 |------|------|
 | 決済方法 | `stripe`（クレジット）・`cod`（代引き）・`bank_transfer`（銀行振込）。**Amazon Pay は新規では使わない**（過去注文の移行のみ §3.12） |
-| Stripe 入金 | **自動**（Webhook で `payment_status = paid`） |
+| Stripe 入金 | **自動**（Webhook `payment_intent.succeeded` で `payment_status = paid`） |
+| Stripe 注文作成 | チェックアウト送信時に `orders` を **`pending` で作成**（住所・明細を保存）→ Webhook で `paid` に更新（[テーブル定義書 §13](./table-definition.md#13-orders注文)） |
+| `stripe_payment_intent_id` | Stripe の PaymentIntent ID（`pi_...`）を **当該注文行に保存**。**UK**（1 PI = 1 注文）。非 Stripe は NULL |
+| Webhook 冪等 | 再送時は既に `paid` なら何もしない。チェックアウトは **1 送信 = 1 注文** |
+| Stripe 未完了注文 | ① 送信後にカード決済せず離脱した `pending` 注文は **自動キャンセルしない**。管理画面で手動キャンセル |
+| 振込案内 | DB に期限列なし。完了画面・メールに **「7 日以内にお振込みください」** と案内（自動キャンセルなし） |
+| 在庫・クーポン | 減算・`used_count` 加算は [§3.7.6](#376-在庫管理)・[§3.13](#313-クーポン) 参照 |
 | 代引き・振込 入金 | **手動**（管理画面で `paid` に更新） |
 | 発送 | **手動**（管理画面で `shipped` に更新。カラーミーと同様） |
 | 送り状 CSV | B2・ゆうパック等へ **エクスポート**（アプリ機能・将来実装） |
@@ -451,6 +491,15 @@ orders
 | `bank_transfer` | `pending` | `unshipped` |
 
 代引きの入金済は、集配時の代金回収後に管理者が手動で `paid` にする想定。銀行振込は振込確認後に `paid`。
+
+**Stripe のチェックアウトフロー**
+
+| 段階 | 操作 | `payment_status` |
+|------|------|-------------------|
+| ① チェックアウト送信 | 自社サイトの「注文する」押下 → `orders` 作成 | `pending` |
+| ② カード決済 | Stripe で支払い → Webhook | `paid` |
+
+① はカード入力画面を表示する**前**。チェックアウト画面を開いただけでは `orders` は作らない。
 
 #### 代引き手数料（新規注文）
 
@@ -521,8 +570,9 @@ payment_fee = cod_fee                                    … cod かつ上記以
 | 適用 | チェックアウトでコード入力。`carts.coupon_id` に保持 |
 | 1 注文 | **1 クーポンのみ** |
 | 種別 | **定額のみ**（`coupons.discount_amount` 円。率割引は使わない） |
-| 利用回数 | `coupons.used_count` / `max_uses`（全体上限。NULL=無制限） |
-| 注文確定時 | `discount`・`discount_name`・`coupon_code` を `orders` に保存し、`used_count` を +1 |
+| 利用回数 | `coupons.used_count` / `max_uses`（**全ユーザー合計**上限。NULL=無制限。1 人 1 回制限はなし） |
+| チェックアウト時 | `discount`・`discount_name`・`coupon_code` を `orders` にスナップショット保存 |
+| `used_count` 加算 | 在庫減算と同タイミング（`stripe`・`bank_transfer` は `paid` 時、`cod` はチェックアウト送信時） |
 
 **移行（sales_all.csv）**
 
@@ -586,6 +636,13 @@ flowchart TD
 
 `admins` テーブルは **作らない**。権限の細分化（ロール等）が必要になったら、その時点で検討する。
 
+#### メール認証（`email_verified_at`）
+
+| 対象 | 方針 |
+|------|------|
+| **新規会員登録** | メール認証 **必須**（認証完了までログイン不可） |
+| **移行会員** | 移行時に `email_verified_at` をセットし、認証フローを **スキップ** |
+
 ### 3.16 ギフト（のし・ラッピング等）
 
 | 機能 | 新規ショップ | 移行 |
@@ -616,11 +673,17 @@ flowchart TD
 
 #### キャンセル（管理画面）
 
+**発送済み（`shipping_status = shipped`）の注文はキャンセル不可**。返金のみ（`refunds`）。
+
+| 条件 | 更新 |
+|------|------|
+| 未発送・未入金（`pending`） | `payment_status` → `cancelled`、`shipping_status` → `cancelled`、`cancelled_at`・`cancel_reason` |
+| 未発送・入金済（`paid`） | `shipping_status` → `cancelled`、`cancelled_at`・`cancel_reason`。`payment_status` は `paid` のまま（返金で `refunded`） |
+
 | 項目 | 方針 |
 |------|------|
-| 操作 | 管理画面から実行 |
-| 更新 | `cancelled_at`・`cancel_reason`・`shipping_status = cancelled`（未発送時） |
-| 在庫 | 未発送でキャンセル時、`stock_managed` 商品は在庫を戻す |
+| 操作 | 管理画面から実行（未発送のみ） |
+| 在庫 | 未発送でキャンセル時、**減算済み**の `stock_managed` 明細のみ在庫を戻す |
 | Stripe 入金済み | キャンセル時に **「全額返金も行いますか？」** と確認（任意でスキップ可）。Yes なら返金フローへ |
 | 代引き・振込 | キャンセルのみでよいことが多い（未集金・未入金の場合） |
 
@@ -705,6 +768,7 @@ Blade / メール     … {{ config('shop.name') }} のように表示
 | 項目 | 方針 |
 |------|------|
 | 表示タイミング | `payment_method = bank_transfer` の注文完了画面・確認メール |
+| 振込期限の案内 | **「7 日以内にお振込みください」** と表示（DB に期限列は持たない。自動キャンセルなし） |
 | 振込名義人 | 注文番号（`order_number`）を含める旨をテンプレートで案内（アプリ側） |
 | 口座の切り替え | 注文ごとには変えない。全振込注文で同じ表示 |
 
@@ -724,46 +788,80 @@ Blade / メール     … {{ config('shop.name') }} のように表示
 |------|------|
 | `saved_addresses` テーブル | **作らない** |
 | 複数お届け先 | **登録・一覧選択 UI は持たない** |
-| ゲスト | チェックアウトフォームに購入者・配送先を **手入力** |
+| ゲスト | チェックアウトフォームに購入者・配送先を **手入力**。注文確定時に `customers` を find or create し `orders.customer_id` をセット（§3.20） |
 | 会員（ログイン） | `customers` の氏名・住所・電話等を購入者欄に **初期表示**（編集可）。配送先も同内容で初期表示し、別住所なら変更可 |
 | 注文確定時 | フォームの内容を `orders.buyer_*` / `shipping_*` にスナップショット。**`customers` は自動更新しない**（プロフィール変更はマイページ等で別途） |
 | 移行 | カラーミー CSV に相当データなし |
 
-### 3.20 顧客・会員の移行
+### 3.20 顧客・会員（カラーミー型）
 
-`customer.csv` の **「ユーザー登録」** 列で会員かどうかを判定する（[データダウンロード](https://help.shop-pro.jp/hc/ja/articles/360062479334)、[顧客管理](https://help.shop-pro.jp/hc/ja/articles/1500004188742)）。パスワードは CSV に **含まれない**（[顧客一括登録](https://help.shop-pro.jp/hc/ja/articles/1500004187722)）ため、移行会員は初回 **パスワード再設定** でログインする。
+カラーミーと同様、**購入者は会員・非会員を問わず `customers` に保持**する。ログインできる会員のみ `users` に登録する。マイページに過去ゲスト注文を出さない制御は **`orders.user_id`** で行う（`customers` の有無とは別）。
 
-#### customer.csv → `customers` / `users`
+#### `customers` と `users` の役割
+
+| テーブル | 役割 | 誰が入るか |
+|---------|------|-----------|
+| `customers` | 顧客マスタ（管理画面の顧客一覧・注文の `customer_id`） | **全会員・非会員の購入者** |
+| `users` | ログイン認証 | **会員のみ**（パスワードあり） |
+| `orders.buyer_*` | 注文時の購入者スナップショット | 全注文 |
+| `orders.user_id` | マイページ用の紐付け | **ログイン購入時のみ** |
+
+**会員かどうか**（新サイト）: `customers.user_id IS NOT NULL`（ログイン可能な会員）。専用フラグは持たない。
+
+#### メールアドレスの使い分け
+
+| 場所 | 用途 |
+|------|------|
+| `users.email` | ログイン・パスワード再設定 |
+| `customers.email` | プロフィール・チェックアウト初期表示・ゲスト顧客の find or create |
+| `orders.buyer_email` | **注文確認メール・領収書**（その注文のスナップショット） |
+
+**マイページでメール変更**したときは `users.email` と `customers.email` を **両方同期更新**する。
+
+#### 移行（customer.csv）
+
+`customer.csv` の **「ユーザー登録」** 列は移行時の `users` 作成判定に使う（[データダウンロード](https://help.shop-pro.jp/hc/ja/articles/360062479334)、[顧客管理](https://help.shop-pro.jp/hc/ja/articles/1500004188742)）。パスワードは CSV に **含まれない**（[顧客一括登録](https://help.shop-pro.jp/hc/ja/articles/1500004187722)）ため、移行会員は **ランダムハッシュを入れたうえで初回パスワード再設定** でログインする。
 
 | ユーザー登録 | メール | `customers` | `users` | `customers.user_id` |
 |--------------|--------|-------------|---------|---------------------|
-| **有** | あり | **移行** | **作成**（パスワードなし） | 紐付ける |
+| **有** | あり | **移行** | **作成**（ランダムハッシュ） | 紐付ける |
 | **有** | なし | 移行 | 作らない | NULL |
-| **無** | — | **移行しない** | 作らない | — |
+| **無** | — | **移行** | 作らない | NULL |
 
-- **無** はゲスト相当の顧客リスト行。新サイトの `customers` には載せない（過去注文を会員に勝手に紐付けないため。§3.20 注文参照）
-- 移行時に作る `users` は `is_admin = false`。メール・名前は CSV から
-- 新規サイトで会員登録した人は、従来どおり `users` + `customers` を新規作成（移行データとは別）
+**移行時の異常行**（`customer.csv` / `sales_all.csv`）: 必須列が空の行は **スキップ**し、移行ログに記録する。
 
-#### 過去注文（sales_all.csv）の `customer_id` / `user_id`
+- **「ユーザー登録=無」も `customers` に移行**する（カラーミーの非会員顧客）
+- 移行時に作る `users` は `is_admin = false`。メール・名前は CSV から。`email_verified_at` は移行時にセット（認証スキップ）
+- 新規サイトで会員登録した人は `users` + `customers` を新規作成（**メール認証必須**。§3.15）
+
+#### 移行（sales_all.csv）の `customer_id` / `user_id`
 
 | 列 | 移行時の方針 |
 |----|-------------|
-| `user_id` | **常に NULL**。ログイン状態は CSV から確定できず、ゲスト購入分を会員のマイページに出さない |
-| `customer_id` | `購入者 顧客ID` が、移行済み `customers.colorme_customer_id` と **一致するときのみ** セット。**管理画面用**。それ以外（ゲスト購入等）は NULL |
-| 購入者情報 | `buyer_*` は常にスナップショットとして移行（表示・検索はここでも可） |
+| `customer_id` | `購入者 顧客ID` が移行済み `customers.colorme_customer_id` と **一致するとき**セット（会員・非会員顧客とも） |
+| `user_id` | **常に NULL**（ログイン状態は CSV から確定できない） |
+| `buyer_*` | 常にスナップショットとして移行 |
 
-**メールアドレス一致だけで過去注文を紐付けない**（家族共有メール・ゲスト購入のプライバシー）。
+#### 新規サイトのチェックアウト
 
-#### マイページの注文履歴（新規サイト）
+| 購入形態 | `customers` | `orders.customer_id` | `orders.user_id` | マイページ |
+|----------|-------------|----------------------|------------------|------------|
+| **ゲスト** | `buyer_email` で find or create（`user_id = NULL`） | **セット** | NULL | 表示しない |
+| **会員**（ログイン） | 紐付く顧客を使用 | **セット** | ログインユーザー | 表示する |
+
+- **ゲスト顧客の find or create**: `email` を正規化（前後空白除去・小文字化）して既存顧客を検索。なければ新規作成
+- 注文確定時: フォーム内容を `orders.buyer_*` にスナップショット。**`customers` は自動更新しない**（§3.19）
+- **後から会員登録**: 同じメールの既存 `customers` に `user_id` を付ける。**過去注文の `orders.user_id` はメール一致だけでは更新しない**
+
+**メールアドレス一致だけで過去注文をマイページに表示しない**（家族共有メール・ゲスト購入のプライバシー）。
+
+#### マイページの注文履歴
 
 | 対象 | 表示条件 |
 |------|----------|
 | お客様のマイページ | `orders.user_id` = ログイン中ユーザー **のみ** |
 | 移行した過去注文 | `user_id` が NULL のため **表示しない** |
-| 管理画面 | 全注文。`customer_id` / `buyer_*` / 注文番号で検索 |
-
-新規注文は、ログイン状態でチェックアウトしたときだけ `orders.user_id`（および `customer_id`）をセットする。ゲスト購入は両方 NULL。
+| 管理画面 | 全注文。顧客詳細から `customer_id` 経由で注文一覧を表示 |
 
 ### 3.21 URL・slug（スラッグ）
 
@@ -789,6 +887,16 @@ Blade / メール     … {{ config('shop.name') }} のように表示
 - `slug` は **数字のみ**（商品・カテゴリとも。注文番号と同じく英字は使わない）
 - ユニーク制約（UK）あり。衝突は想定しにくいが、発生時は移行ログで検出する
 - バリアント（オプション）ごとの URL は持たない。商品 URL は **親商品の `slug` のみ**
+
+### 3.22 要注意リスト（watchlist_entries）
+
+過去にトラブルがあった購入者を管理者が手動登録するリスト。新規注文を管理画面で開いたときに警告表示する（フロント・チェックアウトでは表示しない）。購入のブロックは行わない。
+
+| 項目 | 方針 |
+|------|------|
+| 照合 | `customer_id` / `buyer_email` / `buyer_phone`・`buyer_mobile`（§17 [テーブル定義書](./table-definition.md#17-watchlist_entries要注意リスト)） |
+| 移行 | カラーミー CSV に相当列なし。運用開始後に管理画面から登録 |
+| 自動登録 | キャンセル・返金からの自動登録は **行わない** |
 
 ---
 
@@ -830,6 +938,10 @@ erDiagram
     orders ||--o{ refunds : "order_id"
     users ||--o{ refunds : "recorded_by"
     product_variants ||--o{ order_items : "product_variant_id"
+    customers ||--o{ watchlist_entries : "customer_id"
+    orders ||--o{ watchlist_entries : "source_order_id"
+    users ||--o{ watchlist_entries : "created_by"
+    users ||--o{ watchlist_entries : "deactivated_by"
 ```
 
 ---
@@ -844,13 +956,14 @@ erDiagram
 | product_variants | option_csv_*.csv | colorme_option_id。在庫数は親が stock_managed のときのみ |
 | shipping_methods | 管理画面の配送方法設定 | base_fee + free_shipping_threshold |
 | coupons | （なし） | 新規登録。過去注文の割引は orders のみ |
-| customers | customer.csv | **ユーザー登録=有** のみ（§3.20）。住所は §3.9 |
-| users | customer.csv | ユーザー登録=有 **かつ** メールあり（パスワード再設定） |
-| orders.buyer_* | sales_all 購入者列 | フリガナ列なし。住所は §3.9 |
-| orders.customer_id / user_id | 購入者 顧客ID | §3.20（`user_id` は常に NULL） |
+| customers | customer.csv | **全会員・非会員**（§3.20）。住所は §3.9 |
+| users | customer.csv | ユーザー登録=有 **かつ** メールあり（ランダムハッシュ + パスワード再設定） |
+| orders.buyer_* | sales_all 購入者列 | フリガナ列なし。`buyer_email` = 確認メール宛先。住所は §3.9 |
+| orders.customer_id / user_id | 購入者 顧客ID | §3.20（`customer_id` は顧客 ID 一致時。`user_id` は常に NULL） |
 | orders.shipping_* | sales_all 配送先列 | フリガナは任意。住所は §3.9 |
 | order_items | sales_all 明細列 | 型番列はスキップ |
 | refunds | （なし） | 新規サイト専用。過去分は移行しない |
+| watchlist_entries | （なし） | 新規サイト専用。運用開始後に管理画面から登録 |
 
 ---
 
@@ -905,3 +1018,8 @@ erDiagram
 | 0.38 | 2026-06-22 | §1 に Amazon Pay 廃止・代引き振込継続を明記 |
 | 0.39 | 2026-06-22 | slug は ID ベース（§3.21） |
 | 0.40 | 2026-06-22 | キャンセル・返金・注文後金額変更を §3.17 に詳述 |
+| 0.41 | 2026-06-24 | watchlist_entries 追加（§3.22） |
+| 0.42 | 2026-06-24 | 顧客をカラーミー型に変更（全会員・非会員を customers に保持）。§3.20 全面改訂。送料無料・画像移行・Stripe 注文フローを追記 |
+| 0.43 | 2026-06-24 | orders.stripe_payment_intent_id に UK（§3.12） |
+| 0.44 | 2026-06-24 | 在庫・クーポンタイミング、キャンセル詳細、Stripe フロー、振込案内 7 日、メール認証、ゲストカート 90 日、移行空欄スキップ |
+| 0.45 | 2026-06-24 | カートマージ詳細、会員カート期限なし、在庫不足のカート警告、オプションなしバリアント名、移行 shipping_method_id=NULL、DB 照合順序・TZ |
