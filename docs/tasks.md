@@ -48,64 +48,64 @@
 - [○] マイグレーション作成（`carts`, `cart_items`）
 - [○] マイグレーション作成（`orders`, `order_items`, `refunds`, `watchlist_entries`）
 - [○] Eloquent モデル一式とリレーション定義
-- [ ] `Enums`（`OrderStatus`, `PaymentStatus`, `PaymentMethod`, `DeviceType`）
-- [ ] `ShippingMethodSeeder`（クリックポスト・ゆうパック等の初期マスタ）
-- [ ] `AdminUserSeeder`（初期管理者）
+- [○] `Enums`（`OrderStatus`, `PaymentStatus`, `PaymentMethod`, `DeviceType`）
+- [○] `ShippingMethodSeeder`（クリックポスト・ゆうパック等の初期マスタ）
+- [○] `AdminUserSeeder`（初期管理者）
 
 ### 1.3 CSV インポート基盤
 
-- [ ] `app/Services/Colorme/CsvReader.php`（文字コード・ヘッダー処理）
-- [ ] 移行ログ出力の共通仕組み（スキップ行・エラー行の記録）
-- [ ] 異常行スキップルールの実装（必須列が空の行はログに残してスキップ）
+- [○] `app/Services/Colorme/CsvReader.php`（文字コード・ヘッダー処理）
+- [○] 移行ログ出力の共通仕組み（スキップ行・エラー行の記録）
+- [○] 異常行スキップルールの実装（必須列が空の行はログに残してスキップ）
 
 ### 1.4 商品データ移行
 
-- [ ] `ProductImporter` — `product.csv` → `categories`, `products`
-  - [ ] 大/小カテゴリーの作成・`slug` = `id` の文字列化
-  - [ ] `colorme_product_id` / `slug`（数字 ID ベース）
-  - [ ] `is_published`（掲載設定の変換）
-  - [ ] `stock_managed`（在庫管理 on/off）
-  - [ ] 定価・型番・ISBN・重量・販売期間等の **スキップ列** を無視
-- [ ] `ProductImporter` — オプション CSV → `product_variants`
-  - [ ] `colorme_option_id`・価格・`attributes` JSON
-  - [ ] オプションなし商品は親名と同じ名前のバリアント 1 行
-  - [ ] 在庫数は `stock_managed = true` の商品のみ取り込み
-- [ ] `ImageDownloader` — 商品画像 URL からローカル保存（`storage/app/public/products/`）
-- [ ] `product_images` 登録（`sort_order` 0 = メイン、1〜9 = その他）
-- [ ] Artisan コマンド `ImportColormeProducts`
-- [ ] Artisan コマンド `DownloadProductImages`
-- [ ] 移行テスト（`tests/Feature/Colorme/`）— サンプル CSV で件数・代表データを検証
+- [○] `ProductImporter` — `product.csv` → `categories`, `products`
+  - [○] 大/小カテゴリーの作成・`slug` = `id` の文字列化
+  - [○] `colorme_product_id` / `slug`（数字 ID ベース）
+  - [○] `is_published`（掲載設定の変換）
+  - [○] `stock_managed`（在庫管理 on/off）
+  - [○] 定価・型番・ISBN・重量・販売期間等の **スキップ列** を無視
+- [○] `ProductImporter` — オプション CSV → `product_variants`
+  - [○] `colorme_option_id`・価格・`attributes` JSON
+  - [○] オプションなし商品は親名と同じ名前のバリアント 1 行
+  - [○] 在庫数は `stock_managed = true` の商品のみ取り込み
+- [○] `ImageDownloader` — 商品画像 URL からローカル保存（`storage/app/public/products/`）
+- [○] `product_images` 登録（`sort_order` 0 = メイン、1〜9 = その他）
+- [○] Artisan コマンド `ImportColormeProducts`
+- [○] Artisan コマンド `DownloadProductImages`
+- [○] 移行テスト（`tests/Feature/Colorme/`）— サンプル CSV で件数・代表データを検証
 
 ### 1.5 顧客データ移行
 
-- [ ] `CustomerImporter` — `customer.csv` → `customers`
-  - [ ] 住所は `address_line1` に全文、`address_line2` は NULL（自動分割しない）
-  - [ ] FAX 列は取り込まない
-- [ ] 会員（ユーザー登録=有 かつ メールあり）→ `users` 作成
-  - [ ] ランダムパスワード + 移行時は `email_verified_at` をセット
-- [ ] `customers.user_id` の紐付け
-- [ ] Artisan コマンド `ImportColormeCustomers`
-- [ ] 移行テスト — 会員/非会員・住所の取り込み確認
+- [○] `CustomerImporter` — `customer.csv` → `customers`
+  - [○] 住所は `address_line1` に全文、`address_line2` は NULL（自動分割しない）
+  - [○] FAX 列は取り込まない
+- [○] 会員（ユーザー登録=有 かつ メールあり）→ `users` 作成
+  - [○] ランダムパスワード + 移行時は `email_verified_at` をセット
+- [○] `customers.user_id` の紐付け
+- [○] Artisan コマンド `ImportColormeCustomers`
+- [○] 移行テスト — 会員/非会員・住所の取り込み確認
 
 ### 1.6 注文データ移行
 
-- [ ] `OrderImporter` — `sales_all.csv` → `orders`, `order_items`
-  - [ ] `buyer_*` / `shipping_*` スナップショット
-  - [ ] 配送先フリガナは任意（NULL 許容）
-  - [ ] `customer_id`（顧客 ID 一致時）、`user_id` は **常に NULL**（マイページ非表示）
-  - [ ] 決済方法の変換（`stripe` / `cod` / `bank_transfer` / `amazon_pay` 移行専用）
-  - [ ] 金額列・消費税・手数料・クーポン名・ポイント割引等
-  - [ ] `device`（PC / モバイル）
-- [ ] 商品明細と `product_variants` の紐付け（カラーミー商品 ID・オプション ID）
-- [ ] Artisan コマンド `ImportColormeOrders`
-- [ ] 移行テスト — 購入者≠配送先・Amazon Pay 過去注文の取り込み確認
+- [○] `OrderImporter` — `sales_all.csv` → `orders`, `order_items`
+  - [○] `buyer_*` / `shipping_*` スナップショット
+  - [○] 配送先フリガナは任意（NULL 許容）
+  - [○] `customer_id`（顧客 ID 一致時）、`user_id` は **常に NULL**（マイページ非表示）
+  - [○] 決済方法の変換（`stripe` / `cod` / `bank_transfer` / `amazon_pay` 移行専用）
+  - [○] 金額列・消費税・手数料・クーポン名・ポイント割引等
+  - [○] `device`（PC / モバイル）
+- [○] 商品明細と `product_variants` の紐付け（カラーミー商品 ID・オプション ID）
+- [○] Artisan コマンド `ImportColormeOrders`
+- [○] 移行テスト — 購入者≠配送先・Amazon Pay 過去注文の取り込み確認
 
 ### 1.7 移行の総合確認
 
-- [ ] サンプル CSV で全コマンドを通し実行
-- [ ] 件数突合（商品 72 前後、顧客・注文は本番 CSV で再確認）
-- [ ] `slug` 衝突・必須欠落の移行ログレビュー
-- [ ] 本番 CSV でリハーサル移行（ステージング環境）
+- [○] サンプル CSV で全コマンドを通し実行（`import:colorme-all` + 統合テスト）
+- [○] 件数突合（`ColormeMigrationVerifier` — 商品・顧客・注文の CSV vs DB）
+- [○] `slug` 衝突・必須欠落の移行ログレビュー（コマンド出力 + SKIP/ERROR 集計）
+- [ ] 本番 CSV でリハーサル移行（ステージング環境）— **本番 CSV 取得後に手動実施**
 
 ---
 

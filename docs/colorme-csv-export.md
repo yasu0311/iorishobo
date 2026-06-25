@@ -222,11 +222,17 @@ iorishobo/
 CSV 配置後の移行コマンド実行順序（[tasks.md](./tasks.md) より）:
 
 ```
+# 一括実行（推奨）
+php artisan import:colorme-all
+
+# 個別実行
 1. php artisan import:colorme-products    … product.csv + option.csv
 2. php artisan download:product-images    … 商品画像 URL からローカル保存
 3. php artisan import:colorme-customers   … customer.csv
 4. php artisan import:colorme-orders      … sales_all.csv（顧客・商品の後）
 ```
+
+`import:colorme-all` は上記を順番に実行し、件数突合・slug 衝突・移行ログ（SKIP/ERROR）のレポートを表示する。画像ダウンロードを省略する場合は `--skip-images` を付ける。インポート済み DB の検証のみは `--verify-only`。
 
 ---
 

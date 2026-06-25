@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\DeviceType;
+use App\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -61,6 +65,7 @@ class Order extends Model
     {
         return [
             'ordered_at' => 'datetime',
+            'device' => DeviceType::class,
             'subtotal' => 'integer',
             'tax_amount' => 'integer',
             'shipping_fee' => 'integer',
@@ -69,6 +74,9 @@ class Order extends Model
             'point_discount' => 'integer',
             'external_point_discount' => 'integer',
             'total' => 'integer',
+            'payment_method' => PaymentMethod::class,
+            'payment_status' => PaymentStatus::class,
+            'shipping_status' => OrderStatus::class,
             'shipped_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'refund_amount' => 'integer',
