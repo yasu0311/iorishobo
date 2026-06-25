@@ -6,3 +6,4 @@
 | [テーブル定義書](./table-definition.md) | テーブル・カラム・制約の定義 |
 | [ディレクトリ構成](./directory-structure.md) | 既存・予定のディレクトリ一覧 |
 | [タスク管理](./tasks.md) | 実装タスクの進捗管理 |
+| [カラーミー CSV 取得手順](./colorme-csv-export.md) | 本番移行用 CSV のダウンロード・配置手順 |

@@ -335,7 +335,8 @@ iorishobo/
 ### `colorme_data/`
 
 カラーミーショップからエクスポートした移行用 CSV を格納します。  
-本番移行時も同形式の CSV をここに配置して `ImportColorme*` コマンドで取り込みます。
+本番移行時も同形式の CSV をここに配置して `ImportColorme*` コマンドで取り込みます。  
+取得手順は [カラーミー CSV 取得手順](../docs/colorme-csv-export.md) を参照。
 
 ### `config/`
 

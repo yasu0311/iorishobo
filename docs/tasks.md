@@ -38,16 +38,16 @@
 - [○] MySQL 8.x への接続設定（`.env` / `config/database.php`）
 - [○] [テーブル定義書](./table-definition.md) の最終確認
 - [○] `config/shop.php` と `.env.example` のキー定義（店舗名・振込先・代引手数料・インボイス番号）
-- [ ] 本番用 CSV の取得手順を文書化（商品・オプション・顧客・受注一括）
+- [○] 本番用 CSV の取得手順を文書化（商品・オプション・顧客・受注一括）
 
 ### 1.2 データベース基盤
 
-- [ ] マイグレーション作成（`categories`, `products`, `product_images`, `product_variants`）
-- [ ] マイグレーション作成（`customers`, `users` 拡張）
-- [ ] マイグレーション作成（`shipping_methods`, `coupons`）
-- [ ] マイグレーション作成（`carts`, `cart_items`）
-- [ ] マイグレーション作成（`orders`, `order_items`, `refunds`, `watchlist_entries`）
-- [ ] Eloquent モデル一式とリレーション定義
+- [○] マイグレーション作成（`categories`, `products`, `product_images`, `product_variants`）
+- [○] マイグレーション作成（`customers`, `users` 拡張）
+- [○] マイグレーション作成（`shipping_methods`, `coupons`）
+- [○] マイグレーション作成（`carts`, `cart_items`）
+- [○] マイグレーション作成（`orders`, `order_items`, `refunds`, `watchlist_entries`）
+- [○] Eloquent モデル一式とリレーション定義
 - [ ] `Enums`（`OrderStatus`, `PaymentStatus`, `PaymentMethod`, `DeviceType`）
 - [ ] `ShippingMethodSeeder`（クリックポスト・ゆうパック等の初期マスタ）
 - [ ] `AdminUserSeeder`（初期管理者）
