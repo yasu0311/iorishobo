@@ -105,7 +105,7 @@
 - [○] サンプル CSV で全コマンドを通し実行（`import:colorme-all` + 統合テスト）
 - [○] 件数突合（`ColormeMigrationVerifier` — 商品・顧客・注文の CSV vs DB）
 - [○] `slug` 衝突・必須欠落の移行ログレビュー（コマンド出力 + SKIP/ERROR 集計）
-- [ ] 本番 CSV でリハーサル移行（ステージング環境）— **本番 CSV 取得後に手動実施**
+- [○] 本番 CSV でリハーサル移行（ステージング環境）— `migrate:fresh --seed` 後に `import:colorme-all` で総合判定 OK（2026-06-29）
 
 ---
 

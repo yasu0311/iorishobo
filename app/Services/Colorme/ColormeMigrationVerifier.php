@@ -46,7 +46,7 @@ class ColormeMigrationVerifier
         }
 
         if (is_readable($optionPath)) {
-            $csvOptions = $this->countCsvRows($optionPath);
+            $csvOptions = $this->countOptionItemRows($optionPath);
             $dbVariantsWithOption = ProductVariant::query()->whereNotNull('colorme_option_id')->count();
             $counts[] = $this->countRow('オプション (product_variants)', $csvOptions, $dbVariantsWithOption);
         }
@@ -122,6 +122,23 @@ class ColormeMigrationVerifier
         }
 
         return count($ids);
+    }
+
+    private function countOptionItemRows(string $path): int
+    {
+        $count = 0;
+
+        foreach ($this->csvReader->rows($path) as $payload) {
+            if (($payload['row']['登録種別'] ?? '') === 'name') {
+                continue;
+            }
+
+            if (trim($payload['row']['オプションID'] ?? '') !== '') {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
     /**

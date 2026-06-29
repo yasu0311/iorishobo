@@ -88,6 +88,10 @@ class ProductImporter
             $line = $payload['line'];
             $row = $payload['row'];
 
+            if (($row['登録種別'] ?? '') === 'name') {
+                continue;
+            }
+
             if (! $this->rowValidator->validateOrSkip($line, $row, self::OPTION_REQUIRED_COLUMNS, $logger)) {
                 continue;
             }

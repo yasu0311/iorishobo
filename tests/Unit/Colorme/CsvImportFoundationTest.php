@@ -40,6 +40,19 @@ class CsvImportFoundationTest extends TestCase
     }
 
     #[Test]
+    public function csv_reader_parses_multiline_quoted_fields(): void
+    {
+        $path = base_path('tests/Fixtures/Colorme/product-multiline.csv');
+        $reader = new CsvReader;
+
+        $rows = iterator_to_array($reader->rows($path));
+
+        $this->assertCount(2, $rows);
+        $this->assertStringContainsString('<table>html</table>', $rows[2]['row']['商品説明']);
+        $this->assertSame('通常商品', $rows[3]['row']['商品名']);
+    }
+
+    #[Test]
     public function row_validator_skips_rows_with_missing_required_columns(): void
     {
         $validator = new ImportRowValidator;

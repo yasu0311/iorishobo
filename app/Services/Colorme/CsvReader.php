@@ -12,6 +12,7 @@ class CsvReader
 
     /**
      * CSV を 1 行ずつ連想配列として返す（1 行目 = ヘッダー）。
+     * 引用符内の改行を含むフィールドに対応するため fgetcsv を使用する。
      *
      * @return Generator<int, array{line: int, row: array<string, string>}>
      */
@@ -29,17 +30,19 @@ class CsvReader
 
         try {
             $header = null;
-            $lineNumber = 0;
+            $recordNumber = 0;
 
-            while (($rawLine = fgets($handle)) !== false) {
-                $lineNumber++;
-                $line = $this->toUtf8(rtrim($rawLine, "\r\n"));
+            while (($fields = fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
+                $recordNumber++;
 
-                if ($line === '') {
+                if ($fields === [null] || $this->isEmptyFields($fields)) {
                     continue;
                 }
 
-                $fields = str_getcsv($line);
+                $fields = array_map(
+                    fn (?string $value): string => $this->toUtf8(trim((string) $value)),
+                    $fields,
+                );
 
                 if ($header === null) {
                     $header = $this->normalizeHeader($fields);
@@ -53,8 +56,8 @@ class CsvReader
                     continue;
                 }
 
-                yield $lineNumber => [
-                    'line' => $lineNumber,
+                yield $recordNumber => [
+                    'line' => $recordNumber,
                     'row' => $row,
                 ];
             }
@@ -79,14 +82,17 @@ class CsvReader
         }
 
         try {
-            while (($rawLine = fgets($handle)) !== false) {
-                $line = $this->toUtf8(rtrim($rawLine, "\r\n"));
-
-                if ($line === '') {
+            while (($fields = fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
+                if ($fields === [null] || $this->isEmptyFields($fields)) {
                     continue;
                 }
 
-                return $this->normalizeHeader(str_getcsv($line));
+                $fields = array_map(
+                    fn (?string $value): string => $this->toUtf8(trim((string) $value)),
+                    $fields,
+                );
+
+                return $this->normalizeHeader($fields);
             }
         } finally {
             fclose($handle);
@@ -101,7 +107,7 @@ class CsvReader
             $line = substr($line, 3);
         }
 
-        if (mb_check_encoding($line, 'UTF-8')) {
+        if ($line === '' || mb_check_encoding($line, 'UTF-8')) {
             return $line;
         }
 
@@ -135,7 +141,7 @@ class CsvReader
 
     /**
      * @param  list<string>  $header
-     * @param  list<string|null>  $fields
+     * @param  list<string>  $fields
      * @return array<string, string>
      */
     private function combineRow(array $header, array $fields): array
@@ -151,6 +157,20 @@ class CsvReader
         }
 
         return $row;
+    }
+
+    /**
+     * @param  list<string|null>  $fields
+     */
+    private function isEmptyFields(array $fields): bool
+    {
+        foreach ($fields as $value) {
+            if (trim((string) $value) !== '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
