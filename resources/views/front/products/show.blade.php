@@ -32,36 +32,51 @@
     @if ($product->activeVariants->isEmpty())
         <p>現在お取り扱いのオプションはありません。</p>
     @else
-        <form>
-            <fieldset>
-                <legend>バリアントを選択</legend>
-                @foreach ($product->activeVariants as $variant)
+        @if ($product->hasPurchasableVariant())
+            <form method="post" action="{{ route('cart.items.store') }}">
+                @csrf
+                <fieldset>
+                    <legend>バリアントを選択</legend>
+                    @foreach ($product->activeVariants as $variant)
+                        <label>
+                            <input
+                                type="radio"
+                                name="variant_id"
+                                value="{{ $variant->id }}"
+                                @checked($loop->first && $variant->isPurchasable())
+                                @disabled(! $variant->isPurchasable())
+                            >
+                            {{ $variant->name }}
+                            — {{ number_format($variant->price) }}円（税込）
+                            @if ($product->stock_managed)
+                                @if ($variant->isInStock())
+                                    — 在庫 {{ $variant->stock }}
+                                @else
+                                    — 売り切れ
+                                @endif
+                            @endif
+                        </label>
+                        <br>
+                    @endforeach
+                </fieldset>
+                <p>
                     <label>
-                        <input
-                            type="radio"
-                            name="variant_id"
-                            value="{{ $variant->id }}"
-                            @checked($loop->first)
-                            @disabled(! $variant->isPurchasable())
-                        >
+                        数量
+                        <input type="number" name="quantity" value="1" min="1" required>
+                    </label>
+                </p>
+                <button type="submit">カートに入れる</button>
+            </form>
+        @else
+            <ul>
+                @foreach ($product->activeVariants as $variant)
+                    <li>
                         {{ $variant->name }}
                         — {{ number_format($variant->price) }}円（税込）
-                        @if ($product->stock_managed)
-                            @if ($variant->isInStock())
-                                — 在庫 {{ $variant->stock }}
-                            @else
-                                — 売り切れ
-                            @endif
-                        @endif
-                    </label>
-                    <br>
+                        — 売り切れ
+                    </li>
                 @endforeach
-            </fieldset>
-        </form>
-
-        @if ($product->hasPurchasableVariant())
-            <p>購入可能です。（カート機能は準備中）</p>
-        @else
+            </ul>
             <p><strong>売り切れ</strong></p>
         @endif
     @endif

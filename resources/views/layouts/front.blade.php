@@ -36,6 +36,7 @@
         <nav>
             <a href="{{ route('products.index') }}">商品一覧</a>
             <a href="{{ route('categories.index') }}">カテゴリ</a>
+            <a href="{{ route('cart.index') }}">カート</a>
         </nav>
     </header>
 

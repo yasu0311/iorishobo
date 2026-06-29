@@ -133,37 +133,37 @@
 
 ### 2.3 カート
 
-- [ ] `CartService` 実装
-- [ ] ゲストカート（`session_id`）
-- [ ] 会員カート（`user_id`、1 ユーザー 1 カート）
-- [ ] カート追加・数量変更・削除
-- [ ] 在庫チェック（追加時・表示時 — 超過時は警告＋チェックアウトブロック）
-- [ ] クーポン適用（1 カート 1 クーポン）
-- [ ] ログイン時のゲストカート → 会員カートマージ
-- [ ] `CleanupGuestCarts` コマンド + スケジュール（90 日超のゲストカート削除）
+- [○] `CartService` 実装
+- [○] ゲストカート（`session_id`）
+- [○] 会員カート（`user_id`、1 ユーザー 1 カート）
+- [○] カート追加・数量変更・削除
+- [○] 在庫チェック（追加時・表示時 — 超過時は警告＋チェックアウトブロック）
+- [○] クーポン適用（1 カート 1 クーポン）
+- [○] ログイン時のゲストカート → 会員カートマージ
+- [○] `CleanupGuestCarts` コマンド + スケジュール（90 日超のゲストカート削除）
 
 ### 2.4 チェックアウト・決済
 
-- [ ] チェックアウト画面（購入者・配送先・配送方法・決済方法）
-  - [ ] 氏名必須、フリガナ任意
-  - [ ] メール必須、電話 or 携帯どちらか必須
-  - [ ] 住所 `address_line1` 必須、`address_line2` 任意
-  - [ ] 購入者と配送先の別人入力対応
-- [ ] `CheckoutService` — 注文作成・明細スナップショット
-- [ ] ゲスト購入時の `customers` find or create（メール正規化）
-- [ ] ログイン購入時の `orders.user_id` / `orders.customer_id` セット
-- [ ] 税額計算（内税 10% 固定、`floor(subtotal × 10 / 110)`）
-- [ ] 代金引換（`cod`）— 手数料表示・チェックアウト送信時に在庫減算
-- [ ] 銀行振込（`bank_transfer`）— 振込案内・入金は手動確認
-- [ ] Stripe 連携
-  - [ ] `StripeService`（PaymentIntent 作成）
-  - [ ] チェックアウト送信 → `orders` を `pending` 作成 → カード決済
-  - [ ] `StripeWebhookController`（`payment_intent.succeeded` → `paid`、冪等処理）
-  - [ ] 入金確認後の在庫減算（`stripe` / `bank_transfer`）
-- [ ] 注文確認メール（`orders.buyer_email` 宛）
-- [ ] 振込案内メール（7 日以内の案内文）
-- [ ] 注文完了画面
-- [ ] チェックアウト・決済の Feature テスト
+- [○] チェックアウト画面（購入者・配送先・配送方法・決済方法）
+  - [○] 氏名必須、フリガナ任意
+  - [○] メール必須、電話 or 携帯どちらか必須
+  - [○] 住所 `address_line1` 必須、`address_line2` 任意
+  - [○] 購入者と配送先の別人入力対応
+- [○] `CheckoutService` — 注文作成・明細スナップショット
+- [○] ゲスト購入時の `customers` find or create（メール正規化）
+- [○] ログイン購入時の `orders.user_id` / `orders.customer_id` セット
+- [○] 税額計算（内税 10% 固定、`floor(subtotal × 10 / 110)`）
+- [○] 代金引換（`cod`）— 手数料表示・チェックアウト送信時に在庫減算
+- [○] 銀行振込（`bank_transfer`）— 振込案内・入金は手動確認
+- [○] Stripe 連携
+  - [○] `StripeService`（PaymentIntent 作成）
+  - [○] チェックアウト送信 → `orders` を `pending` 作成 → カード決済
+  - [○] `StripeWebhookController`（`payment_intent.succeeded` → `paid`、冪等処理）
+  - [○] 入金確認後の在庫減算（`stripe` / `bank_transfer`）
+- [○] 注文確認メール（`orders.buyer_email` 宛）
+- [○] 振込案内メール（7 日以内の案内文）
+- [○] 注文完了画面
+- [○] チェックアウト・決済の Feature テスト
 
 ### 2.5 会員機能
 

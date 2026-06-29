@@ -63,7 +63,7 @@ class ProductBrowsingTest extends TestCase
         $response->assertSee('1,500円');
         $response->assertSee('在庫 5');
         $response->assertSee('売り切れ');
-        $response->assertSee('購入可能です');
+        $response->assertSee('カートに入れる');
     }
 
     #[Test]
@@ -75,7 +75,7 @@ class ProductBrowsingTest extends TestCase
         $response = $this->get(route('products.show', $product->slug));
 
         $response->assertOk();
-        $response->assertSee('購入可能です');
+        $response->assertSee('カートに入れる');
         $response->assertDontSee('在庫 0');
     }
 

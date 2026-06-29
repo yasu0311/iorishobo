@@ -1,0 +1,263 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\DeviceType;
+use App\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
+use App\Mail\BankTransferInstructionMail;
+use App\Mail\OrderConfirmationMail;
+use App\Models\Category;
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\ShippingMethod;
+use App\Models\User;
+use App\Services\Cart\CartService;
+use App\Services\Checkout\CheckoutService;
+use App\Services\Payment\StripeService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
+use Mockery;
+use PHPUnit\Framework\Attributes\Test;
+use Stripe\PaymentIntent;
+use Tests\TestCase;
+
+class CheckoutTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private ProductVariant $variant;
+
+    private ShippingMethod $shippingMethod;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->startSession();
+        Mail::fake();
+
+        $category = Category::query()->create([
+            'name' => 'テスト',
+            'slug' => '1',
+            'sort_order' => 1,
+        ]);
+
+        $product = Product::query()->create([
+            'category_id' => $category->id,
+            'name' => 'テスト商品',
+            'slug' => '100',
+            'base_price' => 1100,
+            'stock_managed' => true,
+            'is_published' => true,
+            'sort_order' => 1,
+        ]);
+
+        $this->variant = ProductVariant::query()->create([
+            'product_id' => $product->id,
+            'name' => $product->name,
+            'price' => 1100,
+            'stock' => 10,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $this->shippingMethod = ShippingMethod::query()->create([
+            'slug' => 'test-ship',
+            'name' => 'テスト配送',
+            'base_fee' => 500,
+            'free_shipping_threshold' => null,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+    }
+
+    #[Test]
+    public function cod_checkout_creates_order_decrements_stock_and_sends_mail(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 2,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('checkout.store'), $this->checkoutPayload('cod'));
+
+        $response->assertRedirect(route('checkout.complete'));
+
+        $order = Order::query()->first();
+        $this->assertNotNull($order);
+        $this->assertSame(PaymentMethod::Cod, $order->payment_method);
+        $this->assertSame(PaymentStatus::Pending, $order->payment_status);
+        $this->assertSame($user->id, $order->user_id);
+        $this->assertNotNull($order->customer_id);
+        $this->assertSame(2200, $order->subtotal);
+        $this->assertSame(200, $order->tax_amount);
+        $this->assertDatabaseCount('order_items', 1);
+        $this->assertSame(8, $this->variant->fresh()->stock);
+        $this->assertDatabaseCount('cart_items', 0);
+
+        Mail::assertSent(OrderConfirmationMail::class, fn ($mail) => $mail->hasTo('buyer@example.com'));
+        Mail::assertNotSent(BankTransferInstructionMail::class);
+    }
+
+    #[Test]
+    public function bank_transfer_checkout_sends_transfer_instruction_mail(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.store'), $this->checkoutPayload('bank_transfer'))
+            ->assertRedirect(route('checkout.complete'));
+
+        Mail::assertSent(OrderConfirmationMail::class);
+        Mail::assertSent(BankTransferInstructionMail::class);
+    }
+
+    #[Test]
+    public function guest_checkout_creates_guest_customer_by_normalized_email(): void
+    {
+        $this->startSession();
+        app(CartService::class)->addItem($this->variant, 1);
+
+        $payload = $this->checkoutPayload('cod');
+        $payload['buyer_email'] = '  Buyer@Example.COM  ';
+
+        app(CheckoutService::class)->placeOrder($payload, null, DeviceType::Pc);
+
+        $this->assertDatabaseHas('customers', [
+            'email' => 'buyer@example.com',
+            'user_id' => null,
+        ]);
+
+        $order = Order::query()->first();
+        $this->assertNull($order->user_id);
+        $this->assertNotNull($order->customer_id);
+    }
+
+    #[Test]
+    public function stripe_webhook_marks_order_paid_and_decrements_stock(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 3,
+        ]);
+
+        $paymentIntent = PaymentIntent::constructFrom([
+            'id' => 'pi_test_checkout_1',
+            'object' => 'payment_intent',
+            'client_secret' => 'cs_test_secret',
+        ]);
+
+        $this->mock(StripeService::class, function ($mock) use ($paymentIntent) {
+            $mock->shouldReceive('createPaymentIntent')->once()->andReturn($paymentIntent);
+        });
+
+        $this->actingAs($user)->post(route('checkout.store'), $this->checkoutPayload('stripe'))
+            ->assertRedirect(route('checkout.stripe', Order::query()->first()));
+
+        $order = Order::query()->first();
+        $this->assertSame(10, $this->variant->fresh()->stock);
+
+        app(CheckoutService::class)->markOrderPaidFromStripe('pi_test_checkout_1');
+
+        $order->refresh();
+        $this->assertSame(PaymentStatus::Paid, $order->payment_status);
+        $this->assertSame(7, $this->variant->fresh()->stock);
+        Mail::assertSent(OrderConfirmationMail::class);
+    }
+
+    #[Test]
+    public function stripe_webhook_is_idempotent_when_already_paid(): void
+    {
+        $order = Order::query()->create($this->minimalOrderAttributes([
+            'stripe_payment_intent_id' => 'pi_paid_1',
+            'payment_status' => PaymentStatus::Paid,
+            'payment_method' => PaymentMethod::Stripe,
+        ]));
+
+        app(CheckoutService::class)->markOrderPaidFromStripe('pi_paid_1');
+
+        Mail::assertNothingSent();
+        $this->assertSame(PaymentStatus::Paid, $order->fresh()->payment_status);
+    }
+
+    #[Test]
+    public function checkout_is_blocked_when_cart_has_stock_issues(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 5,
+        ]);
+
+        $this->variant->update(['stock' => 1]);
+
+        $this->actingAs($user)->get(route('checkout.index'))
+            ->assertRedirect(route('cart.index'));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function checkoutPayload(string $paymentMethod): array
+    {
+        return [
+            'buyer_name' => 'テスト太郎',
+            'buyer_email' => 'buyer@example.com',
+            'buyer_phone' => '0312345678',
+            'buyer_postal_code' => '1000001',
+            'buyer_prefecture' => '東京都',
+            'buyer_address_line1' => '千代田区1-1',
+            'shipping_method_id' => $this->shippingMethod->id,
+            'payment_method' => $paymentMethod,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function minimalOrderAttributes(array $overrides = []): array
+    {
+        return array_merge([
+            'order_number' => '1234567890',
+            'ordered_at' => now(),
+            'subtotal' => 1100,
+            'tax_amount' => 100,
+            'shipping_fee' => 0,
+            'payment_fee' => 0,
+            'discount' => 0,
+            'total' => 1100,
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+            'shipping_status' => OrderStatus::Unshipped,
+            'buyer_name' => 'テスト',
+            'buyer_email' => 'test@example.com',
+            'buyer_postal_code' => '1000001',
+            'buyer_prefecture' => '東京都',
+            'buyer_address_line1' => '千代田区',
+            'shipping_name' => 'テスト',
+            'shipping_phone' => '0312345678',
+            'shipping_postal_code' => '1000001',
+            'shipping_prefecture' => '東京都',
+            'shipping_address_line1' => '千代田区',
+        ], $overrides);
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
+    }
+}
