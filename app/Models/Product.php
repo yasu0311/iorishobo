@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -32,6 +33,16 @@ class Product extends Model
         ];
     }
 
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query->where('is_published', true);
+    }
+
+    public function scopeOrdered(Builder $query): Builder
+    {
+        return $query->orderBy('sort_order')->orderBy('id');
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
@@ -50,5 +61,17 @@ class Product extends Model
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class)->orderBy('sort_order');
+    }
+
+    public function activeVariants(): HasMany
+    {
+        return $this->variants()->where('is_active', true);
+    }
+
+    public function hasPurchasableVariant(): bool
+    {
+        return $this->activeVariants
+            ->each(fn (ProductVariant $variant) => $variant->setRelation('product', $this))
+            ->contains(fn (ProductVariant $variant) => $variant->isPurchasable());
     }
 }

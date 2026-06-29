@@ -44,4 +44,18 @@ class ProductVariant extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    public function isInStock(): bool
+    {
+        if (! $this->product->stock_managed) {
+            return true;
+        }
+
+        return $this->stock > 0;
+    }
+
+    public function isPurchasable(): bool
+    {
+        return $this->is_active && $this->isInStock();
+    }
 }

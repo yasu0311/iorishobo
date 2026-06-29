@@ -116,20 +116,20 @@
 
 ### 2.1 共通基盤
 
-- [ ] `config/shop.php` 実装（振込先・代引手数料・送料無料ライン・インボイス番号）
-- [ ] `ShippingFeeCalculator`（全国一律・`free_shipping_threshold` はクーポン適用後小計で判定）
-- [ ] `OrderNumberGenerator`（数字のみの注文番号）
-- [ ] `lang/ja` バリデーションメッセージ（電話 or 携帯どちらか必須等）
-- [ ] 旧 URL リダイレクト `?pid=` → `/products/{slug}`（301）
+- [○] `config/shop.php` 実装（振込先・代引手数料・送料無料ライン・インボイス番号）
+- [○] `ShippingFeeCalculator`（全国一律・`free_shipping_threshold` はクーポン適用後小計で判定）
+- [○] `OrderNumberGenerator`（数字のみの注文番号）
+- [○] `lang/ja` バリデーションメッセージ（電話 or 携帯どちらか必須等）
+- [○] 旧 URL リダイレクト `?pid=` → `/products/{slug}`（301）
 
 ### 2.2 商品閲覧（機能のみ）
 
-- [ ] 商品一覧（掲載中のみ、`is_published`）
-- [ ] 商品詳細（バリアント選択・価格表示・在庫表示）
-  - [ ] `stock_managed = false` は常に購入可
-  - [ ] `stock_managed = true` かつ `stock = 0` は売り切れ
-- [ ] カテゴリ一覧・カテゴリ別商品一覧（`/categories/{slug}`）
-- [ ] ルーティング（`/products/{slug}`）
+- [○] 商品一覧（掲載中のみ、`is_published`）
+- [○] 商品詳細（バリアント選択・価格表示・在庫表示）
+  - [○] `stock_managed = false` は常に購入可
+  - [○] `stock_managed = true` かつ `stock = 0` は売り切れ
+- [○] カテゴリ一覧・カテゴリ別商品一覧（`/categories/{slug}`）
+- [○] ルーティング（`/products/{slug}`）
 
 ### 2.3 カート
 
