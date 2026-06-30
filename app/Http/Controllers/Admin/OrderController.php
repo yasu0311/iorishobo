@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\Order\OrderManagementService;
+use App\Services\Order\RefundService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class OrderController extends Controller
 {
     public function __construct(
         private readonly OrderManagementService $orderManagementService,
+        private readonly RefundService $refundService,
     ) {}
 
     public function index(Request $request): View
@@ -104,5 +106,28 @@ class OrderController extends Controller
         return redirect()
             ->route('admin.orders.show', $order)
             ->with('status', '注文をキャンセルしました。');
+    }
+
+    public function storeRefund(Request $request, Order $order): RedirectResponse
+    {
+        $validated = $request->validate([
+            'amount' => 'required|integer|min:1',
+            'reason' => 'required|string|max:1000',
+            'manual_only' => 'boolean',
+            'restore_inventory' => 'boolean',
+        ]);
+
+        $this->refundService->record(
+            $order,
+            (int) $validated['amount'],
+            $validated['reason'],
+            $request->user(),
+            viaStripe: ! $request->boolean('manual_only'),
+            restoreInventory: $request->boolean('restore_inventory'),
+        );
+
+        return redirect()
+            ->route('admin.orders.show', $order)
+            ->with('status', '返金を記録しました。');
     }
 }

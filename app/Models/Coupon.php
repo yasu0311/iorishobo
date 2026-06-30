@@ -41,4 +41,25 @@ class Coupon extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    public function isCurrentlyValid(): bool
+    {
+        if (! $this->is_active) {
+            return false;
+        }
+
+        if ($this->starts_at !== null && $this->starts_at->isFuture()) {
+            return false;
+        }
+
+        if ($this->ends_at !== null && $this->ends_at->isPast()) {
+            return false;
+        }
+
+        if ($this->max_uses !== null && $this->used_count >= $this->max_uses) {
+            return false;
+        }
+
+        return true;
+    }
 }

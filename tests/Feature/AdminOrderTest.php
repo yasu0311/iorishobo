@@ -171,10 +171,10 @@ class AdminOrderTest extends TestCase
 
         $stripeService = $this->getMockBuilder(StripeService::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['createFullRefund'])
+            ->onlyMethods(['createRefund'])
             ->getMock();
         $stripeService->expects($this->once())
-            ->method('createFullRefund')
+            ->method('createRefund')
             ->willReturn($stripeRefund);
 
         $this->instance(StripeService::class, $stripeService);

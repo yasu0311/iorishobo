@@ -3,13 +3,10 @@
 namespace App\Services\Order;
 
 use App\Enums\OrderStatus;
-use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
-use App\Models\Refund;
 use App\Models\User;
 use App\Services\Inventory\InventoryService;
-use App\Services\Payment\StripeService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -17,7 +14,7 @@ class OrderManagementService
 {
     public function __construct(
         private readonly InventoryService $inventoryService,
-        private readonly StripeService $stripeService,
+        private readonly RefundService $refundService,
     ) {}
 
     public function markAsPaid(Order $order): void
@@ -42,7 +39,7 @@ class OrderManagementService
     public function ship(Order $order, ?string $trackingNumber): void
     {
         if (! $order->canShip()) {
-            $message = $order->payment_method === PaymentMethod::BankTransfer
+            $message = $order->payment_method === \App\Enums\PaymentMethod::BankTransfer
                 && $order->payment_status === PaymentStatus::Pending
                 ? '振込未入金の注文は発送できません。'
                 : 'この注文は発送できません。';
@@ -73,8 +70,15 @@ class OrderManagementService
 
         DB::transaction(function () use ($order, $reason, $refundStripe, $admin, $shouldRestoreInventory, $wasPaid, &$stripeRefunded) {
             if ($refundStripe) {
-                $this->processStripeRefundOnCancel($order, $reason, $admin);
+                $this->refundService->record(
+                    $order,
+                    $order->refundableAmount(),
+                    $reason,
+                    $admin,
+                    viaStripe: true,
+                );
                 $stripeRefunded = true;
+                $order->refresh();
             }
 
             if ($stripeRefunded) {
@@ -102,56 +106,5 @@ class OrderManagementService
                 $this->inventoryService->restoreForOrder($order->fresh(['items.productVariant.product']));
             }
         });
-    }
-
-    private function processStripeRefundOnCancel(Order $order, string $reason, User $admin): void
-    {
-        if ($order->payment_method !== PaymentMethod::Stripe) {
-            throw ValidationException::withMessages([
-                'refund_stripe' => 'Stripe 返金はクレジットカード決済の注文のみ可能です。',
-            ]);
-        }
-
-        if ($order->payment_status !== PaymentStatus::Paid) {
-            throw ValidationException::withMessages([
-                'refund_stripe' => '入金済みの注文のみ Stripe 返金できます。',
-            ]);
-        }
-
-        if ($order->stripe_payment_intent_id === null) {
-            throw ValidationException::withMessages([
-                'refund_stripe' => 'Stripe の決済情報がありません。',
-            ]);
-        }
-
-        $refundableAmount = $order->total - $order->refund_amount;
-
-        if ($refundableAmount <= 0) {
-            throw ValidationException::withMessages([
-                'refund_stripe' => '返金可能な金額がありません。',
-            ]);
-        }
-
-        try {
-            $stripeRefund = $this->stripeService->createFullRefund($order);
-        } catch (\Throwable) {
-            throw ValidationException::withMessages([
-                'refund_stripe' => 'Stripe 返金に失敗しました。手動返金が必要です。',
-            ]);
-        }
-
-        Refund::query()->create([
-            'order_id' => $order->id,
-            'amount' => $refundableAmount,
-            'reason' => $reason,
-            'stripe_refund_id' => $stripeRefund->id,
-            'recorded_by' => $admin->id,
-        ]);
-
-        $order->update([
-            'refund_amount' => $order->total,
-            'refunded_at' => now(),
-            'payment_status' => PaymentStatus::Refunded,
-        ]);
     }
 }

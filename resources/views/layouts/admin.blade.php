@@ -192,6 +192,79 @@
         .btn-danger {
             background: #b42318;
         }
+
+        .btn-link {
+            color: #fff;
+            background: #111827;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-grid label,
+        .panel > label {
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        .form-grid input,
+        .form-grid select,
+        .panel input[type="text"],
+        .panel input[type="number"],
+        .panel input[type="file"],
+        .panel textarea,
+        .panel select {
+            display: block;
+            width: 100%;
+            margin-top: 0.25rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+        }
+
+        .form-checkboxes {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .variant-form {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .image-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 0.5rem;
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .image-card p {
+            font-size: 0.8125rem;
+            margin: 0.5rem 0;
+        }
     </style>
 </head>
 <body>
@@ -202,6 +275,9 @@
                 <nav class="admin-nav">
                     <a href="{{ route('admin.dashboard') }}">ダッシュボード</a>
                     <a href="{{ route('admin.orders.index') }}">注文</a>
+                    <a href="{{ route('admin.products.index') }}">商品</a>
+                    <a href="{{ route('admin.customers.index') }}">顧客</a>
+                    <a href="{{ route('admin.coupons.index') }}">クーポン</a>
                 </nav>
             </div>
             <div>

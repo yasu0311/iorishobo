@@ -136,8 +136,19 @@ class Order extends Model
             PaymentMethod::Cod => true,
             PaymentMethod::Stripe,
             PaymentMethod::BankTransfer,
-            PaymentMethod::AmazonPay => $this->payment_status === PaymentStatus::Paid,
+            PaymentMethod::AmazonPay => in_array($this->payment_status, [PaymentStatus::Paid, PaymentStatus::Refunded], true),
         };
+    }
+
+    public function refundableAmount(): int
+    {
+        return max(0, $this->total - $this->refund_amount);
+    }
+
+    public function canRefund(): bool
+    {
+        return $this->payment_status === PaymentStatus::Paid
+            && $this->refundableAmount() > 0;
     }
 
     public function canMarkAsPaid(): bool

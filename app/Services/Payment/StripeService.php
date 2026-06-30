@@ -25,10 +25,21 @@ class StripeService
         ]);
     }
 
+    public function createRefund(Order $order, int $amount): \Stripe\Refund
+    {
+        $params = [
+            'payment_intent' => $order->stripe_payment_intent_id,
+        ];
+
+        if ($amount < $order->refundableAmount()) {
+            $params['amount'] = $amount;
+        }
+
+        return \Stripe\Refund::create($params);
+    }
+
     public function createFullRefund(Order $order): \Stripe\Refund
     {
-        return \Stripe\Refund::create([
-            'payment_intent' => $order->stripe_payment_intent_id,
-        ]);
+        return $this->createRefund($order, $order->refundableAmount());
     }
 }

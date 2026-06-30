@@ -65,6 +65,9 @@
             <h2>購入者</h2>
             <dl class="detail-list">
                 <dt>氏名</dt><dd>{{ $order->buyer_name }}</dd>
+                @if ($order->customer)
+                    <dt>顧客</dt><dd><a href="{{ route('admin.customers.show', $order->customer) }}">{{ $order->customer->name }}（ID: {{ $order->customer->id }}）</a></dd>
+                @endif
                 <dt>メール</dt><dd>{{ $order->buyer_email }}</dd>
                 @if ($order->buyer_phone)<dt>電話</dt><dd>{{ $order->buyer_phone }}</dd>@endif
                 @if ($order->buyer_mobile)<dt>携帯</dt><dd>{{ $order->buyer_mobile }}</dd>@endif
@@ -188,6 +191,35 @@
                     </label>
                 @endif
                 <button type="submit" class="btn-danger" onclick="return confirm('注文をキャンセルしますか？')">キャンセル</button>
+            </form>
+        @endif
+
+        @if ($order->canRefund())
+            <form method="post" action="{{ route('admin.orders.refunds.store', $order) }}" class="action-form">
+                @csrf
+                <h3>返金</h3>
+                <p>返金可能額: {{ number_format($order->refundableAmount()) }}円</p>
+                <label>
+                    返金額
+                    <input type="number" name="amount" value="{{ old('amount', $order->refundableAmount()) }}" min="1" max="{{ $order->refundableAmount() }}" required>
+                </label>
+                <label>
+                    理由
+                    <textarea name="reason" rows="3" required maxlength="1000">{{ old('reason') }}</textarea>
+                </label>
+                @if ($order->payment_method === \App\Enums\PaymentMethod::Stripe)
+                    <label>
+                        <input type="checkbox" name="manual_only" value="1" @checked(old('manual_only'))>
+                        Stripe を使わず手動記録（振込返金など）
+                    </label>
+                @endif
+                @if ($order->inventoryWasDecremented())
+                    <label>
+                        <input type="checkbox" name="restore_inventory" value="1" @checked(old('restore_inventory'))>
+                        在庫を戻す
+                    </label>
+                @endif
+                <button type="submit" onclick="return confirm('返金を記録しますか？')">返金を記録</button>
             </form>
         @endif
     </section>
