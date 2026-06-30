@@ -7,6 +7,12 @@
 
     <h1>{{ $customer->name }}</h1>
 
+    @if (session('status'))
+        <p class="flash">{{ session('status') }}</p>
+    @endif
+
+    @include('admin.partials.watchlist-warning', ['watchlistMatches' => $watchlistMatches])
+
     <div class="detail-grid">
         <section class="panel">
             <h2>基本情報</h2>
@@ -97,5 +103,11 @@
         @else
             <p>注文がありません。</p>
         @endif
+    </section>
+
+    <section class="panel">
+        @include('admin.partials.watchlist-register-form', [
+            'action' => route('admin.customers.watchlist.store', $customer),
+        ])
     </section>
 @endsection

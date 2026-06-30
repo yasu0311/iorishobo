@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\Order\OrderManagementService;
 use App\Services\Order\RefundService;
+use App\Services\Watchlist\WatchlistService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class OrderController extends Controller
     public function __construct(
         private readonly OrderManagementService $orderManagementService,
         private readonly RefundService $refundService,
+        private readonly WatchlistService $watchlistService,
     ) {}
 
     public function index(Request $request): View
@@ -61,6 +63,7 @@ class OrderController extends Controller
 
         return view('admin.orders.show', [
             'order' => $order,
+            'watchlistMatches' => $this->watchlistService->matchingForOrder($order),
         ]);
     }
 

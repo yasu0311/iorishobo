@@ -278,6 +278,8 @@
                     <a href="{{ route('admin.products.index') }}">商品</a>
                     <a href="{{ route('admin.customers.index') }}">顧客</a>
                     <a href="{{ route('admin.coupons.index') }}">クーポン</a>
+                    <a href="{{ route('admin.shipping-methods.index') }}">配送</a>
+                    <a href="{{ route('admin.watchlist.index') }}">要注意</a>
                 </nav>
             </div>
             <div>

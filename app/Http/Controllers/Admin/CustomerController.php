@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Services\Watchlist\WatchlistService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
+    public function __construct(
+        private readonly WatchlistService $watchlistService,
+    ) {}
+
     public function index(Request $request): View
     {
         $query = Customer::query()->with('user')->latest('id');
@@ -49,6 +54,7 @@ class CustomerController extends Controller
         return view('admin.customers.show', [
             'customer' => $customer,
             'orders' => $orders,
+            'watchlistMatches' => $this->watchlistService->matchingForCustomer($customer),
         ]);
     }
 }

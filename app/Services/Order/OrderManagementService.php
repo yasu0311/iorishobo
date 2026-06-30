@@ -4,10 +4,12 @@ namespace App\Services\Order;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Mail\OrderShippedMail;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Inventory\InventoryService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class OrderManagementService
@@ -54,6 +56,10 @@ class OrderManagementService
             'shipped_at' => now(),
             'tracking_number' => filled($trackingNumber) ? $trackingNumber : null,
         ]);
+
+        $order = $order->fresh(['items']);
+
+        Mail::to($order->buyer_email)->send(new OrderShippedMail($order));
     }
 
     public function cancel(Order $order, string $reason, bool $refundStripe, User $admin): void

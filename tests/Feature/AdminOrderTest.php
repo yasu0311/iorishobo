@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Mail\OrderShippedMail;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
@@ -12,6 +13,7 @@ use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\Payment\StripeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -95,6 +97,31 @@ class AdminOrderTest extends TestCase
 
         $this->assertSame(PaymentStatus::Paid, $order->fresh()->payment_status);
         $this->assertSame(8, $this->variant->fresh()->stock);
+    }
+
+    #[Test]
+    public function shipping_order_sends_notification_mail(): void
+    {
+        Mail::fake();
+
+        $order = $this->createOrder([
+            'order_number' => '20260630555',
+            'buyer_email' => 'ship-notify@example.com',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.ship', $order), [
+                'tracking_number' => 'TRACK-001',
+            ])
+            ->assertRedirect(route('admin.orders.show', $order));
+
+        Mail::assertSent(OrderShippedMail::class, function ($mail) {
+            return $mail->hasTo('ship-notify@example.com')
+                && $mail->order->order_number === '20260630555'
+                && $mail->order->tracking_number === 'TRACK-001';
+        });
     }
 
     #[Test]

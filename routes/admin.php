@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ShippingMethodController;
+use App\Http\Controllers\Admin\WatchlistController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'admin'])
@@ -19,6 +21,7 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::post('/orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
         Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
         Route::post('/orders/{order}/refunds', [OrderController::class, 'storeRefund'])->name('orders.refunds.store');
+        Route::post('/orders/{order}/watchlist', [WatchlistController::class, 'storeFromOrder'])->name('orders.watchlist.store');
 
         Route::get('/products', [ProductController::class, 'index'])->name('products.index');
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
@@ -35,6 +38,7 @@ Route::middleware(['auth', 'verified', 'admin'])
 
         Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
         Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+        Route::post('/customers/{customer}/watchlist', [WatchlistController::class, 'storeFromCustomer'])->name('customers.watchlist.store');
 
         Route::get('/coupons', [CouponController::class, 'index'])->name('coupons.index');
         Route::get('/coupons/create', [CouponController::class, 'create'])->name('coupons.create');
@@ -42,4 +46,14 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::get('/coupons/{coupon}/edit', [CouponController::class, 'edit'])->name('coupons.edit');
         Route::put('/coupons/{coupon}', [CouponController::class, 'update'])->name('coupons.update');
         Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])->name('coupons.destroy');
+
+        Route::get('/shipping-methods', [ShippingMethodController::class, 'index'])->name('shipping-methods.index');
+        Route::get('/shipping-methods/create', [ShippingMethodController::class, 'create'])->name('shipping-methods.create');
+        Route::post('/shipping-methods', [ShippingMethodController::class, 'store'])->name('shipping-methods.store');
+        Route::get('/shipping-methods/{shippingMethod}/edit', [ShippingMethodController::class, 'edit'])->name('shipping-methods.edit');
+        Route::put('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'update'])->name('shipping-methods.update');
+        Route::delete('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'destroy'])->name('shipping-methods.destroy');
+
+        Route::get('/watchlist', [WatchlistController::class, 'index'])->name('watchlist.index');
+        Route::post('/watchlist/{watchlistEntry}/deactivate', [WatchlistController::class, 'deactivate'])->name('watchlist.deactivate');
     });

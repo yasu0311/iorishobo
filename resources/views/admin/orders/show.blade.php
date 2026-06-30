@@ -19,6 +19,8 @@
         </div>
     @endif
 
+    @include('admin.partials.watchlist-warning', ['watchlistMatches' => $watchlistMatches])
+
     <div class="detail-grid">
         <section class="panel">
             <h2>注文情報</h2>
@@ -222,5 +224,9 @@
                 <button type="submit" onclick="return confirm('返金を記録しますか？')">返金を記録</button>
             </form>
         @endif
+
+        @include('admin.partials.watchlist-register-form', [
+            'action' => route('admin.orders.watchlist.store', $order),
+        ])
     </section>
 @endsection
