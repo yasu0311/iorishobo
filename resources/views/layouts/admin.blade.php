@@ -35,6 +35,13 @@
 
         .admin-header a { color: #f9fafb; text-decoration: none; }
 
+        .admin-nav {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+        }
+
         .admin-main {
             max-width: 1200px;
             margin: 0 auto;
@@ -70,12 +77,133 @@
             font-weight: 700;
             line-height: 1.2;
         }
+
+        .filter-form,
+        .action-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: end;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-form input,
+        .filter-form select,
+        .action-form input,
+        .action-form textarea {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        .admin-table th {
+            background: #f9fafb;
+            font-size: 0.875rem;
+        }
+
+        .panel {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .panel h2 {
+            margin: 0 0 1rem;
+            font-size: 1.125rem;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .detail-list {
+            margin: 0;
+            display: grid;
+            grid-template-columns: 7rem 1fr;
+            gap: 0.5rem 1rem;
+        }
+
+        .detail-list dt {
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .detail-list dd {
+            margin: 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            background: #f3f4f6;
+            border-radius: 999px;
+            font-size: 0.8125rem;
+        }
+
+        .flash {
+            padding: 0.75rem 1rem;
+            background: #ecfdf3;
+            border: 1px solid #abefc6;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .flash--error {
+            background: #fef3f2;
+            border-color: #fecdca;
+        }
+
+        .notice {
+            color: #b42318;
+            margin: 0 0 1rem;
+        }
+
+        button,
+        .filter-form button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            background: #111827;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            background: #b42318;
+        }
     </style>
 </head>
 <body>
     <header class="admin-header">
         <div class="admin-header__inner">
-            <strong><a href="{{ route('admin.dashboard') }}">管理画面</a></strong>
+            <div>
+                <strong><a href="{{ route('admin.dashboard') }}">管理画面</a></strong>
+                <nav class="admin-nav">
+                    <a href="{{ route('admin.dashboard') }}">ダッシュボード</a>
+                    <a href="{{ route('admin.orders.index') }}">注文</a>
+                </nav>
+            </div>
             <div>
                 <span>{{ auth()->user()->name }}</span>
                 <form method="post" action="{{ route('logout') }}" style="display: inline; margin-left: 1rem;">

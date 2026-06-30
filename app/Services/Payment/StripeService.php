@@ -24,4 +24,11 @@ class StripeService
             ],
         ]);
     }
+
+    public function createFullRefund(Order $order): \Stripe\Refund
+    {
+        return \Stripe\Refund::create([
+            'payment_intent' => $order->stripe_payment_intent_id,
+        ]);
+    }
 }

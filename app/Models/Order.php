@@ -123,4 +123,43 @@ class Order extends Model
     {
         return $this->colorme_sales_id !== null;
     }
+
+    public function isActive(): bool
+    {
+        return $this->payment_status !== PaymentStatus::Cancelled
+            && $this->shipping_status !== OrderStatus::Cancelled;
+    }
+
+    public function inventoryWasDecremented(): bool
+    {
+        return match ($this->payment_method) {
+            PaymentMethod::Cod => true,
+            PaymentMethod::Stripe,
+            PaymentMethod::BankTransfer,
+            PaymentMethod::AmazonPay => $this->payment_status === PaymentStatus::Paid,
+        };
+    }
+
+    public function canMarkAsPaid(): bool
+    {
+        return $this->isActive()
+            && $this->payment_status === PaymentStatus::Pending;
+    }
+
+    public function canShip(): bool
+    {
+        if (! $this->isActive() || $this->shipping_status !== OrderStatus::Unshipped) {
+            return false;
+        }
+
+        return match ($this->payment_method) {
+            PaymentMethod::BankTransfer, PaymentMethod::Stripe => $this->payment_status === PaymentStatus::Paid,
+            default => true,
+        };
+    }
+
+    public function canCancel(): bool
+    {
+        return $this->isActive() && $this->shipping_status !== OrderStatus::Shipped;
+    }
 }

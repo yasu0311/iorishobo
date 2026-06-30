@@ -19,4 +19,6 @@
             <div class="stat-card__value">{{ number_format($todayOrderCount) }}</div>
         </div>
     </div>
+
+    <p><a href="{{ route('admin.orders.index') }}">注文一覧へ</a></p>
 @endsection

@@ -48,4 +48,31 @@ class InventoryService
             }
         });
     }
+
+    public function restoreForOrder(Order $order): void
+    {
+        DB::transaction(function () use ($order) {
+            $order->load('items.productVariant.product');
+
+            foreach ($order->items as $item) {
+                $variant = $item->productVariant;
+
+                if ($variant === null) {
+                    continue;
+                }
+
+                $product = $variant->product;
+
+                if ($product === null || ! $product->stock_managed) {
+                    continue;
+                }
+
+                ProductVariant::query()
+                    ->whereKey($variant->id)
+                    ->lockForUpdate()
+                    ->first()
+                    ?->increment('stock', $item->quantity);
+            }
+        });
+    }
 }
