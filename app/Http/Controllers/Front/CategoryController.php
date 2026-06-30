@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Contracts\View\View;
 
 class CategoryController extends Controller
@@ -29,8 +31,14 @@ class CategoryController extends Controller
         $products = $category->products()
             ->published()
             ->ordered()
-            ->with('mainImage')
+            ->with(['mainImage', 'activeVariants'])
             ->paginate(24);
+
+        $products->getCollection()->each(function (Product $product) {
+            $product->activeVariants->each(
+                fn (ProductVariant $variant) => $variant->setRelation('product', $product)
+            );
+        });
 
         return view('front.categories.show', compact('category', 'products'));
     }

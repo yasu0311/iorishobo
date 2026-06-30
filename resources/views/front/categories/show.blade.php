@@ -4,24 +4,25 @@
 
 @section('content')
     @if ($category->parent)
-        <p><a href="{{ route('categories.show', $category->parent->slug) }}">{{ $category->parent->name }}</a></p>
+        <p class="breadcrumb">
+            <a href="{{ route('categories.index') }}">カテゴリ</a>
+            /
+            <a href="{{ route('categories.show', $category->parent->slug) }}">{{ $category->parent->name }}</a>
+        </p>
+    @else
+        <p class="breadcrumb"><a href="{{ route('categories.index') }}">カテゴリ</a></p>
     @endif
 
     <h1>{{ $category->name }}</h1>
 
     @if ($products->isEmpty())
-        <p>このカテゴリに掲載中の商品はありません。</p>
+        <p class="text-muted">このカテゴリに掲載中の商品はありません。</p>
     @else
-        <ul>
+        <div class="product-grid">
             @foreach ($products as $product)
-                <li>
-                    <a href="{{ route('products.show', $product->slug) }}">{{ $product->name }}</a>
-                    @if ($product->mainImage)
-                        <img src="{{ $product->mainImage->url() }}" alt="{{ $product->name }}" width="120">
-                    @endif
-                </li>
+                @include('front.partials.product-card', ['product' => $product])
             @endforeach
-        </ul>
+        </div>
 
         {{ $products->links() }}
     @endif

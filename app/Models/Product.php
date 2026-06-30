@@ -74,4 +74,17 @@ class Product extends Model
             ->each(fn (ProductVariant $variant) => $variant->setRelation('product', $this))
             ->contains(fn (ProductVariant $variant) => $variant->isPurchasable());
     }
+
+    public function lowestPrice(): ?int
+    {
+        if ($this->relationLoaded('activeVariants')) {
+            $price = $this->activeVariants->min('price');
+
+            return $price !== null ? (int) $price : null;
+        }
+
+        $price = $this->activeVariants()->min('price');
+
+        return $price !== null ? (int) $price : null;
+    }
 }

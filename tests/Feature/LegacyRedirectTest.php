@@ -60,5 +60,7 @@ class LegacyRedirectTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
+        $response->assertSee(config('shop.name'), false);
+        $response->assertSee('商品を見る', false);
     }
 }

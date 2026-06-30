@@ -5,27 +5,15 @@
 @section('content')
     <h1>カート</h1>
 
-    @if (session('status'))
-        <p>{{ session('status') }}</p>
-    @endif
-
-    @if ($errors->any())
-        <ul>
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    @endif
-
     @if ($summary->isEmpty())
-        <p>カートに商品はありません。</p>
-        <p><a href="{{ route('products.index') }}">商品一覧へ</a></p>
+        <p class="text-muted">カートに商品はありません。</p>
+        <p><a href="{{ route('products.index') }}" class="btn btn--primary">商品一覧へ</a></p>
     @else
         @if ($summary->hasStockIssues)
-            <p><strong>在庫不足の商品があります。数量を調整するか削除してください。チェックアウトはできません。</strong></p>
+            <div class="alert alert--error">在庫不足の商品があります。数量を調整するか削除してください。チェックアウトはできません。</div>
         @endif
 
-        <table border="1" cellpadding="8">
+        <table class="data-table">
             <thead>
                 <tr>
                     <th>商品</th>
@@ -92,7 +80,7 @@
         <p>合計（割引後）: {{ number_format($summary->totalAfterDiscount()) }}円（税込）</p>
 
         @if ($summary->canCheckout)
-            <p><a href="{{ route('checkout.index') }}">レジに進む</a></p>
+            <p><a href="{{ route('checkout.index') }}" class="btn btn--primary">レジに進む</a></p>
         @endif
     @endif
 @endsection

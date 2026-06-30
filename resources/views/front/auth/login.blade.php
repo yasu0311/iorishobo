@@ -5,37 +5,25 @@
 @section('content')
     <h1>ログイン</h1>
 
-    @if (session('status'))
-        <p>{{ session('status') }}</p>
-    @endif
-
-    @if ($errors->any())
-        <ul>
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    @endif
-
-    <form method="post" action="{{ route('login') }}">
+    <form method="post" action="{{ route('login') }}" class="panel" style="max-width: 28rem;">
         @csrf
-        <p>
-            <label>メールアドレス<br>
+        <p class="form-field">
+            <label>メールアドレス
                 <input type="email" name="email" value="{{ old('email') }}" required autofocus>
             </label>
         </p>
-        <p>
-            <label>パスワード<br>
+        <p class="form-field">
+            <label>パスワード
                 <input type="password" name="password" required>
             </label>
         </p>
-        <p>
+        <p class="form-field">
             <label>
                 <input type="checkbox" name="remember" value="1" @checked(old('remember'))>
                 ログイン状態を保持する
             </label>
         </p>
-        <button type="submit">ログイン</button>
+        <button type="submit" class="btn btn--primary">ログイン</button>
     </form>
 
     <p><a href="{{ route('password.request') }}">パスワードをお忘れですか？</a></p>

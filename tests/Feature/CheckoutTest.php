@@ -99,6 +99,8 @@ class CheckoutTest extends TestCase
         $this->assertDatabaseCount('order_items', 1);
         $this->assertSame(8, $this->variant->fresh()->stock);
         $this->assertDatabaseCount('cart_items', 0);
+        $this->assertSame('テスト太郎', $order->shipping_name);
+        $this->assertSame('1000001', $order->shipping_postal_code);
 
         Mail::assertSent(OrderConfirmationMail::class, fn ($mail) => $mail->hasTo('buyer@example.com'));
         Mail::assertNotSent(BankTransferInstructionMail::class);
@@ -189,6 +191,53 @@ class CheckoutTest extends TestCase
 
         Mail::assertNothingSent();
         $this->assertSame(PaymentStatus::Paid, $order->fresh()->payment_status);
+    }
+
+    #[Test]
+    public function checkout_uses_buyer_address_when_shipping_fields_are_empty(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.store'), $this->checkoutPayload('cod'))
+            ->assertRedirect(route('checkout.complete'));
+
+        $order = Order::query()->first();
+        $this->assertSame('テスト太郎', $order->buyer_name);
+        $this->assertSame('テスト太郎', $order->shipping_name);
+        $this->assertSame('0312345678', $order->shipping_phone);
+        $this->assertSame('東京都', $order->shipping_prefecture);
+    }
+
+    #[Test]
+    public function checkout_accepts_custom_shipping_address(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $payload = array_merge($this->checkoutPayload('cod'), [
+            'shipping_name' => '配送先花子',
+            'shipping_phone' => '09011112222',
+            'shipping_postal_code' => '5300001',
+            'shipping_prefecture' => '大阪府',
+            'shipping_address_line1' => '大阪市北区1-1',
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.store'), $payload)
+            ->assertRedirect(route('checkout.complete'));
+
+        $order = Order::query()->first();
+        $this->assertSame('テスト太郎', $order->buyer_name);
+        $this->assertSame('配送先花子', $order->shipping_name);
+        $this->assertSame('5300001', $order->shipping_postal_code);
     }
 
     #[Test]

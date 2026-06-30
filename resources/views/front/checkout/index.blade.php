@@ -74,21 +74,16 @@
             </label>
         </p>
 
-        <h2>配送先</h2>
-        <p>
-            <label>
-                <input type="checkbox" name="ship_to_different" value="1" @checked(old('ship_to_different'))>
-                購入者と別の住所に送る
-            </label>
-        </p>
-        <div>
-            <p><label>配送先氏名<br><input type="text" name="shipping_name" value="{{ old('shipping_name') }}"></label></p>
-            <p><label>配送先フリガナ<br><input type="text" name="shipping_name_kana" value="{{ old('shipping_name_kana') }}"></label></p>
-            <p><label>配送先電話<br><input type="text" name="shipping_phone" value="{{ old('shipping_phone') }}"></label></p>
-            <p><label>郵便番号<br><input type="text" name="shipping_postal_code" value="{{ old('shipping_postal_code') }}" maxlength="7"></label></p>
-            <p><label>都道府県<br><input type="text" name="shipping_prefecture" value="{{ old('shipping_prefecture') }}"></label></p>
-            <p><label>住所<br><input type="text" name="shipping_address_line1" value="{{ old('shipping_address_line1') }}"></label></p>
-            <p><label>建物名<br><input type="text" name="shipping_address_line2" value="{{ old('shipping_address_line2') }}"></label></p>
+        <h2>配送先（任意）</h2>
+        <p class="text-muted">未入力の場合は購入者住所へお届けします。別の住所へ送る場合のみご記入ください。</p>
+        <div class="panel">
+            <p class="form-field"><label>配送先氏名<input type="text" name="shipping_name" value="{{ old('shipping_name') }}"></label></p>
+            <p class="form-field"><label>配送先フリガナ<input type="text" name="shipping_name_kana" value="{{ old('shipping_name_kana') }}"></label></p>
+            <p class="form-field"><label>配送先電話<input type="text" name="shipping_phone" value="{{ old('shipping_phone') }}"></label></p>
+            <p class="form-field"><label>郵便番号<input type="text" name="shipping_postal_code" value="{{ old('shipping_postal_code') }}" maxlength="7"></label></p>
+            <p class="form-field"><label>都道府県<input type="text" name="shipping_prefecture" value="{{ old('shipping_prefecture') }}"></label></p>
+            <p class="form-field"><label>住所<input type="text" name="shipping_address_line1" value="{{ old('shipping_address_line1') }}"></label></p>
+            <p class="form-field"><label>建物名<input type="text" name="shipping_address_line2" value="{{ old('shipping_address_line2') }}"></label></p>
         </div>
 
         <h2>配送・決済</h2>

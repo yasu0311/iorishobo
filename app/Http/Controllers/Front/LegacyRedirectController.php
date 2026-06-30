@@ -20,7 +20,7 @@ class LegacyRedirectController extends Controller
             return $this->redirectByProductId($request->query('pid'));
         }
 
-        return view('welcome');
+        return app(HomeController::class)->index();
     }
 
     /**

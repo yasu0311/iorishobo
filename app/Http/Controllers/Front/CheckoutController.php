@@ -50,6 +50,7 @@ class CheckoutController extends Controller
         return view('front.checkout.index', compact(
             'summary',
             'shippingMethods',
+            'defaultShipping',
             'defaultAmounts',
             'customer',
         ));

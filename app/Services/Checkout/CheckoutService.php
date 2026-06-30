@@ -295,7 +295,7 @@ class CheckoutService
      */
     private function extractShipping(array $input, array $buyer): array
     {
-        if (! ($input['ship_to_different'] ?? false)) {
+        if (! filled($input['shipping_name'] ?? null)) {
             $phone = trim((string) ($buyer['phone'] ?? ''));
             if ($phone === '') {
                 $phone = trim((string) ($buyer['mobile'] ?? ''));
