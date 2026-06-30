@@ -33,7 +33,7 @@ class VerifyEmailController extends Controller
         Auth::login($user);
 
         return redirect()
-            ->route('mypage.index')
+            ->to($user->defaultHomeUrl())
             ->with('status', 'メール認証が完了しました。');
     }
 

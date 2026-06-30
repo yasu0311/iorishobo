@@ -20,6 +20,12 @@ class LegacyRedirectController extends Controller
             return $this->redirectByProductId($request->query('pid'));
         }
 
+        $user = $request->user();
+
+        if ($user !== null && $user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
         return app(HomeController::class)->index();
     }
 

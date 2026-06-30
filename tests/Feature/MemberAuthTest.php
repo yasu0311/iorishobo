@@ -104,11 +104,11 @@ class MemberAuthTest extends TestCase
         $this->post(route('login'), [
             'email' => 'member@example.com',
             'password' => 'password',
-        ])->assertRedirect(route('mypage.index'));
+        ])->assertRedirect(route('home'));
 
         $this->assertAuthenticatedAs($user);
 
-        $this->actingAs($user)->post(route('logout'))->assertRedirect(route('products.index'));
+        $this->actingAs($user)->post(route('logout'))->assertRedirect(route('home'));
         $this->assertGuest();
     }
 
@@ -123,7 +123,7 @@ class MemberAuthTest extends TestCase
             ['id' => $user->id, 'hash' => sha1($user->email)],
         );
 
-        $this->get($url)->assertRedirect(route('mypage.index'));
+        $this->get($url)->assertRedirect(route('home'));
 
         $this->assertAuthenticatedAs($user);
         $this->assertNotNull($user->fresh()->email_verified_at);

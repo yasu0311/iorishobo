@@ -17,7 +17,7 @@ use App\Http\Controllers\Front\ProductController;
 use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [LegacyRedirectController::class, 'home']);
+Route::get('/', [LegacyRedirectController::class, 'home'])->name('home');
 
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');

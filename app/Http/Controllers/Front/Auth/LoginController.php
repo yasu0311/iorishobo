@@ -39,7 +39,7 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('mypage.index'));
+        return redirect()->intended($user->defaultHomeUrl());
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -49,6 +49,6 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('products.index');
+        return redirect()->route('home');
     }
 }

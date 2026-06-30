@@ -176,8 +176,8 @@
 
 ### 2.6 管理画面
 
-- [ ] `EnsureAdmin` ミドルウェア + `routes/admin.php`
-- [ ] ダッシュボード（未処理注文数など最低限のサマリ）
+- [○] `EnsureAdmin` ミドルウェア + `routes/admin.php`
+- [○] ダッシュボード（未処理注文数など最低限のサマリ）
 - [ ] 注文管理
   - [ ] 一覧・詳細・検索
   - [ ] 入金確認（`payment_status = paid` 手動更新）

@@ -77,4 +77,11 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->is_admin;
     }
+
+    public function defaultHomeUrl(): string
+    {
+        return $this->isAdmin()
+            ? route('admin.dashboard')
+            : route('home');
+    }
 }
