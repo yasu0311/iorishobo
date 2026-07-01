@@ -5,19 +5,25 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\ShippingExportFormat;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\ShippingMethod;
 use App\Services\Order\OrderManagementService;
+use App\Services\Order\OrderShippingExportService;
 use App\Services\Order\RefundService;
 use App\Services\Watchlist\WatchlistService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OrderController extends Controller
 {
     public function __construct(
         private readonly OrderManagementService $orderManagementService,
+        private readonly OrderShippingExportService $orderShippingExportService,
         private readonly RefundService $refundService,
         private readonly WatchlistService $watchlistService,
     ) {}
@@ -54,7 +60,33 @@ class OrderController extends Controller
             'paymentStatuses' => PaymentStatus::cases(),
             'shippingStatuses' => OrderStatus::cases(),
             'paymentMethods' => PaymentMethod::cases(),
+            'shippingMethods' => ShippingMethod::query()->orderBy('sort_order')->get(),
+            'exportFormats' => ShippingExportFormat::cases(),
         ]);
+    }
+
+    public function exportShipping(Request $request): StreamedResponse|RedirectResponse
+    {
+        $validated = $request->validate([
+            'format' => 'required|in:'.implode(',', array_column(ShippingExportFormat::cases(), 'value')),
+            'shipping_method_slug' => 'nullable|string|exists:shipping_methods,slug',
+            'q' => 'nullable|string|max:255',
+            'payment_status' => 'nullable|string|max:30',
+            'payment_method' => 'nullable|string|max:30',
+        ]);
+
+        try {
+            return $this->orderShippingExportService->download($validated);
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('admin.orders.index', $request->only([
+                    'q',
+                    'payment_status',
+                    'shipping_status',
+                    'payment_method',
+                ]))
+                ->withErrors($exception->errors());
+        }
     }
 
     public function show(Order $order): View

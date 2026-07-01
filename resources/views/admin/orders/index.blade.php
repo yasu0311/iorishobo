@@ -34,6 +34,26 @@
         <button type="submit">検索</button>
     </form>
 
+    <form method="get" action="{{ route('admin.orders.export-shipping') }}" class="filter-form" style="margin-bottom: 1.5rem;">
+        <strong>配送 CSV エクスポート</strong>
+        <span class="text-muted" style="font-size: 0.875rem;">（未発送・発送可能な注文のみ）</span>
+        <select name="format" required>
+            @foreach ($exportFormats as $format)
+                <option value="{{ $format->value }}">{{ $format->label() }}</option>
+            @endforeach
+        </select>
+        <select name="shipping_method_slug">
+            <option value="">配送方法（すべて）</option>
+            @foreach ($shippingMethods as $method)
+                <option value="{{ $method->slug }}">{{ $method->name }}</option>
+            @endforeach
+        </select>
+        <input type="hidden" name="q" value="{{ $filters['q'] ?? '' }}">
+        <input type="hidden" name="payment_status" value="{{ $filters['payment_status'] ?? '' }}">
+        <input type="hidden" name="payment_method" value="{{ $filters['payment_method'] ?? '' }}">
+        <button type="submit">CSV ダウンロード</button>
+    </form>
+
     <table class="admin-table">
         <thead>
             <tr>

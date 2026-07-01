@@ -16,6 +16,7 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/export/shipping', [OrderController::class, 'exportShipping'])->name('orders.export-shipping');
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::post('/orders/{order}/mark-paid', [OrderController::class, 'markPaid'])->name('orders.mark-paid');
         Route::post('/orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
