@@ -2,6 +2,8 @@
 
 @section('title', config('shop.name'))
 
+@section('meta_description', config('shop.meta_description'))
+
 @section('content')
     <section class="hero">
         <h1 class="hero__title">{{ config('shop.name') }}</h1>

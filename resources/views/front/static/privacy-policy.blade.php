@@ -51,6 +51,13 @@
         <p>当店は、必要に応じて本ポリシーを変更することがあります。変更後のポリシーは、本サイト上に掲載した時点から効力を生じます。</p>
 
         <h2>9. お問い合わせ</h2>
-        <p>個人情報の取扱いに関するお問い合わせは、<a href="{{ route('contacts.create') }}">お問い合わせフォーム</a>よりご連絡ください。</p>
+        <p>
+            個人情報の取扱いに関するお問い合わせは、下記までご連絡ください。<br>
+            {{ config('shop.operator_name') }}
+            @if (config('shop.email'))
+                <br>メール: <a href="mailto:{{ config('shop.email') }}">{{ config('shop.email') }}</a>
+            @endif
+            <br><a href="{{ route('contacts.create') }}">お問い合わせフォーム</a>もご利用いただけます。
+        </p>
     </div>
 @endsection

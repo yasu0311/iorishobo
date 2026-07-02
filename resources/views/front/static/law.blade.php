@@ -2,9 +2,7 @@
 
 @section('title', '特定商取引法に基づく表記 - '.config('shop.name'))
 
-@section('head_meta')
-    <meta name="robots" content="noindex">
-@endsection
+@section('robots', 'noindex')
 
 @section('content')
     <h1>特定商取引法に基づく表記</h1>

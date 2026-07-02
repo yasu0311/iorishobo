@@ -2,6 +2,14 @@
 
 @section('title', $product->name.' - '.config('shop.name'))
 
+@section('meta_description', \Illuminate\Support\Str::limit(strip_tags($product->short_description ?: $product->name), 120))
+
+@section('og_type', 'product')
+
+@if ($product->mainImage)
+    @section('og_image', url($product->mainImage->url()))
+@endif
+
 @section('content')
     @if ($product->category)
         <p class="breadcrumb">
@@ -16,7 +24,12 @@
             @if ($product->images->isNotEmpty())
                 <div class="product-detail__gallery">
                     @foreach ($product->images as $image)
-                        <img src="{{ $image->url() }}" alt="{{ $product->name }}">
+                        <img src="{{ $image->url() }}"
+                             alt="{{ $product->name }}"
+                             @if ($loop->first) fetchpriority="high" @else loading="lazy" @endif
+                             decoding="async"
+                             width="800"
+                             height="800">
                     @endforeach
                 </div>
             @endif

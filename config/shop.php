@@ -67,4 +67,14 @@ return [
         ? (int) env('SHOP_COD_FREE_THRESHOLD')
         : null,
 
+    /*
+    |--------------------------------------------------------------------------
+    | SEO / OGP
+    |--------------------------------------------------------------------------
+    */
+
+    'meta_description' => env('SHOP_META_DESCRIPTION', '書籍・文具のオンラインショップ'),
+
+    'og_image' => env('SHOP_OG_IMAGE', '/images/og-default.svg'),
+
 ];

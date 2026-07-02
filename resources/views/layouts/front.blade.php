@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', config('shop.name'))</title>
+    <x-site-meta />
     @yield('head_meta')
     <link rel="stylesheet" href="{{ asset('css/common/utility.css') }}">
     <link rel="stylesheet" href="{{ asset('css/front/component.css') }}">
@@ -12,6 +13,7 @@
     @yield('styles')
 </head>
 <body>
+    <a href="#main-content" class="skip-link">メインコンテンツへスキップ</a>
     <header class="site-header">
         <div class="site-header__inner">
             <a href="{{ url('/') }}" class="site-logo">{{ config('shop.name') }}</a>
@@ -56,7 +58,7 @@
         <a href="{{ route('contacts.create') }}">お問い合わせ</a>
     </nav>
 
-    <main class="site-main">
+    <main class="site-main" id="main-content">
         @if (session('status'))
             <x-alert type="success">{{ session('status') }}</x-alert>
         @endif
