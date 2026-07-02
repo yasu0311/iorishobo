@@ -75,8 +75,8 @@
                     <td>{{ $order->buyer_name }}</td>
                     <td>{{ number_format($order->total) }}円</td>
                     <td>{{ $order->payment_method->label() }}</td>
-                    <td><span class="badge">{{ $order->payment_status->label() }}</span></td>
-                    <td><span class="badge">{{ $order->shipping_status->label() }}</span></td>
+                    <td><span class="badge badge--payment-{{ $order->payment_status->value }}">{{ $order->payment_status->label() }}</span></td>
+                    <td><span class="badge badge--shipping-{{ $order->shipping_status->value }}">{{ $order->shipping_status->label() }}</span></td>
                     <td><a href="{{ route('admin.orders.show', $order) }}">詳細</a></td>
                 </tr>
             @empty

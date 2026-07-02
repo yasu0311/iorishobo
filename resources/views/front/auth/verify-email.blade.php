@@ -1,27 +1,24 @@
-@extends('layouts.front')
+@extends('layouts.auth')
 
-@section('title', 'メール認証 - '.config('shop.name'))
+@section('title', 'メール認証')
 
 @section('content')
     <h1>メール認証</h1>
 
-    @if (session('status'))
-        <p>{{ session('status') }}</p>
-    @endif
-
     <p>ご登録のメールアドレスに確認リンクを送信しました。メール内のリンクをクリックして認証を完了してください。</p>
     <p>認証が完了するまでログインできません。</p>
 
-    <h2>確認メールを再送する</h2>
+    <h2 style="font-size: 1rem; margin: 1.5rem 0 0.75rem; color: var(--color-accent);">確認メールを再送する</h2>
     <form method="post" action="{{ route('verification.send') }}">
         @csrf
-        <p>
-            <label>メールアドレス<br>
-                <input type="email" name="email" value="{{ old('email') }}" required>
-            </label>
-        </p>
-        <button type="submit">再送する</button>
+        <label>メールアドレス
+            <input type="email" name="email" value="{{ old('email') }}" required>
+        </label>
+        <x-input-error :messages="$errors->get('email')" />
+        <button type="submit" class="btn">再送する</button>
     </form>
 
-    <p><a href="{{ route('login') }}">ログインへ</a></p>
+    <div class="auth-footer">
+        <p><a href="{{ route('login') }}">ログインへ</a></p>
+    </div>
 @endsection

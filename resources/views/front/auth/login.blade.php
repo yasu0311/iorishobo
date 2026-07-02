@@ -1,31 +1,29 @@
-@extends('layouts.front')
+@extends('layouts.auth')
 
-@section('title', 'ログイン - '.config('shop.name'))
+@section('title', 'ログイン')
 
 @section('content')
     <h1>ログイン</h1>
 
-    <form method="post" action="{{ route('login') }}" class="panel" style="max-width: 28rem;">
+    <form method="post" action="{{ route('login') }}">
         @csrf
-        <p class="form-field">
-            <label>メールアドレス
-                <input type="email" name="email" value="{{ old('email') }}" required autofocus>
-            </label>
-        </p>
-        <p class="form-field">
-            <label>パスワード
-                <input type="password" name="password" required>
-            </label>
-        </p>
-        <p class="form-field">
-            <label>
-                <input type="checkbox" name="remember" value="1" @checked(old('remember'))>
-                ログイン状態を保持する
-            </label>
-        </p>
-        <button type="submit" class="btn btn--primary">ログイン</button>
+        <label>メールアドレス
+            <input type="email" name="email" value="{{ old('email') }}" required autofocus>
+        </label>
+        <x-input-error :messages="$errors->get('email')" />
+        <label>パスワード
+            <input type="password" name="password" required>
+        </label>
+        <x-input-error :messages="$errors->get('password')" />
+        <label>
+            <input type="checkbox" name="remember" value="1" @checked(old('remember'))>
+            ログイン状態を保持する
+        </label>
+        <button type="submit" class="btn">ログイン</button>
     </form>
 
-    <p><a href="{{ route('password.request') }}">パスワードをお忘れですか？</a></p>
-    <p><a href="{{ route('register') }}">会員登録</a></p>
+    <div class="auth-footer">
+        <p><a href="{{ route('password.request') }}">パスワードをお忘れですか？</a></p>
+        <p><a href="{{ route('register') }}">会員登録</a></p>
+    </div>
 @endsection

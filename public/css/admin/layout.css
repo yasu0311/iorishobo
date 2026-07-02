@@ -1,0 +1,141 @@
+:root {
+  --admin-color-bg: #f3f4f6;
+  --admin-color-text: #1f2937;
+  --admin-color-header: #003b83;
+  --admin-color-header-text: #f9fafb;
+  --admin-color-link: #1d4ed8;
+  --admin-color-surface: #ffffff;
+  --admin-color-border: #d1d5db;
+  --admin-color-muted: #6b7280;
+  --admin-sidebar-width: 220px;
+  --admin-font-sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  --admin-max-width: 1400px;
+  --admin-radius: 6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body.admin-body {
+  margin: 0;
+  min-width: 1024px;
+  font-family: var(--admin-font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--admin-color-text);
+  background: var(--admin-color-bg);
+}
+
+a { color: var(--admin-color-link); }
+
+.admin-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--admin-sidebar-width);
+  height: 100vh;
+  background: var(--admin-color-header);
+  color: var(--admin-color-header-text);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.admin-sidebar__brand {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.admin-sidebar__brand a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.admin-sidebar__shop {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+.admin-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.admin-sidebar__nav a {
+  display: block;
+  padding: 0.7rem 1.25rem;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  border-left: 3px solid transparent;
+}
+
+.admin-sidebar__nav a:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.admin-sidebar__nav a.is-active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-left-color: #fff;
+  font-weight: 600;
+}
+
+.admin-content {
+  margin-left: var(--admin-sidebar-width);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--admin-color-surface);
+  border-bottom: 1px solid var(--admin-color-border);
+}
+
+.admin-topbar__user {
+  font-size: 0.875rem;
+  color: var(--admin-color-muted);
+}
+
+.admin-topbar__logout {
+  background: none;
+  border: none;
+  color: var(--admin-color-link);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.admin-main {
+  flex: 1;
+  max-width: var(--admin-max-width);
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.admin-main h1 {
+  margin: 0 0 1.5rem;
+  font-size: 1.5rem;
+  color: var(--admin-color-text);
+}

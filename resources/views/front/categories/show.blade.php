@@ -20,7 +20,7 @@
     @else
         <div class="product-grid">
             @foreach ($products as $product)
-                @include('front.partials.product-card', ['product' => $product])
+                <x-product-card :product="$product" />
             @endforeach
         </div>
 

@@ -27,8 +27,8 @@
             <dl class="detail-list">
                 <dt>注文日時</dt><dd>{{ $order->ordered_at?->format('Y-m-d H:i') }}</dd>
                 <dt>決済方法</dt><dd>{{ $order->payment_method->label() }}</dd>
-                <dt>入金状態</dt><dd>{{ $order->payment_status->label() }}</dd>
-                <dt>発送状態</dt><dd>{{ $order->shipping_status->label() }}</dd>
+                <dt>入金状態</dt><dd><span class="badge badge--payment-{{ $order->payment_status->value }}">{{ $order->payment_status->label() }}</span></dd>
+                <dt>発送状態</dt><dd><span class="badge badge--shipping-{{ $order->shipping_status->value }}">{{ $order->shipping_status->label() }}</span></dd>
                 @if ($order->shipped_at)
                     <dt>発送日時</dt><dd>{{ $order->shipped_at->format('Y-m-d H:i') }}</dd>
                 @endif

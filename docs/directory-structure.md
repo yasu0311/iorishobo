@@ -190,7 +190,8 @@ iorishobo/
 │       ├── layouts/                        # （予定）
 │       │   ├── front.blade.php
 │       │   ├── admin.blade.php
-│       │   └── guest.blade.php
+│       │   ├── auth.blade.php
+│       │   └── error.blade.php
 │       ├── components/                     # （予定）共通 UI パーツ
 │       ├── front/                          # （予定）ストアフロント
 │       │   ├── home/
