@@ -3,8 +3,8 @@
 @section('title', '商品一覧')
 
 @section('content')
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h1 style="margin: 0;">商品一覧</h1>
+    <div class="admin-page-header">
+        <h1>商品一覧</h1>
         <a href="{{ route('admin.products.create') }}" class="btn-link">新規登録</a>
     </div>
 
@@ -25,7 +25,7 @@
     <table class="admin-table">
         <thead>
             <tr>
-                <th>ID / slug</th>
+                <th>slug</th>
                 <th>商品名</th>
                 <th>カテゴリ</th>
                 <th>価格</th>
@@ -37,16 +37,20 @@
         <tbody>
             @forelse ($products as $product)
                 <tr>
-                    <td>{{ $product->slug }}</td>
+                    <td><code>{{ $product->slug }}</code></td>
                     <td>{{ $product->name }}</td>
                     <td>{{ $product->category?->name ?? '—' }}</td>
                     <td>{{ number_format($product->base_price) }}円</td>
-                    <td><span class="badge">{{ $product->is_published ? '掲載中' : '非掲載' }}</span></td>
+                    <td>
+                        <span class="badge {{ $product->is_published ? 'badge--published' : 'badge--unpublished' }}">
+                            {{ $product->is_published ? '掲載中' : '非掲載' }}
+                        </span>
+                    </td>
                     <td>{{ $product->stock_managed ? 'あり' : 'なし' }}</td>
                     <td>
                         <a href="{{ route('admin.products.edit', $product) }}">編集</a>
                         @if ($product->is_published)
-                            · <a href="{{ route('products.show', $product->slug) }}" target="_blank">表示</a>
+                            · <a href="{{ route('products.show', $product->slug) }}" target="_blank" rel="noopener">表示</a>
                         @endif
                     </td>
                 </tr>

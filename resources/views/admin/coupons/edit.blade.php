@@ -3,8 +3,9 @@
 @section('title', 'クーポン編集')
 
 @section('content')
-    <p><a href="{{ route('admin.coupons.index') }}">← クーポン一覧</a></p>
-    <h1>クーポン編集: {{ $coupon->code }}</h1>
+    <a href="{{ route('admin.coupons.index') }}" class="admin-back-link">← クーポン一覧</a>
+    <h1>クーポン編集</h1>
+    <p class="meta-bar">コード: <code>{{ $coupon->code }}</code></p>
 
     @if (session('status'))
         <p class="flash">{{ session('status') }}</p>
@@ -16,7 +17,8 @@
         'method' => 'PUT',
     ])
 
-    <section class="panel">
+    <section class="panel danger-zone">
+        <h2>危険な操作</h2>
         <form method="post" action="{{ route('admin.coupons.destroy', $coupon) }}" onsubmit="return confirm('このクーポンを削除しますか？')">
             @csrf
             @method('DELETE')

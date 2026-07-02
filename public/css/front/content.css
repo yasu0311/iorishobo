@@ -57,22 +57,233 @@
   margin-bottom: 1rem;
 }
 
-.product-detail__gallery {
+/* カテゴリツリー */
+.category-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.category-tree > li + li {
+  margin-top: 1rem;
+}
+
+.category-tree__children {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0 0 0 1rem;
   display: flex;
   flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* 商品詳細 */
+.product-detail {
+  display: grid;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.product-detail__gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
 }
 
 .product-detail__gallery img {
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  max-width: 220px;
+  width: 100%;
+  max-width: none;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.product-detail__gallery img:first-child {
+  grid-column: 1 / -1;
+  aspect-ratio: 4 / 3;
+  max-height: 420px;
+  object-fit: contain;
+  background: #e8eef4;
+}
+
+.product-detail__price {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin: 0 0 1rem;
+}
+
+.product-detail__description {
+  margin-top: 2rem;
 }
 
 .variant-options label {
   display: block;
   padding: 0.5rem 0;
+}
+
+/* カート */
+.cart-layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.cart-summary {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+}
+
+.cart-summary__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.35rem 0;
+}
+
+.cart-summary__total {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.cart-actions {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* チェックアウト */
+.checkout-layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.checkout-summary {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  height: fit-content;
+}
+
+.checkout-summary h2 {
+  font-size: 1.125rem;
+  margin: 0 0 1rem;
+}
+
+.checkout-summary ul {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+}
+
+.checkout-summary__total {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin: 0;
+}
+
+/* マイページ */
+.mypage-header {
+  margin-bottom: 1.5rem;
+}
+
+.mypage-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 600px) {
+  .mypage-nav {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.mypage-nav a {
+  display: block;
+  padding: 1rem 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.mypage-nav a:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* 注文完了・領収書 */
+.order-complete,
+.receipt-document {
+  max-width: 640px;
+}
+
+.order-complete__highlight,
+.receipt-document__amount {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.bank-transfer-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+}
+
+/* Stripe 決済 */
+.stripe-payment {
+  max-width: 480px;
+}
+
+.stripe-payment #payment-element {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.stripe-payment #payment-message {
+  color: var(--color-danger);
+  font-size: 0.875rem;
+  min-height: 1.25rem;
+}
+
+@media (min-width: 900px) {
+  .cart-layout {
+    grid-template-columns: 1fr 300px;
+    align-items: start;
+  }
+
+  .checkout-layout {
+    grid-template-columns: 1fr 300px;
+    align-items: start;
+  }
+
+  .product-detail {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .product-detail__description {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 600px) {

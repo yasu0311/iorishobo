@@ -10,77 +10,91 @@
         <p><a href="{{ route('products.index') }}" class="btn btn--primary">商品一覧へ</a></p>
     @else
         @if ($summary->hasStockIssues)
-            <div class="alert alert--error">在庫不足の商品があります。数量を調整するか削除してください。チェックアウトはできません。</div>
+            <x-alert type="error">在庫不足の商品があります。数量を調整するか削除してください。チェックアウトはできません。</x-alert>
         @endif
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>商品</th>
-                    <th>単価</th>
-                    <th>数量</th>
-                    <th>小計</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($summary->lines as $line)
-                    <tr>
-                        <td>
-                            <a href="{{ route('products.show', $line->product->slug) }}">{{ $line->product->name }}</a>
-                            @if ($line->variant->name !== $line->product->name)
-                                <br>{{ $line->variant->name }}
-                            @endif
-                            @if ($line->stockExceeded)
-                                <br><strong>在庫不足（残り {{ $line->variant->stock }} 点）</strong>
-                            @endif
-                        </td>
-                        <td>{{ number_format($line->unitPrice) }}円</td>
-                        <td>
-                            <form method="post" action="{{ route('cart.items.update', $line->item) }}">
-                                @csrf
-                                @method('PATCH')
-                                <input type="number" name="quantity" value="{{ $line->item->quantity }}" min="0" required>
-                                <button type="submit">更新</button>
-                            </form>
-                        </td>
-                        <td>{{ number_format($line->lineSubtotal) }}円</td>
-                        <td>
-                            <form method="post" action="{{ route('cart.items.destroy', $line->item) }}">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit">削除</button>
-                            </form>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+        <div class="cart-layout">
+            <div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>商品</th>
+                                <th>単価</th>
+                                <th>数量</th>
+                                <th>小計</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($summary->lines as $line)
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('products.show', $line->product->slug) }}">{{ $line->product->name }}</a>
+                                        @if ($line->variant->name !== $line->product->name)
+                                            <br><span class="text-muted">{{ $line->variant->name }}</span>
+                                        @endif
+                                        @if ($line->stockExceeded)
+                                            <br><span class="text-danger">在庫不足（残り {{ $line->variant->stock }} 点）</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ number_format($line->unitPrice) }}円</td>
+                                    <td>
+                                        <form method="post" action="{{ route('cart.items.update', $line->item) }}" class="inline-form">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="number" name="quantity" value="{{ $line->item->quantity }}" min="0" required>
+                                            <button type="submit" class="btn btn--sm btn--secondary">更新</button>
+                                        </form>
+                                    </td>
+                                    <td>{{ number_format($line->lineSubtotal) }}円</td>
+                                    <td>
+                                        <form method="post" action="{{ route('cart.items.destroy', $line->item) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn--sm btn--ghost">削除</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-        <p>商品合計: {{ number_format($summary->subtotal) }}円（税込）</p>
+            <aside class="cart-summary">
+                <h2 style="margin: 0 0 1rem; font-size: 1.125rem;">ご注文内容</h2>
+                <p class="cart-summary__row"><span>商品合計</span><span>{{ number_format($summary->subtotal) }}円</span></p>
 
-        @if ($summary->coupon)
-            <p>クーポン「{{ $summary->coupon->name }}」: -{{ number_format($summary->discount) }}円</p>
-            <form method="post" action="{{ route('cart.coupon.remove') }}">
-                @csrf
-                @method('DELETE')
-                <button type="submit">クーポンを解除</button>
-            </form>
-        @else
-            <form method="post" action="{{ route('cart.coupon.apply') }}">
-                @csrf
-                <label>
-                    クーポンコード
-                    <input type="text" name="coupon_code" value="{{ old('coupon_code') }}" required>
-                </label>
-                <button type="submit">適用</button>
-            </form>
-        @endif
+                @if ($summary->coupon)
+                    <p class="cart-summary__row">
+                        <span>クーポン「{{ $summary->coupon->name }}」</span>
+                        <span>-{{ number_format($summary->discount) }}円</span>
+                    </p>
+                    <form method="post" action="{{ route('cart.coupon.remove') }}">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn--sm btn--ghost">クーポンを解除</button>
+                    </form>
+                @else
+                    <form method="post" action="{{ route('cart.coupon.apply') }}" class="coupon-form">
+                        @csrf
+                        <input type="text" name="coupon_code" value="{{ old('coupon_code') }}" placeholder="クーポンコード" required>
+                        <button type="submit" class="btn btn--sm btn--secondary">適用</button>
+                    </form>
+                @endif
 
-        <p>合計（割引後）: {{ number_format($summary->totalAfterDiscount()) }}円（税込）</p>
+                <p class="cart-summary__row cart-summary__total">
+                    <span>合計（割引後）</span>
+                    <span>{{ number_format($summary->totalAfterDiscount()) }}円</span>
+                </p>
 
-        @if ($summary->canCheckout)
-            <p><a href="{{ route('checkout.index') }}" class="btn btn--primary">レジに進む</a></p>
-        @endif
+                @if ($summary->canCheckout)
+                    <div class="cart-actions">
+                        <a href="{{ route('checkout.index') }}" class="btn btn--primary">レジに進む</a>
+                    </div>
+                @endif
+            </aside>
+        </div>
     @endif
 @endsection

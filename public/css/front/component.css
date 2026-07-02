@@ -39,6 +39,129 @@ h2 { font-size: 1.375rem; }
   color: var(--color-accent);
 }
 
+.btn--sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-muted);
+}
+
+.btn--ghost:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: #fef2f2;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.form-section h2 {
+  font-size: 1.125rem;
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.inline-form input[type="number"] {
+  width: 4rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font: inherit;
+}
+
+.coupon-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: end;
+  margin: 1rem 0;
+}
+
+.coupon-form input[type="text"] {
+  flex: 1;
+  min-width: 10rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font: inherit;
+}
+
+.pagination-summary {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  margin: 1.5rem 0 0.5rem;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0.5rem 0 1.5rem;
+}
+
+.pagination__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  padding: 0.4rem 0.65rem;
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  font-size: 0.875rem;
+}
+
+.pagination__link:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.pagination__link--current {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+  pointer-events: none;
+}
+
+.pagination__link--disabled {
+  background: #f1f5f9;
+  color: var(--color-muted);
+  pointer-events: none;
+}
+
 .panel {
   background: var(--color-surface);
   border: 1px solid var(--color-border);

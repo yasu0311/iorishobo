@@ -3,7 +3,7 @@
 @section('title', 'クーポン登録')
 
 @section('content')
-    <p><a href="{{ route('admin.coupons.index') }}">← クーポン一覧</a></p>
+    <a href="{{ route('admin.coupons.index') }}" class="admin-back-link">← クーポン一覧</a>
     <h1>クーポン登録</h1>
 
     @include('admin.coupons._form', [

@@ -5,7 +5,7 @@
 @section('content')
     <h1>プライバシーポリシー</h1>
 
-    <div class="static-content">
+    <div class="panel static-content">
         <p>{{ config('shop.name') }}（以下「当店」）は、当店が運営するオンラインショップ（以下「本サイト」）における、お客様の個人情報の取扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」）を定めます。</p>
 
         <h2>1. 個人情報の定義</h2>

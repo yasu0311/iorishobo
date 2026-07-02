@@ -5,7 +5,7 @@
 @section('content')
     <h1>利用規約</h1>
 
-    <div class="static-content">
+    <div class="panel static-content">
         <p>この利用規約（以下「本規約」）は、{{ config('shop.name') }}（以下「当店」）が運営するオンラインショップ（以下「本サイト」）の利用条件を定めるものです。本サイトをご利用いただくお客様（以下「お客様」）には、本規約に同意いただいたものとみなします。</p>
 
         <h2>第1条（適用）</h2>

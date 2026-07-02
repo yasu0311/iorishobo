@@ -33,7 +33,11 @@
                     <td>{{ $customer->name }}</td>
                     <td>{{ $customer->email ?? '—' }}</td>
                     <td>{{ $customer->phone ?? $customer->mobile ?? '—' }}</td>
-                    <td><span class="badge">{{ $customer->isMember() ? '会員' : '非会員' }}</span></td>
+                    <td>
+                        <span class="badge {{ $customer->isMember() ? 'badge--member' : 'badge--guest' }}">
+                            {{ $customer->isMember() ? '会員' : '非会員' }}
+                        </span>
+                    </td>
                     <td><a href="{{ route('admin.customers.show', $customer) }}">詳細</a></td>
                 </tr>
             @empty

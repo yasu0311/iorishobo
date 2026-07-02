@@ -3,8 +3,8 @@
 @section('title', 'クーポン一覧')
 
 @section('content')
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h1 style="margin: 0;">クーポン一覧</h1>
+    <div class="admin-page-header">
+        <h1>クーポン一覧</h1>
         <a href="{{ route('admin.coupons.create') }}" class="btn-link">新規登録</a>
     </div>
 
@@ -58,15 +58,13 @@
                         @endif
                     </td>
                     <td>
-                        <span class="badge">
-                            @if ($coupon->isCurrentlyValid())
-                                利用可
-                            @elseif ($coupon->is_active)
-                                条件外
-                            @else
-                                無効
-                            @endif
-                        </span>
+                        @if ($coupon->isCurrentlyValid())
+                            <span class="badge badge--coupon-active">利用可</span>
+                        @elseif ($coupon->is_active)
+                            <span class="badge badge--coupon-expired">条件外</span>
+                        @else
+                            <span class="badge badge--coupon-inactive">無効</span>
+                        @endif
                     </td>
                     <td><a href="{{ route('admin.coupons.edit', $coupon) }}">編集</a></td>
                 </tr>

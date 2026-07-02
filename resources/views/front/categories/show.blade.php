@@ -24,6 +24,6 @@
             @endforeach
         </div>
 
-        {{ $products->links() }}
+        <x-pagination :paginator="$products" />
     @endif
 @endsection

@@ -3,7 +3,7 @@
 @section('title', '商品登録')
 
 @section('content')
-    <p><a href="{{ route('admin.products.index') }}">← 商品一覧</a></p>
+    <a href="{{ route('admin.products.index') }}" class="admin-back-link">← 商品一覧</a>
     <h1>商品登録</h1>
 
     @include('admin.products._form', [

@@ -26,7 +26,7 @@
         </table>
     </div>
 
-    <p style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+    <p class="cart-actions">
         <form method="post" action="{{ route('contacts.back') }}">
             @csrf
             <button type="submit" class="btn btn--secondary">内容を修正する</button>

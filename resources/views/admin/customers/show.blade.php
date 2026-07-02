@@ -3,7 +3,7 @@
 @section('title', '顧客 '.$customer->name)
 
 @section('content')
-    <p><a href="{{ route('admin.customers.index') }}">← 顧客一覧</a></p>
+    <a href="{{ route('admin.customers.index') }}" class="admin-back-link">← 顧客一覧</a>
 
     <h1>{{ $customer->name }}</h1>
 
@@ -21,7 +21,12 @@
                 @if ($customer->colorme_customer_id)
                     <dt>カラーミー ID</dt><dd>{{ $customer->colorme_customer_id }}</dd>
                 @endif
-                <dt>会員</dt><dd>{{ $customer->isMember() ? '会員' : '非会員' }}</dd>
+                <dt>会員</dt>
+                <dd>
+                    <span class="badge {{ $customer->isMember() ? 'badge--member' : 'badge--guest' }}">
+                        {{ $customer->isMember() ? '会員' : '非会員' }}
+                    </span>
+                </dd>
                 @if ($customer->user)
                     <dt>ユーザー ID</dt><dd>{{ $customer->user->id }}（{{ $customer->user->email }}）</dd>
                 @endif
@@ -92,8 +97,8 @@
                             <td>{{ $order->order_number }}</td>
                             <td>{{ $order->ordered_at?->format('Y-m-d H:i') }}</td>
                             <td>{{ number_format($order->total) }}円</td>
-                            <td>{{ $order->payment_status->label() }}</td>
-                            <td>{{ $order->shipping_status->label() }}</td>
+                            <td><span class="badge badge--payment-{{ $order->payment_status->value }}">{{ $order->payment_status->label() }}</span></td>
+                            <td><span class="badge badge--shipping-{{ $order->shipping_status->value }}">{{ $order->shipping_status->label() }}</span></td>
                             <td><a href="{{ route('admin.orders.show', $order) }}">詳細</a></td>
                         </tr>
                     @endforeach
