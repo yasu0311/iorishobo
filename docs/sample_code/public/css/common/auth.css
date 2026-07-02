@@ -1,0 +1,94 @@
+body{
+  background-color: #eee;
+  margin: 0;
+  padding:0;
+}
+.container{
+  width: 320px;
+  background-color: #fff;
+  margin: 1em auto;
+  padding:1em;
+  min-height: 450px;
+  border-radius: 5px;
+}
+:root {
+  --primary-color: #003b83;
+}
+label{
+  cursor: pointer;
+}
+
+h1{
+  font-size: 1.2em;
+  color: var(--primary-color);
+  text-align: center;
+}
+input[type="email"],input[type="password"]{
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto 1em auto;
+  padding: 0.3em;
+  border-radius: 3px;
+  background: darken(#f9f9f9, 10%);
+  color: darken(#f9f9f9, 50%);
+  border: 2px solid #ccc;
+}
+button{
+  cursor: pointer;
+  transition: 0.3s;
+  width:7em;
+  background: linear-gradient(to top, var(--primary-color), #3366bb);
+  display: block;
+  margin: 1em auto;
+  padding: 0.7em;
+  color: #fff;
+  border-radius: 3px;
+  text-decoration: none;  
+  border:0px;  
+}
+button:hover {
+  opacity: 0.5;
+}
+img{
+  max-width: 60%;
+}
+.center{
+  text-align: center;
+}
+.small{
+  font-size: 0.9em;
+}
+.gray{
+  color: #444;
+}
+
+/*警告表示*/
+.alert {
+  position: relative;
+  padding: 1em;
+  margin: 0.5em 0;
+  border: 1px solid transparent;
+  border-radius: 0.2em;
+}
+.alert-warning {
+  color: #664d03; 
+  background-color: #fff3cd;
+  border-color: #ffecb5;
+}
+.alert-danger {
+  color: #842029;
+  background-color: #f8d7da;
+  border-color: #f5c2c7;
+}
+.alert-success {
+  color: #0f5132;
+  background-color: #d1e7dd;
+  border-color: #badbcc;
+}
+.alert-info {
+  color: #055160;
+  background-color: #cff4fc;
+  border-color: #b6effb;
+}
+
+

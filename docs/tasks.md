@@ -1,7 +1,7 @@
 # タスク管理
 
 > **プロジェクト名:** いおり書房 EC サイト（iorishobo）  
-> **最終更新日:** 2026-06-25
+> **最終更新日:** 2026-07-02
 
 ---
 
@@ -208,26 +208,81 @@
 フェーズ 2 で動作が固まったあと、UI / UX を整える。  
 管理画面は機能優先の簡素な UI から、必要に応じて改善する。
 
+**スタイル実装方針**（[sample_code](./sample_code/) を参考）:
+
+- **Tailwind は使わない** — Laravel 初期の `resources/css/app.css`（Tailwind）はストアフロント・管理画面では使用しない
+- **プレーン CSS** — `public/css/` に配置し、レイアウトから `asset('css/...')` で読み込む（Vite ビルド不要）
+- **レイアウトごとに CSS を分割** — 共通 → レイアウト固有 → ページ固有の順で `<link>` する
+- **JS も同様** — `public/js/common/`・`public/js/front/`・`public/js/admin/` に配置（Stripe 等、バンドルが必要なもののみ Vite を使う）
+- **レスポンシブ方針** — ストアフロント（ショップページ）は PC / スマホ対応。管理画面は **PC 専用**（スマホ向けレイアウト・ハンバーガーメニューは作らない）
+
 ### 3.1 設計・準備
 
 - [ ] デザイン方針の決定（トーン、カラー、タイポグラフィ）
+  - [ ] `:root` の CSS 変数定義（`--primary-color` 等）を文書化
 - [ ] 要素整理（ロゴ・配色・雰囲気）
+- [ ] 静的アセット配置方針（`public/images/`・`public/favicon.png`）
+- [ ] **CSS / JS ディレクトリ構成の決定**
+  - [ ] [sample_code](./sample_code/public/css/) の構成をベースに、いおり書房向けのファイル一覧を確定する
+  - [ ] 各 CSS ファイルの責務（レイアウト / コンポーネント / ユーティリティ）を文書化する
+  - [ ] レイアウトごとの `<link>` 読み込み順を決める（共通 → レイアウト固有 → ページ固有）
+  - [ ] `public/js/` のディレクトリ・ファイル構成もあわせて決める
+- [ ] **共通コンポーネント一覧の確認**
+  - [ ] [sample_code の components](./sample_code/resources/views/components/) を参照し、流用・新規・不要を仕分けする
+  - [ ] フェーズ 2 の既存 partial（`product-card`、`watchlist-warning` 等）を棚卸しし、コンポーネント化するか判断する
+  - [ ] ストアフロント / 管理画面 / 認証で必要なコンポーネントを一覧化する（例: `pagination`, `alert`, `badge`, `product-card`）
 - [ ] ワイヤーフレームまたはモックアップ（主要画面）
   - [ ] トップ
   - [ ] 商品一覧・詳細
   - [ ] カート・チェックアウト
   - [ ] マイページ
   - [ ] 注文完了・領収書
-- [ ] レスポンシブ方針（PC / モバイル）
+- [ ] **レスポンシブ方針の決定**
+  - [ ] ストアフロント — PC / スマホ両対応（ブレークポイント・ハンバーガーメニュー等を決める）
+  - [ ] 管理画面 — PC 専用（最小幅を想定し、スマホ向けの調整は行わない）
 
-### 3.2 フロントエンド基盤
+### 3.2 CSS / JS 基盤
 
-- [ ] `resources/css/front.css` の整備（Vite エントリ追加）
-- [ ] `resources/views/layouts/front.blade.php`（ヘッダー・フッター・ナビ）
-- [ ] 共通コンポーネント（`ProductCard`, `CartSummary`, パンくず等）
+3.1 で決めた構成に従い、フェーズ 2 のインライン `<style>` を外部ファイルへ切り出す。
+
+#### CSS ディレクトリ（`public/css/`）
+
+- [ ] `common/utility.css` — 表示制御・flex・テキスト揃え・色クラス等のユーティリティ
+- [ ] `common/auth.css` — 認証画面専用スタイル
+- [ ] `front/component.css` — ボタン・フォーム・テーブル・見出し等の共通 UI
+- [ ] `front/content.css` — コンテンツ領域の共通スタイル
+- [ ] `front/guest-layout.css` — ストアフロント用レイアウト（ヘッダー・フッター・ナビ・`:root` 変数・レスポンシブ）
+- [ ] `admin/layout.css` — 管理画面レイアウト（PC 専用・固定サイドメニュー・ヘッダー）
+- [ ] `admin/component.css` — 管理画面の共通 UI（バッジ・テーブル・フォーム等）
+
+#### JS ディレクトリ（`public/js/`）
+
+- [ ] `common/common.js` — ストアフロント用ハンバーガーメニュー開閉・マスク等（管理画面では不要）
+- [ ] `front/content.js` — ストアフロント固有の UI 操作
+- [ ] `admin/content.js` — 管理画面固有の UI 操作
+- [ ] Stripe Elements 用 JS は既存の Vite エントリ（`resources/js/front/checkout.js`）を維持
+
+### 3.3 レイアウト・コンポーネント
+
+- [ ] `layouts/guest.blade.php` — ストアフロント用（3.1 で決めた CSS を読み込み）
+  - [ ] ヘッダー・フッター・ナビゲーション
+  - [ ] OGP メタタグ・`@yield('head_meta')`
+  - [ ] `@yield('styles')` / `@yield('script')` でページ固有アセットを差し込み
+- [ ] `layouts/auth.blade.php` — ログイン・会員登録・パスワードリセット用（`auth.css` + `utility.css`）
+- [ ] `layouts/admin.blade.php` — 管理画面用（PC 専用レイアウト・`admin/layout.css` + `admin/component.css` + `utility.css`）
+- [ ] `layouts/mail-html.blade.php` / `layouts/mail-text.blade.php` — メール用レイアウト
+- [ ] `layouts/error.blade.php` — エラーページ用
+- [ ] 既存 `layouts/front.blade.php` のインライン CSS を撤去し、`guest` レイアウトへ移行
+- [ ] 3.1 で確定したコンポーネントを `resources/views/components/` に実装
+  - [ ] `pagination` — ページネーション UI
+  - [ ] `alert` — フラッシュメッセージ
+  - [ ] `input-error` — バリデーションエラー表示
+  - [ ] 既存 partial のコンポーネント化（`product-card`、`watchlist-warning` 等）
 - [ ] `lang/ja` の文言統一（ボタン・ラベル・エラー表示）
 
-### 3.3 ストアフロント画面
+### 3.4 ストアフロント画面
+
+レスポンシブ対応（PC / スマホ）で実装する。
 
 - [ ] トップページ
 - [ ] 商品一覧・カテゴリページのレイアウト
@@ -237,24 +292,29 @@
 - [ ] Stripe Elements のスタイル調整
 - [ ] 注文完了・領収書
 - [ ] マイページ（注文履歴・プロフィール）
-- [ ] ログイン・会員登録・パスワードリセット画面
+- [ ] ログイン・会員登録・パスワードリセット画面（`auth` レイアウトへ移行）
 
-### 3.4 管理画面デザイン
+### 3.5 管理画面デザイン
 
-- [ ] `resources/css/admin.css` + `layouts/admin.blade.php`
+PC 専用で実装する（スマホ向けレイアウト・ハンバーガーメニューは対象外）。
+
+- [ ] 既存 `layouts/admin.blade.php` のインライン CSS を `public/css/admin/` へ切り出し
+- [ ] 固定サイドメニュー・ヘッダーの実装（PC 画面幅前提）
 - [ ] 注文一覧・詳細の視認性改善（ステータスバッジ・要注意警告）
 - [ ] 商品・顧客・クーポン画面のフォーム整理
 
-### 3.5 メールテンプレート
+### 3.6 メールテンプレート
 
 - [ ] 注文確認メール（HTML + テキスト）
 - [ ] 振込案内メール
 - [ ] 発送通知メール
 - [ ] 各クライアントでの表示確認
 
-### 3.6 仕上げ・公開前
+### 3.7 仕上げ・公開前
 
 - [ ] 実機・主要ブラウザでの表示確認
+  - [ ] ストアフロント — PC / スマホ両方
+  - [ ] 管理画面 — PC のみ
 - [ ] アクセシビリティの最低限チェック（フォーカス・コントラスト・ラベル）
 - [ ] OGP・ファビコン・`robots.txt`
 - [ ] フッター情報（店舗名・連絡先・特商法リンク等）の掲載
@@ -286,3 +346,6 @@
 | 日付 | 内容 |
 |------|------|
 | 2026-06-25 | 初版作成 |
+| 2026-07-02 | フェーズ 3 を sample_code 準拠の CSS 方針（Tailwind 不使用・`public/css/` 構成）に更新 |
+| 2026-07-02 | フェーズ 3.1 に CSS 構成決定・コンポーネント一覧確認タスクを追加 |
+| 2026-07-02 | レスポンシブ方針を明記（ストアフロント対応・管理画面 PC 専用） |

@@ -1,0 +1,884 @@
+/* ========== トップ画面 ========== */
+
+/* ヒーロー：ファーストビュー */
+.top-hero {
+  position: relative;
+  width: calc(100% + 2em);
+  margin: -1em -1em 2em -1em;
+  overflow: hidden;
+  min-height: 400px;
+  height: 50vh;
+}
+.top-hero__image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  line-height: 0;
+}
+.top-hero__image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  box-sizing: border-box;
+  object-fit: cover;
+  object-position: center;
+}
+.top-hero__caption {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.5em 2em;
+  background: linear-gradient(to right, rgba(0, 59, 131, 0.75) 0%, rgba(0, 59, 131, 0.3) 50%, transparent 100%);
+  color: #fff;
+  box-sizing: border-box;
+}
+.top-hero__catch {
+  margin: 0 0 0.3em 0;
+  font-family: "Hiragino Mincho Pro", "MS Mincho", serif;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: bold;
+  line-height: 1.4;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.top-hero__sub {
+  margin: 0 0 1em 0;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  opacity: 0.95;
+  max-width: 20em;
+}
+/* ヒーロー検索窓 */
+.top-hero__search {
+  display: flex;
+  align-items: stretch;
+  max-width: 28em;
+  margin-top: 0.5em;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+.top-hero__search-input {
+  flex: 1;
+  padding: 0.75em 1em;
+  font-size: 1rem;
+  border: none;
+  min-width: 0;
+}
+.top-hero__search-input::placeholder {
+  color: #999;
+}
+.top-hero__search-input:focus {
+  outline: none;
+}
+.top-hero__search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  padding: 0.75em 1.25em;
+  font-size: 1rem;
+  color: #fff;
+  background: linear-gradient(to top, #003b83, #3366bb);
+  border: none;
+  cursor: pointer;
+}
+.top-hero__search-btn .material-icons {
+  font-size: 1.25em;
+}
+.top-hero__search-btn:hover {
+  opacity: 0.95;
+}
+@media screen and (max-width: 600px) {
+  /* PCと同じ：横長バナー＋左からのグラデーション（下方向オーバーレイは使わない） */
+  .top-hero {
+    height: auto;
+    aspect-ratio: 2 / 1;
+    /* 2:1 だけだとキャプション＋検索がはみ出して隠れるため最低高さを確保 */
+    min-height: 280px;
+  }
+  .top-hero__caption {
+    justify-content: center;
+    padding: 0.75em 1em;
+    background: linear-gradient(to right, rgba(0, 59, 131, 0.75) 0%, rgba(0, 59, 131, 0.3) 50%, transparent 100%);
+  }
+  .top-hero__catch {
+    margin-bottom: 0.15em;
+    font-size: 1.35rem;
+    line-height: 1.3;
+  }
+  .top-hero__sub {
+    margin-bottom: 0.4em;
+    font-size: 0.8rem;
+    max-width: 16em;
+  }
+  .top-hero__search {
+    max-width: 100%;
+    margin-top: 0.35em;
+  }
+  .top-hero__search-input,
+  .top-hero__search-btn {
+    padding: 0.55em 0.75em;
+    font-size: 0.9rem;
+  }
+  .top-hero__search-btn span { display: none; }
+}
+
+/* トップ用セクション見出し */
+.top-section {
+  margin-bottom: 2.5em;
+}
+.top-section__title {
+  margin: 0 0 1em 0;
+  padding-bottom: 0.4em;
+  font-size: 1.35rem;
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+}
+.top-section .card.card-shadow {
+  margin-bottom: 0.8em;
+}
+
+/* 教材マーケットとは：購入者向け・販売者向けで明確に */
+.about-section__lead {
+  margin: 0 0 1.5em 0;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #333;
+}
+.about-blocks {
+  display: grid;
+  gap: 2em;
+  grid-template-columns: 1fr;
+}
+@media screen and (min-width: 700px) {
+  .about-blocks {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.about-block {
+  padding: 1.25em;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+/* .content h3 の共通スタイル（左線・青・下線）を打ち消す */
+.content .about-block__title {
+  width: auto;
+  min-width: 0;
+  padding: 0;
+  border-bottom: none;
+  color: #374151;
+}
+.content .about-block__title:before {
+  display: none;
+}
+.about-block__title {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  margin: 0 0 1em 0;
+  font-size: 1.15rem;
+  font-weight: bold;
+  color: #374151;
+}
+.about-block__title .material-icons {
+  font-size: 1.3em;
+  color: #6b7280;
+}
+/* 購入者ブロック：ブルー */
+.about-block--buyer .about-block__title,
+.about-block--buyer .about-block__title .material-icons { color: #003b83; }
+/* 販売者ブロック：水色でない落ち着いた緑 */
+.about-block--seller .about-block__title,
+.about-block--seller .about-block__title .material-icons { color: #047857; }
+.about-block .about-cards {
+  display: grid;
+  gap: 1em;
+  grid-template-columns: 1fr;
+}
+.about-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5em;
+  border-radius: 8px;
+  background: #fafbfc;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #5b6b7c;
+  transition: box-shadow 0.2s, border-left-color 0.2s;
+}
+.about-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.about-card--blue  { border-left-color: #5b6b7c; }
+.about-card--green { border-left-color: #5b6b7c; }
+.about-card--orange { border-left-color: #047857; }
+/* 購入者ブロック：ブルーで統一 */
+.about-block--buyer .about-card { border-left-color: #2563eb; }
+.about-block--buyer .about-card:hover { border-left-color: #3b82f6; }
+/* 販売者ブロック：落ち着いた緑で統一 */
+.about-block--seller .about-card { border-left-color: #047857; }
+.about-block--seller .about-card:hover { border-left-color: #059669; }
+.about-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5em;
+  height: 2.5em;
+  margin-bottom: 0.75em;
+  border-radius: 8px;
+  color: #fff;
+}
+.about-block--buyer .about-card__icon { background: #2563eb; }
+.about-block--buyer .about-card:hover .about-card__icon { background: #3b82f6; }
+.about-block--seller .about-card__icon { background: #047857; }
+.about-card__icon .material-icons {
+  font-size: 1.4em;
+}
+.about-card__title {
+  margin: 0 0 0.5em 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #1f2937;
+}
+.about-card__text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #4b5563;
+}
+
+/* 注目教材：グリッド */
+.featured-products {
+  display: grid;
+  gap: 1.25em;
+  grid-template-columns: 1fr;
+}
+@media screen and (min-width: 600px) {
+  .featured-products {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media screen and (min-width: 1000px) {
+  .featured-products {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.featured-product {
+  display: flex;
+  flex-direction: column;
+}
+.featured-product .text-lg {
+  margin-bottom: 0.25em;
+}
+.featured-product .flex.card {
+  flex-wrap: wrap;
+  gap: 0.25em;
+}
+
+.top-cta {
+  margin-top: 2em;
+  margin-bottom: 1em;
+}
+
+/* 旧トップ画像（互換用） */
+.top-image{
+  width: calc(100% + 2em);
+  margin: -1em -1em 1em -1em;
+  position: relative;
+}
+.top-image img{
+  width: 100%;
+  box-sizing: border-box;
+}
+.top-image span{
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  line-height: 2;
+  font-family: "Hiragino Mincho Pro", "MS Mincho", serif;
+  color: var(--primary-color);
+  font-size: calc(3vw);  
+  font-weight: bold;
+  z-index: 1;  
+}
+
+/* メインアクション：さがす / 売る（シンプルなボタン） */
+.top-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1em;
+  margin: 1.5em 0;
+}
+.top-action-buttons .btn {
+  display: inline-block;
+  text-align: center;
+}
+
+/* トップ画面　写真ボックス */
+.picture-box-flex{
+  width: 90%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  margin: 3em auto;
+}
+.picture-box{
+  display: block;
+  width:45%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border:0;
+}
+.picture-box img{
+  display: block;
+  width:100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.picture-box-title{
+  display:block;
+  color: #fff;
+  margin: 0;
+  padding: 0.5em;
+  font-size: 1.5em;
+  text-align: center;
+}
+.picture-box-title.green{
+  background-color: #0ad848;
+}
+.picture-box-title.lightblue{
+  background-color: #2c81e3;
+}
+
+/* 運営者からのお知らせ*/
+.information{
+  margin: 2em auto;
+  max-width: 700px;
+}
+.information summary {
+  display: block;
+}
+.information summary::-webkit-details-marker {
+  display: none;
+}
+.information__summary-inner{
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8em;
+  border: 1px solid #ccc;
+  font-weight: bold;
+  color: #002255;
+}
+.information__important{
+  color:red;
+  padding-left:0.5em;
+}
+.information__detail{
+  background-color: #fafafa;
+  padding:1em;
+  margin:0.1em 0em 2em 2em;
+}
+.information__icon {
+  display: block;
+  position: relative;
+  width: 24px;
+  margin-left: 6px;
+  flex-shrink: 0;
+  transform-origin: center 43%;
+  transition: transform 0.4s;
+}
+.information details[open] .information__icon {
+  transform: rotate(180deg);
+}
+.information__icon::before,
+.information__icon::after {
+  content: "";
+  position: absolute;
+  display: block;
+  width: 15px;
+  height: 3px;
+  background-color:var(--primary-color) ;
+}
+.information__icon::before {
+  left: 0;
+  transform: rotate(45deg);
+}
+.information__icon::after {
+  right: 0;
+  transform: rotate(-45deg);
+}
+
+/* 商品詳細 */
+.product-detail{
+  display: flex;
+  flex-direction:row-reverse;
+}
+.product-detail .product-img{
+  padding:1em;
+  width:30%;
+  text-align: center;
+}
+.product-detail .product-img img{
+  max-width:90%;
+  max-height:50em;
+  border:#ddd 1px solid;
+}
+.product-detail table{
+  width:70%;
+  font-size: 0.9em;
+}
+@media (max-width: 580px) {
+  .product-detail{
+    display: block;
+  }
+  .product-detail .product-img{
+    padding:0.5em;
+    width:100%;
+    box-sizing: border-box;
+  }
+  .product-detail table{
+    width:100%;
+    box-sizing: border-box;
+  }
+} 
+
+/* 商品ファイル一覧 */
+.file-list{
+  width:100%;
+}
+.file-list summary {
+  display: block;
+}
+.file-list.summary::-webkit-details-marker {
+  display: none;
+}
+.file-list span.summary-inner{
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;  
+  align-items: center;
+  padding: 0.8em;
+  border: 1px solid #ccc;
+  color: #111;
+}
+.file-list div.detail{
+  background-color: #fafafa;
+  padding:1em;
+}
+.file-list-icon {
+  display: block;
+  position: relative;
+  width: 24px;
+  margin-right: 6px;
+  flex-shrink: 0;
+  transform-origin: center 43%;
+  transition: transform 0.4s;
+}
+.file-list details[open] .file-list-icon {
+  transform: rotate(180deg);
+}
+.file-list-icon::before,
+.file-list-icon::after {
+  content: "";
+  position: absolute;
+  display: block;
+  width: 15px;
+  height: 3px;
+  background-color: var(--primary-color) ;
+}
+.file-list-icon::before {
+  left: 0;
+  transform: rotate(45deg);
+}
+.file-list-icon::after {
+  right: 0;
+  transform: rotate(-45deg);
+}
+
+/* 購入オプション選択 */
+.purchase-option{
+  width:95%;
+  box-sizing: border-box;
+  max-width:500px;
+  background-color: #eee;
+  margin:1em auto;
+  padding:1em;
+  text-align: center;
+  font-size: 1.2em;
+}
+
+
+
+/* 総合評価 */
+.total-review-box{
+  display: flex;
+  justify-content:space-around;
+  background-color: #f7f6fd;
+  width:90%;
+  max-width:500px;
+  padding: 1em;
+  margin: 1em auto;
+  border: 1px solid #6a63f6;
+  border-radius: 5px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+/* 売上合計 */
+
+.total-sales{
+  font-weight: bold;
+  background-color: #eee;
+  text-align: center!important;
+}
+
+/* よくある質問 */
+.faq{
+  margin: 2em 0;
+}
+
+.faq h2 {
+  margin-top: 2em;
+  margin-bottom: 0.8em;
+}
+.faq h2:first-child {
+  margin-top: 0;
+}
+
+.faq__item {
+  margin: 1.5em 0;
+}
+.faq__question {
+  font-weight: bold;
+  color: #002255;
+  font-size: 1.1em;
+  margin-bottom: 0.5em;
+  padding: 1em;
+  border-bottom: 1px solid #ddd;
+}
+.faq__answer {
+  padding: 0.5em 2em;
+  line-height: 1.8;
+  color: #333;
+}
+.faq__answer a {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+.faq__answer a:hover {
+  color: #0066cc;
+}
+@media (max-width: 580px) {
+  .faq__question {
+    font-size: 1em;
+  }
+  .faq__answer {
+    font-size: 0.95em;
+  }
+}
+
+/* 教材販売の方法・教材入手の方法 など 静的ガイドページ */
+.static-guide {
+  max-width: 700px;
+  margin: 0 auto;
+  color: #333;
+}
+
+.static-guide__lead {
+  padding: 0 0.2em 1.5em;
+  margin: 0 0 1.5em;
+  line-height: 1.8;
+  color: #555;
+  font-size: 0.95em;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.static-guide__section {
+  margin-bottom: 2em;
+  padding: 1.2em 1em 1.5em;
+  background-color: #fafbfc;
+  border-radius: 6px;
+  border-left: 3px solid #d0d8e0;
+}
+
+.static-guide__section:last-child {
+  margin-bottom: 0;
+}
+
+.static-guide__section h2 {
+  margin: 0 0 0.8em;
+  padding: 0 0 0.4em;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #e0e4e8;
+  border-left: none;
+  color: var(--primary-color);
+  font-size: 1.15em;
+}
+
+.static-guide__list {
+  margin: 0;
+  padding-left: 1.4em;
+  line-height: 1.9;
+  color: #444;
+}
+
+.static-guide__list li {
+  margin-bottom: 0.5em;
+}
+
+.static-guide__list li:last-child {
+  margin-bottom: 0;
+}
+
+.static-guide__list a {
+  color: var(--primary-color);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0, 59, 131, 0.3);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.static-guide__list a:hover {
+  color: #0055aa;
+  border-bottom-color: var(--primary-color);
+}
+
+.static-guide__note {
+  margin-top: 2em;
+  padding: 1em 1.2em;
+  background-color: #f5f6f7;
+  border-radius: 6px;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.static-guide__note p {
+  margin: 0.3em 0;
+  padding: 0;
+}
+
+.static-guide__note p:first-child {
+  margin-top: 0;
+}
+
+.static-guide__note p:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 580px) {
+  .static-guide__section {
+    padding: 1em 0.9em 1.2em;
+  }
+  .static-guide__list {
+    font-size: 0.95em;
+  }
+}
+
+/* 著作権上の注意点（購入者） */
+.copyright-purchaser {
+  max-width: 700px;
+  margin: 0 auto;
+  color: #333;
+}
+
+.copyright-purchaser__section {
+  margin-bottom: 2.2em;
+  padding: 1.5em 1.2em 1.8em;
+  background-color: #fafbfc;
+  border-radius: 8px;
+}
+
+.copyright-purchaser__section:last-child {
+  margin-bottom: 0;
+}
+
+.copyright-purchaser__lead {
+  margin: 0 0 1.2em;
+  padding: 0;
+  line-height: 1.7;
+  color: #555;
+  font-size: 0.95em;
+}
+
+.copyright-purchaser__lead--top {
+  margin-bottom: 1.5em;
+}
+
+.copyright-purchaser__block {
+  margin-bottom: 1.5em;
+  padding: 1em 1em 1.2em;
+  background-color: #fff;
+  border-radius: 6px;
+  border: 1px solid #e8eaed;
+}
+
+.copyright-purchaser__block:last-child {
+  margin-bottom: 0;
+}
+
+.copyright-purchaser__label {
+  margin: 0 0 0.6em;
+  padding: 0.35em 0;
+  font-weight: bold;
+  color: #002255;
+  font-size: 1.2em;
+}
+
+.copyright-purchaser__text {
+  margin: 0 0 0.75em;
+  padding: 0;
+  line-height: 1.75;
+  color: #444;
+  font-size: 0.95em;
+}
+
+.copyright-purchaser__text--important {
+  font-weight: bold;
+  color: #002255;
+}
+
+.copyright-purchaser__list {
+  margin: 0.4em 0 0;
+  padding-left: 1.4em;
+  line-height: 1.85;
+  color: #444;
+}
+
+.copyright-purchaser__list li {
+  margin-bottom: 0.4em;
+}
+
+.copyright-purchaser__list li:last-child {
+  margin-bottom: 0;
+}
+
+.copyright-purchaser__okng {
+  margin-top: 0.9em;
+  padding: 0.7em 0.9em;
+  background-color: #f7f8fa;
+  border-radius: 6px;
+}
+
+.copyright-purchaser__okng:first-of-type {
+  margin-top: 0.5em;
+}
+
+.copyright-purchaser__ok {
+  margin: 0 0 0.4em;
+  padding: 0.2em 0;
+  font-weight: bold;
+  color: #0a6b2c;
+  font-size: 1.15em;
+}
+
+.copyright-purchaser__ng {
+  margin: 0 0 0.4em;
+  padding: 0.2em 0;
+  font-weight: bold;
+  color: #b52a2a;
+  font-size: 1.15em;
+}
+
+.copyright-purchaser__okng .copyright-purchaser__list {
+  margin-top: 0.25em;
+}
+
+@media (max-width: 580px) {
+  .copyright-purchaser__section {
+    padding: 1.2em 1em 1.5em;
+  }
+  .copyright-purchaser__block {
+    padding: 0.9em 0.85em 1em;
+  }
+  .copyright-purchaser__list {
+    font-size: 0.95em;
+  }
+}
+
+/* 著作権上の注意点（販売者） */
+.copyright-shop {
+  max-width: 700px;
+  margin: 0 auto;
+  color: #333;
+}
+
+.copyright-shop__lead {
+  margin: 0 0 1.8em;
+  padding: 0;
+  line-height: 1.8;
+  color: #555;
+  font-size: 0.95em;
+}
+
+.copyright-shop__section {
+  margin-bottom: 2.2em;
+  padding: 1.5em 1.2em 1.8em;
+  background-color: #fafbfc;
+  border-radius: 8px;
+}
+
+.copyright-shop__section:last-child {
+  margin-bottom: 0;
+}
+
+.copyright-shop__text {
+  margin: 0 0 0.75em;
+  padding: 0;
+  line-height: 1.75;
+  color: #444;
+  font-size: 0.95em;
+}
+
+.copyright-shop__text:last-child {
+  margin-bottom: 0;
+}
+
+.copyright-shop__list {
+  margin: 0.4em 0 0;
+  padding-left: 1.4em;
+  line-height: 1.85;
+  color: #444;
+}
+
+.copyright-shop__list li {
+  margin-bottom: 0.4em;
+}
+
+.copyright-shop__list li:last-child {
+  margin-bottom: 0;
+}
+
+.copyright-shop__note {
+  margin: 1em 0 0;
+  padding: 1em 1.2em;
+  background-color: #f0f4f8;
+  border-radius: 6px;
+  font-size: 0.9em;
+  color: #555;
+  line-height: 1.7;
+}
+
+@media (max-width: 580px) {
+  .copyright-shop__section {
+    padding: 1.2em 1em 1.5em;
+  }
+  .copyright-shop__list {
+    font-size: 0.95em;
+  }
+}

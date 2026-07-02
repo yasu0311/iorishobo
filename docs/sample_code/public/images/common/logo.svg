@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+	"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg width="146.900mm" height="45.549mm" viewBox="0 -14 5876 1822" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:jsh="http://www.justsystem.co.jp/hanako13/svg">
+<defs>
+</defs>
+<g visibility="hidden" jsh:type="region">
+<rect fill="none" stroke="#444444" stroke-width="10" x="-120" y="-120" width="6000" height="2000" jsh:type="page"/>
+<rect fill="none" stroke="#444444" stroke-width="10" stroke-dasharray="40 40" x="0" y="0" width="5760" height="1720" jsh:type="margin"/>
+</g>
+<g id="Fig_0" jsh:plane="A" jsh:type="text" jsh:x="1429" jsh:y="86" jsh:width="4347" jsh:height="1622">
+<text font-size="226" font-family="'ＭＳ 明朝',mincho" jsh:wabunFont="ＭＳ 明朝" jsh:oubunFont="Times New Roman" jsh:lineAdjust="2" jsh:lineSpace="56" jsh:charSpace="0" jsh:fontSize="226">
+<tspan xml:space="preserve"><tspan font-size="945" fill="#003c83" stroke="none" font-family="'HG丸ｺﾞｼｯｸM-PRO'" x="1429,2374,3319" y="1004,1004,1004" jsh:fontSize="945" jsh:txtColor="#003c83">あおば</tspan></tspan>
+<tspan xml:space="preserve"><tspan font-size="621" fill="#003c83" stroke="none" font-family="'HG丸ｺﾞｼｯｸM-PRO'" x="1429,2050,2671,3292,3913,4534,5155" y="1681,1681,1681,1681,1681,1681,1681" jsh:fontSize="621" jsh:txtColor="#003c83">教材マーケット</tspan></tspan>
+</text>
+</g>
+<g id="Fig_1" jsh:plane="A" jsh:type="fill">
+<path fill="#003C83" fill-rule="evenodd" fill-opacity="1" d="M 0,407 L 1195,407 L 1195,1738 L 0,1738 Z"/>
+<path fill="none" stroke="#000000" stroke-width="4" d="M 0,407 L 1195,407 L 1195,1738 L 0,1738 Z" id="Fig_1_0" jsh:type="polyline">
+</path>
+</g>
+
+<g id="Fig_2" jsh:plane="A" jsh:type="fill">
+<path fill="#003C83" fill-rule="evenodd" fill-opacity="1" d="M 315,0 L 315,361 L 1093,361 Z"/>
+<path fill="none" stroke="#000000" stroke-width="4" visibility="hidden" d="M 315,0 L 315,361 L 1093,361 Z" id="Fig_2_0" jsh:type="polyline">
+</path>
+</g>
+
+<path fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round" d="M 315,0 L 315,361" id="Fig_3" jsh:plane="A" jsh:type="line">
+</path>
+<path fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round" d="M 315,361 L 1093,361" id="Fig_4" jsh:plane="A" jsh:type="line">
+</path>
+<path fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round" d="M 315,0 L 1093,361" id="Fig_5" jsh:plane="A" jsh:type="line">
+</path>
+<g id="Fig_6" jsh:plane="A" jsh:type="fill">
+<path fill="#FF0000" fill-rule="evenodd" fill-opacity="1" d="M 493,949 L 660,949 L 660,1623 L 493,1623 Z"/>
+<path fill="none" stroke="#FF0000" stroke-width="4" d="M 493,949 L 660,949 L 660,1623 L 493,1623 Z" id="Fig_6_0" jsh:type="polyline">
+</path>
+</g>
+
+<g id="Fig_7" jsh:plane="A" jsh:type="fill">
+<path fill="#FF0000" fill-rule="evenodd" fill-opacity="1" d="M 493,901 L 577,496 L 662,901 Z"/>
+<path fill="none" stroke="#FF0000" stroke-width="4" d="M 493,901 L 577,496 L 662,901 Z" id="Fig_7_0" jsh:type="polyline">
+</path>
+</g>
+
+</svg>

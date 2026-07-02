@@ -1,0 +1,454 @@
+body{
+  background-color: #fff;
+  margin: 0;
+  padding:0;
+}
+
+:root {
+  --primary-color: #003b83;
+}
+
+.header{
+  width: 100%;
+  margin: 0;
+  background-color:#fff;
+  border-bottom: 1px solid #003b83;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.main {
+  width:100%;
+  max-width: 1300px;
+  margin: 2px auto;
+  padding: 0 0.1em;
+  background-color: #fff;
+  display: flex;
+  box-sizing: border-box;
+  flex-direction: column; 
+  /* border: #003b83 1px solid; */
+}
+@media screen and (min-width: 900px) {
+  .main{
+    flex-direction: row;
+    padding: 0;
+  }
+}
+
+/* 非会員用：メインはサイドバーなしで全幅 */
+.guest-main {
+  flex-direction: column !important;
+}
+.guest-main .content {
+  width: 100%;
+}
+
+.guest-main .content{
+  max-width: 100%;
+  min-height: 400px;
+  box-sizing: border-box;
+  padding:1em 10em;
+  text-align:left;
+  background-color: #fff;
+  margin:0.5em;
+  line-height: 150%;
+  flex: 1;
+}
+@media screen and (max-width: 1000px) {
+  .guest-main .content{
+    padding:1em;
+    margin:0.1em;
+  }
+}
+
+/* 非会員用：ヒーローをコンテンツの padding 分だけ広げる（100vw はスクロールバー分はみ出す） */
+.guest-main .top-hero {
+  box-sizing: border-box;
+  margin-top: -1em;
+  margin-bottom: 2em;
+}
+@media screen and (max-width: 1000px) {
+  .guest-main .top-hero {
+    width: calc(100% + 2em);
+    margin-left: -1em;
+    margin-right: -1em;
+  }
+}
+@media screen and (min-width: 1001px) {
+  .guest-main .top-hero {
+    width: calc(100% + 20em);
+    margin-left: -10em;
+    margin-right: -10em;
+  }
+}
+
+/* 非会員用スマホ：top-imageの負のマージンで余白が消えないように（会員用と同じ余白を維持） */
+@media screen and (max-width: 899px) {
+  body.layout-guest .top-image {
+    margin-top: 0;
+  }
+} 
+
+
+.footer{
+  padding: 5px;
+	background-color: #003b83;
+	color: #fff;
+  margin:0;
+  padding-bottom: 80px;
+}
+
+/* ヘッダー */
+.logo a img{
+  height: 50px;
+}
+.logo{
+  height: 50px;
+  margin: 3px;
+  text-align: center;
+}
+
+/* 非会員用：ヘッダー構成（上部：ロゴ＋ログインボタン / 下部：ナビ） */
+body.layout-guest .guest-header {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+body.layout-guest .guest-header__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3em 0.5em;
+}
+body.layout-guest .header__menu {
+  margin-left: auto;
+}
+
+/* スマホ：会員レイアウト同様、ロゴの下にホーム・教材検索などを表示 */
+@media screen and (max-width: 899px) {
+  body.layout-guest .guest-header__top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  body.layout-guest .logo {
+    text-align: center;
+  }
+  body.layout-guest .header__menu {
+    margin-left: 0;
+    width: 100%;
+  }
+  body.layout-guest .header__link {
+    margin-top: 0;
+  }
+  body.layout-guest .header__link ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25em 0.5em;
+  }
+}
+
+.header__link{
+  margin-top: 0.5em;
+}
+.header__btn{
+  text-align: center;
+  padding:0.5em;
+}
+
+.header__link ul {
+  padding-left:0;
+  text-align: center;
+  margin:0 auto;
+  vertical-align: middle;
+}  
+.header__link ul li {
+  display: inline-block;
+  margin-right: 0.5em;
+
+}
+.header__link ul li a{
+  display: inline-block;
+  color: #666;
+  font-size: 0.8em;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+.header__link ul li a i {
+  margin-right: 0.1em;
+}
+.header__btn{
+  display: flex;
+  justify-content: center;
+}
+
+@media screen and (min-width: 900px) {
+  .header:not(.guest-header){
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  body.layout-guest .guest-header {
+    display: flex;
+    flex-direction: column;
+  }
+  .header__menu{
+    display: flex;
+    align-items: center;
+  }
+  .header__btn{
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+.login-btn{
+  width:7em;
+  height:2em;
+  margin: 0.2em;
+  background: linear-gradient(to top,#003b83 , #3366bb);
+  color: #fff;
+  border:0;
+  border-radius: 2px;
+}
+.signup-btn{
+  width:7em;
+  height:2em;
+  margin: 0.2em;
+  background: linear-gradient(to top,#e59a22 , #ffaa33);
+  color: #fff;
+  border:0;
+  border-radius: 2px;
+}
+.logout-btn{
+  width:7em;
+  height:2em;
+  margin: 0.2em;
+  background: #fff;
+  color: #3366bb;
+  border:1px solid #3366bb;
+  border-radius: 2px;
+}
+/* ========== 非会員用：ページ上部ナビゲーション ========== */
+
+/* PC：ロゴ・ログインボタンより下、primary-color背景の横並びメニュー */
+.guest-nav--pc {
+  display: none;
+}
+@media screen and (min-width: 900px) {
+  .guest-nav--pc {
+    display: block;
+    width: 100%;
+    background-color: var(--primary-color);
+  }
+  .guest-nav--pc ul {
+    list-style: none;
+    padding: 0.5em 1.5em;
+    margin: 0;
+    display: flex;
+    gap: 0.5em 2em;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    justify-content: center;
+  }
+  .guest-nav--pc li {
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+    padding-right: 2em;
+  }
+  .guest-nav--pc li:last-child {
+    border-right: none;
+    padding-right: 0;
+  }
+  .guest-nav--pc li a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.9em;
+    white-space: nowrap;
+  }
+  .guest-nav--pc li a:hover {
+    color: #ccc;
+    text-decoration: underline;
+  }
+}
+
+/* スマホ：ハンバーガーメニューの中身（会員用と同じ左からスライドイン） */
+.guest-nav--sp {
+  position: fixed;
+  top: 0;
+  left: -300px;
+  bottom: 0;
+  width: 250px;
+  background-color: var(--primary-color);
+  box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+  transition: left 0.5s;
+  z-index: 10;
+  overflow-y: auto;
+}
+.guest-nav--sp.open {
+  left: 0;
+}
+.guest-nav--sp nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 1em 0 0 0;
+}
+.guest-nav--sp nav li {
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+}
+.guest-nav--sp nav li a {
+  display: block;
+  padding: 0.9em 1.2em;
+  color: #fff;
+  text-decoration: none;
+}
+.guest-nav--sp nav li a:hover {
+  background-color: rgba(255,255,255,0.15);
+  color: #fff;
+}
+@media screen and (min-width: 900px) {
+  .guest-nav--sp {
+    display: none !important;
+  }
+}
+
+/* ハンバーガーボタン：会員用と同じ右下固定 */
+.guest-toggle-btn {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  height: 55px;
+  width: 50px;
+  border-radius: 5px;
+  border: #336699 solid 3px;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+}
+@media screen and (min-width: 900px) {
+  .guest-toggle-btn {
+    display: none !important;
+  }
+}
+
+.toggle-bar {
+  display: block;
+  position: relative;
+  width:40px;
+  height:40px;
+  margin: 0 auto;
+  z-index: 3;
+  cursor: pointer;
+}
+.toggle-btn span {
+  position: absolute;
+  display: block;
+  left: 5px;
+  width: 30px;
+  height: 4px;
+  background-color: #555;
+  transition: all 0.5s;
+  border-radius: 5px;
+}
+.toggle-menu{
+  text-align: center;
+  margin-top: 0px;
+  padding: 0;
+  font-size: 10px;
+  z-index: 3;
+  color:#555;
+  font-weight: bold;
+}
+.toggle-btn span:nth-child(1) {
+  top: 6px;
+}
+.toggle-btn span:nth-child(2) {
+  top: 18px;
+}
+.toggle-btn span:nth-child(3) {
+  top: 30px;
+}
+.open.toggle-btn span:nth-child(1) {
+  transform: translateY(12px) rotate(-315deg);
+}
+.open.toggle-btn span:nth-child(2) {
+  opacity: 0;
+}
+.open.toggle-btn span:nth-child(3) {
+  transform: translateY(-12px) rotate(315deg);
+}
+#mask {
+  display: none;
+  transition: all 0.5s;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2;
+  cursor: pointer;
+}
+.open#mask {
+  display: block;
+}
+
+/* フッター */
+.footer__container{
+	background-color: #003b83;
+	color: #eee;
+  display: flex;
+  justify-content: flex-start;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 0.5em;
+}
+.footer h1{
+  font-size: 1.2em;
+  padding: 0.5em;
+  margin: 0;
+  border-bottom: 1px solid #888;
+}
+.footer h1 span{
+  font-size: 0.6em;
+  padding-left: 1em;
+}
+.footer h3{
+  font-size: 0.9em;
+  padding: 0.5em;
+  margin: 0;
+}
+.footer__column{
+  max-width: 230px;
+  width: 33%;
+}
+.footer__container ul {
+  list-style-type: none; 
+  font-size: 0.7em;
+  margin: 0;
+  padding: 0em 0.5em;
+}
+.footer__container li {
+  padding: 0;
+}
+.footer__container li a {
+  text-decoration: none;
+  color: #ddd;
+}
+.footer__container li a:hover {
+  color: #ccc;
+  text-decoration: underline; 
+}
+@media screen and (min-width: 900px) {
+  .footer__container{
+    padding: 0 3em;
+  }
+  .footer h1{
+    padding: 0.5em 2.5em;
+  }
+}
