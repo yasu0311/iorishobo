@@ -14,6 +14,10 @@ return [
 
     'name' => env('SHOP_NAME', env('APP_NAME', 'いおり書房')),
 
+    'operator_name' => env('SHOP_OPERATOR_NAME', env('SHOP_NAME', env('APP_NAME', 'いおり書房'))),
+
+    'representative' => env('SHOP_REPRESENTATIVE', ''),
+
     'phone' => env('SHOP_PHONE', ''),
 
     'email' => env('SHOP_EMAIL', ''),

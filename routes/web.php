@@ -8,16 +8,42 @@ use App\Http\Controllers\Front\Auth\VerifyEmailController;
 use App\Http\Controllers\Front\CartController;
 use App\Http\Controllers\Front\CategoryController;
 use App\Http\Controllers\Front\CheckoutController;
+use App\Http\Controllers\Front\ContactController;
 use App\Http\Controllers\Front\LegacyRedirectController;
 use App\Http\Controllers\Front\Mypage\MypageController;
 use App\Http\Controllers\Front\Mypage\OrderController as MypageOrderController;
 use App\Http\Controllers\Front\Mypage\ProfileController;
 use App\Http\Controllers\Front\Mypage\ReceiptController;
 use App\Http\Controllers\Front\ProductController;
+use App\Http\Controllers\Front\SitemapController;
+use App\Http\Controllers\Front\StaticController;
 use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LegacyRedirectController::class, 'home'])->name('home');
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap.xml');
+Route::get('/robots.txt', function () {
+    $lines = [
+        'User-agent: *',
+        'Allow: /',
+        '',
+        'Sitemap: '.url('/sitemap.xml'),
+    ];
+
+    return response(implode("\n", $lines), 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+})->name('robots.txt');
+
+Route::get('/contacts/create', [ContactController::class, 'create'])->name('contacts.create');
+Route::post('/contacts/confirm', [ContactController::class, 'confirm'])->name('contacts.confirm')->middleware('throttle:5,1');
+Route::post('/contacts', [ContactController::class, 'store'])->name('contacts.store')->middleware('throttle:5,1');
+Route::post('/contacts/back', [ContactController::class, 'back'])->name('contacts.back');
+Route::get('/contacts/complete', [ContactController::class, 'complete'])->name('contacts.complete');
+
+Route::prefix('static')->name('static.')->group(function () {
+    Route::get('/law', [StaticController::class, 'law'])->name('law');
+    Route::get('/privacy-policy', [StaticController::class, 'privacyPolicy'])->name('privacy-policy');
+    Route::get('/terms', [StaticController::class, 'terms'])->name('terms');
+});
 
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');

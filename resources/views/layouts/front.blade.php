@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', config('shop.name'))</title>
+    @yield('head_meta')
     <style>
         :root {
             --color-bg: #f7f4ef;
@@ -368,6 +369,37 @@
             font-weight: 600;
         }
 
+        .static-content ul {
+            padding-left: 1.5rem;
+        }
+
+        .static-content li + li {
+            margin-top: 0.35rem;
+        }
+
+        .text-muted {
+            color: var(--color-muted);
+            font-weight: 400;
+        }
+
+        .site-footer__links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 1.25rem;
+            margin: 0.75rem 0 0;
+            font-size: 0.875rem;
+        }
+
+        .site-footer__links a {
+            color: var(--color-muted);
+            text-decoration: none;
+        }
+
+        .site-footer__links a:hover {
+            color: var(--color-accent);
+            text-decoration: underline;
+        }
+
         .text-muted { color: var(--color-muted); }
         .text-danger { color: var(--color-danger); }
 
@@ -479,6 +511,12 @@
                     {{ $addr['prefecture'] ?? '' }}{{ $addr['address_line1'] ?? '' }}{{ $addr['address_line2'] ?? '' }}
                 </p>
             @endif
+            <nav class="site-footer__links" aria-label="フッターメニュー">
+                <a href="{{ route('static.law') }}">特定商取引法に基づく表記</a>
+                <a href="{{ route('static.privacy-policy') }}">プライバシーポリシー</a>
+                <a href="{{ route('static.terms') }}">利用規約</a>
+                <a href="{{ route('contacts.create') }}">お問い合わせ</a>
+            </nav>
         </div>
     </footer>
 </body>
