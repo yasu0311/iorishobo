@@ -18,7 +18,7 @@
     $ogTitle = $pageTitle;
 @endphp
 
-<link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+<link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
 <meta name="description" content="{{ $metaDescription }}">
 @if ($robots !== '')
     <meta name="robots" content="{{ $robots }}">

@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'エラー') — {{ config('shop.name') }}</title>
+    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
     <link rel="stylesheet" href="{{ asset('css/common/utility.css') }}">
     <link rel="stylesheet" href="{{ asset('css/front/component.css') }}">
     <link rel="stylesheet" href="{{ asset('css/front/layout.css') }}">

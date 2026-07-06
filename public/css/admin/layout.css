@@ -64,6 +64,24 @@ a { color: var(--admin-color-link); }
   color: #94a3b8;
 }
 
+.admin-sidebar__logo {
+  margin-top: 0.5rem;
+  line-height: 0;
+}
+
+.admin-sidebar__logo .site-logo {
+  display: inline-block;
+  background: #fff;
+  border-radius: 4px;
+  padding: 0.25rem 0.4rem;
+}
+
+.admin-sidebar__logo img {
+  width: 9rem;
+  height: auto;
+  max-width: 100%;
+}
+
 .admin-sidebar__nav {
   display: flex;
   flex-direction: column;

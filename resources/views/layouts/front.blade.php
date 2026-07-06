@@ -16,7 +16,7 @@
     <a href="#main-content" class="skip-link">メインコンテンツへスキップ</a>
     <header class="site-header">
         <div class="site-header__inner">
-            <a href="{{ url('/') }}" class="site-logo">{{ config('shop.name') }}</a>
+            <x-site-logo />
             <button type="button"
                     class="site-nav-toggle"
                     data-site-nav-toggle

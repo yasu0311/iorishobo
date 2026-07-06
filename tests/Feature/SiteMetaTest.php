@@ -19,7 +19,8 @@ class SiteMetaTest extends TestCase
         $response = $this->get(route('home'));
 
         $response->assertOk();
-        $response->assertSee('<link rel="icon" href="'.asset('favicon.svg').'" type="image/svg+xml">', false);
+        $response->assertSee('<link rel="icon" href="'.asset('favicon.png').'" type="image/png">', false);
+        $response->assertSee(asset('images/common/logo.png'), false);
         $response->assertSee('<meta name="description" content="'.e(config('shop.meta_description')).'">', false);
         $response->assertSee('<meta property="og:type" content="website">', false);
         $response->assertSee('<meta property="og:image" content="'.e(url(config('shop.og_image'))).'">', false);

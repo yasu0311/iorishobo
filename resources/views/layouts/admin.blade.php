@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', '管理画面') — {{ config('shop.name') }}</title>
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
     <link rel="stylesheet" href="{{ asset('css/common/utility.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin/layout.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin/component.css') }}">
@@ -15,7 +15,9 @@
         <aside class="admin-sidebar">
             <div class="admin-sidebar__brand">
                 <a href="{{ route('admin.dashboard') }}">管理画面</a>
-                <div class="admin-sidebar__shop">{{ config('shop.name') }}</div>
+                <div class="admin-sidebar__logo">
+                    <x-site-logo :href="url('/')" title="{{ config('shop.name') }}" />
+                </div>
             </div>
             <nav class="admin-sidebar__nav" aria-label="管理メニュー">
                 <a href="{{ route('admin.dashboard') }}" @class(['is-active' => request()->routeIs('admin.dashboard')])>ダッシュボード</a>
