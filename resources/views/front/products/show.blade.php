@@ -45,7 +45,7 @@
             @endif
 
             @if ($product->short_description)
-                <p>{{ $product->short_description }}</p>
+                <p>{{ strip_tags($product->short_description) }}</p>
             @endif
 
             <h2>オプション</h2>
@@ -70,7 +70,7 @@
                                 — {{ number_format($variant->price) }}円（税込）
                                 @if ($product->stock_managed)
                                     @if ($variant->isInStock())
-                                        — 在庫 {{ $variant->stock }}
+                                        — 在庫 <x-quantity :value="$variant->stock" />
                                     @else
                                         — <span class="text-danger">売り切れ</span>
                                     @endif
@@ -80,7 +80,7 @@
                     </fieldset>
                     <p class="form-field">
                         <label>
-                            数量
+                            数量（{{ config('shop.quantity_unit') }}）
                             <input type="number" name="quantity" value="1" min="1" required>
                         </label>
                     </p>
@@ -105,7 +105,7 @@
         @if ($product->description)
             <div class="product-detail__description panel static-content">
                 <h2>商品説明</h2>
-                {!! nl2br(e($product->description)) !!}
+                {!! $product->description !!}
             </div>
         @endif
     </div>

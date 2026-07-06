@@ -7,7 +7,7 @@
 
 【ご注文内容】
 @foreach ($order->items as $item)
-- {{ $item->product_name }}@if ($item->variant_label)（{{ $item->variant_label }}）@endif × {{ $item->quantity }} = {{ number_format($item->subtotal) }}円
+- {{ $item->product_name }}@if ($item->variant_label)（{{ $item->variant_label }}）@endif × {{ $item->quantity }}{{ config('shop.quantity_unit') }} = {{ number_format($item->subtotal) }}円
 @endforeach
 
 商品合計: {{ number_format($order->subtotal) }}円（税込）

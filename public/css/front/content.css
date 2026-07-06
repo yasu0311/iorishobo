@@ -153,6 +153,25 @@
   margin-top: 0.35rem;
 }
 
+.static-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.static-content table th,
+.static-content table td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.static-content img {
+  max-width: 100%;
+  height: auto;
+}
+
 .breadcrumb {
   font-size: 0.875rem;
   color: var(--color-muted);

@@ -97,7 +97,7 @@
                 @endforeach
             </ul>
             <p>商品合計: {{ number_format($summary->subtotal) }}円（税込）</p>
-            @if ($summary->discount > 0)
+            @if (config('shop.coupons_enabled') && $summary->discount > 0)
                 <p>クーポン割引: -{{ number_format($summary->discount) }}円</p>
             @endif
             @if ($defaultAmounts)

@@ -146,6 +146,10 @@ class CartService
 
     public function applyCoupon(string $code, ?Cart $cart = null): CartSummary
     {
+        if (! config('shop.coupons_enabled')) {
+            abort(404);
+        }
+
         $cart ??= $this->currentCart();
         $coupon = Coupon::query()->where('code', $code)->first();
 
@@ -166,6 +170,10 @@ class CartService
 
     public function removeCoupon(?Cart $cart = null): CartSummary
     {
+        if (! config('shop.coupons_enabled')) {
+            abort(404);
+        }
+
         $cart ??= $this->currentCart();
         $cart->update(['coupon_id' => null]);
         $cart->touch();
@@ -229,6 +237,10 @@ class CartService
 
     private function resolveApplicableCoupon(Cart $cart, int $subtotal): ?Coupon
     {
+        if (! config('shop.coupons_enabled')) {
+            return null;
+        }
+
         if ($cart->coupon === null) {
             return null;
         }

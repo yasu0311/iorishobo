@@ -23,7 +23,7 @@
             <thead>
                 <tr>
                     <th>商品</th>
-                    <th>数量</th>
+                    <th>数量（{{ config('shop.quantity_unit') }}）</th>
                     <th>小計</th>
                 </tr>
             </thead>
@@ -34,7 +34,7 @@
                             {{ $item->product_name }}
                             @if ($item->variant_label)（{{ $item->variant_label }}）@endif
                         </td>
-                        <td>{{ $item->quantity }}</td>
+                        <td><x-quantity :value="$item->quantity" /></td>
                         <td>{{ number_format($item->subtotal) }}円</td>
                     </tr>
                 @endforeach

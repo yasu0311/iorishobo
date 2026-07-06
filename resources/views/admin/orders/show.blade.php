@@ -108,7 +108,7 @@
                 <tr>
                     <th>商品</th>
                     <th>単価</th>
-                    <th>数量</th>
+                    <th>数量（{{ config('shop.quantity_unit') }}）</th>
                     <th>小計</th>
                 </tr>
             </thead>
@@ -122,7 +122,7 @@
                             @endif
                         </td>
                         <td>{{ number_format($item->unit_price) }}円</td>
-                        <td>{{ $item->quantity }}</td>
+                        <td><x-quantity :value="$item->quantity" /></td>
                         <td>{{ number_format($item->subtotal) }}円</td>
                     </tr>
                 @endforeach

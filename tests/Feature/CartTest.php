@@ -133,6 +133,8 @@ class CartTest extends TestCase
     #[Test]
     public function coupon_can_be_applied_to_cart(): void
     {
+        config(['shop.coupons_enabled' => true]);
+
         Coupon::query()->create([
             'code' => 'SAVE100',
             'name' => '100円引き',
@@ -159,6 +161,27 @@ class CartTest extends TestCase
         $response = $this->actingAs($user)->get(route('cart.index'));
         $response->assertSee('100円引き');
         $response->assertSee('900円');
+    }
+
+    #[Test]
+    public function coupon_input_is_hidden_when_coupons_disabled(): void
+    {
+        config(['shop.coupons_enabled' => false]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($user)->get(route('cart.index'))
+            ->assertOk()
+            ->assertDontSee('クーポンコード')
+            ->assertDontSee('合計（割引後）');
+
+        $this->actingAs($user)->post(route('cart.coupon.apply'), ['coupon_code' => 'SAVE100'])
+            ->assertNotFound();
     }
 
     #[Test]

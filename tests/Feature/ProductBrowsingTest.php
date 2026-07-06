@@ -61,7 +61,8 @@ class ProductBrowsingTest extends TestCase
         $response->assertOk();
         $response->assertSee('在庫管理商品');
         $response->assertSee('1,500円');
-        $response->assertSee('在庫 5');
+        $response->assertSee('在庫 5冊');
+        $response->assertSee('数量（冊）');
         $response->assertSee('売り切れ');
         $response->assertSee('カートに入れる');
     }
@@ -191,6 +192,19 @@ class ProductBrowsingTest extends TestCase
         $response->assertSee('存在しないキーワード');
         $response->assertSee('一致する商品は見つかりませんでした');
         $response->assertDontSee('既存商品');
+    }
+
+    #[Test]
+    public function product_detail_renders_description_html(): void
+    {
+        $product = $this->createProduct('HTML説明商品', '801', published: true);
+        $product->update(['description' => '<p>説明<strong>太字</strong></p>']);
+
+        $response = $this->get(route('products.show', $product->slug));
+
+        $response->assertOk();
+        $response->assertSee('<p>説明<strong>太字</strong></p>', false);
+        $response->assertDontSee('&lt;p&gt;');
     }
 
     #[Test]

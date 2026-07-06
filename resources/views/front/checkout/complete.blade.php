@@ -36,7 +36,7 @@
                         <td>
                             {{ $item->product_name }}
                             @if ($item->variant_label)（{{ $item->variant_label }}）@endif
-                            × {{ $item->quantity }}
+                            × <x-quantity :value="$item->quantity" />
                         </td>
                         <td>{{ number_format($item->subtotal) }}円</td>
                     </tr>

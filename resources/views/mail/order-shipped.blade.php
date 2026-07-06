@@ -11,7 +11,7 @@
 
 【ご注文内容】
 @foreach ($order->items as $item)
-- {{ $item->product_name }}@if ($item->variant_label)（{{ $item->variant_label }}）@endif × {{ $item->quantity }}
+- {{ $item->product_name }}@if ($item->variant_label)（{{ $item->variant_label }}）@endif × {{ $item->quantity }}{{ config('shop.quantity_unit') }}
 @endforeach
 
 【配送先】

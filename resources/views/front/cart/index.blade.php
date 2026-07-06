@@ -10,7 +10,7 @@
         <p><a href="{{ route('products.index') }}" class="btn btn--primary">商品一覧へ</a></p>
     @else
         @if ($summary->hasStockIssues)
-            <x-alert type="error">在庫不足の商品があります。数量を調整するか削除してください。チェックアウトはできません。</x-alert>
+            <x-alert type="error">在庫不足の商品があります。{{ config('shop.quantity_unit') }}数を調整するか削除してください。チェックアウトはできません。</x-alert>
         @endif
 
         <div class="cart-layout">
@@ -21,7 +21,7 @@
                             <tr>
                                 <th>商品</th>
                                 <th>単価</th>
-                                <th>数量</th>
+                                <th>数量（{{ config('shop.quantity_unit') }}）</th>
                                 <th>小計</th>
                                 <th></th>
                             </tr>
@@ -35,7 +35,7 @@
                                             <br><span class="text-muted">{{ $line->variant->name }}</span>
                                         @endif
                                         @if ($line->stockExceeded)
-                                            <br><span class="text-danger">在庫不足（残り {{ $line->variant->stock }} 点）</span>
+                                            <br><span class="text-danger">在庫不足（残り <x-quantity :value="$line->variant->stock" />）</span>
                                         @endif
                                     </td>
                                     <td>{{ number_format($line->unitPrice) }}円</td>
@@ -66,26 +66,28 @@
                 <h2 style="margin: 0 0 1rem; font-size: 1.125rem;">ご注文内容</h2>
                 <p class="cart-summary__row"><span>商品合計</span><span>{{ number_format($summary->subtotal) }}円</span></p>
 
-                @if ($summary->coupon)
-                    <p class="cart-summary__row">
-                        <span>クーポン「{{ $summary->coupon->name }}」</span>
-                        <span>-{{ number_format($summary->discount) }}円</span>
-                    </p>
-                    <form method="post" action="{{ route('cart.coupon.remove') }}">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn--sm btn--ghost">クーポンを解除</button>
-                    </form>
-                @else
-                    <form method="post" action="{{ route('cart.coupon.apply') }}" class="coupon-form">
-                        @csrf
-                        <input type="text" name="coupon_code" value="{{ old('coupon_code') }}" placeholder="クーポンコード" required>
-                        <button type="submit" class="btn btn--sm btn--secondary">適用</button>
-                    </form>
+                @if (config('shop.coupons_enabled'))
+                    @if ($summary->coupon)
+                        <p class="cart-summary__row">
+                            <span>クーポン「{{ $summary->coupon->name }}」</span>
+                            <span>-{{ number_format($summary->discount) }}円</span>
+                        </p>
+                        <form method="post" action="{{ route('cart.coupon.remove') }}">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn--sm btn--ghost">クーポンを解除</button>
+                        </form>
+                    @else
+                        <form method="post" action="{{ route('cart.coupon.apply') }}" class="coupon-form">
+                            @csrf
+                            <input type="text" name="coupon_code" value="{{ old('coupon_code') }}" placeholder="クーポンコード" required>
+                            <button type="submit" class="btn btn--sm btn--secondary">適用</button>
+                        </form>
+                    @endif
                 @endif
 
                 <p class="cart-summary__row cart-summary__total">
-                    <span>合計（割引後）</span>
+                    <span>@if (config('shop.coupons_enabled') && $summary->discount > 0)合計（割引後）@else合計@endif</span>
                     <span>{{ number_format($summary->totalAfterDiscount()) }}円</span>
                 </p>
 
