@@ -116,6 +116,19 @@ img { max-width: 100%; height: auto; display: block; }
 
 .site-nav a:hover { color: var(--color-accent); }
 
+.site-nav__link--with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  line-height: 1;
+}
+
+.site-nav__link--with-icon svg {
+  flex-shrink: 0;
+  width: 1.125em;
+  height: 1.125em;
+}
+
 .site-nav-toggle {
   display: none;
   flex-direction: column;
@@ -187,6 +200,10 @@ img { max-width: 100%; height: auto; display: block; }
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text);
   font-size: 1rem;
+}
+
+.site-nav--drawer .site-nav__link--with-icon {
+  display: flex;
 }
 
 .site-nav--drawer a:hover {

@@ -1,9 +1,9 @@
 @extends('layouts.front')
 
-@section('title', 'チェックアウト - '.config('shop.name'))
+@section('title', 'ご注文手続き - '.config('shop.name'))
 
 @section('content')
-    <h1>チェックアウト</h1>
+    <h1>ご注文手続き</h1>
 
     <div class="checkout-layout">
         <form method="post" action="{{ route('checkout.store') }}" class="checkout-form">
@@ -96,12 +96,12 @@
                     <li>{{ $line->product->name }} — {{ number_format($line->lineSubtotal) }}円</li>
                 @endforeach
             </ul>
-            <p>商品合計: {{ number_format($summary->subtotal) }}円（税込）</p>
+            <p @class(['checkout-summary__total' => ! (config('shop.coupons_enabled') && $summary->discount > 0)])>
+                商品合計: {{ number_format($summary->subtotal) }}円（税込）
+            </p>
             @if (config('shop.coupons_enabled') && $summary->discount > 0)
                 <p>クーポン割引: -{{ number_format($summary->discount) }}円</p>
-            @endif
-            @if ($defaultAmounts)
-                <p class="checkout-summary__total">お支払い合計（目安）: {{ number_format($defaultAmounts['total']) }}円（税込）</p>
+                <p class="checkout-summary__total">合計（割引後）: {{ number_format($summary->totalAfterDiscount()) }}円（税込）</p>
             @endif
         </aside>
     </div>

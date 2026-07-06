@@ -30,7 +30,9 @@
             <nav class="site-nav site-nav--desktop" aria-label="メインメニュー">
                 <a href="{{ route('products.index') }}">商品一覧</a>
                 <a href="{{ route('categories.index') }}">カテゴリ</a>
-                <a href="{{ route('cart.index') }}">カート</a>
+                <a href="{{ route('cart.index') }}" class="site-nav__link site-nav__link--with-icon">
+                    <x-icon.cart />カート
+                </a>
                 @auth
                     <a href="{{ route('mypage.index') }}">マイページ</a>
                 @else
@@ -48,7 +50,9 @@
          aria-label="モバイルメニュー">
         <a href="{{ route('products.index') }}">商品一覧</a>
         <a href="{{ route('categories.index') }}">カテゴリ</a>
-        <a href="{{ route('cart.index') }}">カート</a>
+        <a href="{{ route('cart.index') }}" class="site-nav__link site-nav__link--with-icon">
+            <x-icon.cart />カート
+        </a>
         @auth
             <a href="{{ route('mypage.index') }}">マイページ</a>
         @else

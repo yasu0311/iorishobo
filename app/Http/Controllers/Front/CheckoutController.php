@@ -41,9 +41,6 @@ class CheckoutController extends Controller
             ->get();
 
         $defaultShipping = $shippingMethods->first();
-        $defaultAmounts = $defaultShipping
-            ? $this->checkoutService->previewAmounts($summary, $defaultShipping, PaymentMethod::Cod)
-            : null;
 
         $customer = Auth::user()?->customer;
 
@@ -51,7 +48,6 @@ class CheckoutController extends Controller
             'summary',
             'shippingMethods',
             'defaultShipping',
-            'defaultAmounts',
             'customer',
         ));
     }
