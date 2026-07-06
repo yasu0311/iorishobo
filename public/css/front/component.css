@@ -327,6 +327,18 @@ table.data-table th {
   gap: 0.5rem;
 }
 
+.category-list--sub {
+  margin: 0.5rem 0 2rem;
+}
+
+.category-list--sub + .product-grid {
+  margin-top: 0.25rem;
+}
+
+.page-header + .product-grid {
+  margin-top: 0.5rem;
+}
+
 .category-chip {
   display: inline-block;
   padding: 0.4rem 0.9rem;

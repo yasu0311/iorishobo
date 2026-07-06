@@ -25,11 +25,12 @@ class CategoryController extends Controller
     {
         $category = Category::query()
             ->where('slug', $slug)
-            ->with('parent')
+            ->with(['parent', 'childrenOrdered'])
             ->firstOrFail();
 
-        $products = $category->products()
+        $products = Product::query()
             ->published()
+            ->whereIn('category_id', $category->selfAndDescendantIds())
             ->ordered()
             ->with(['mainImage', 'activeVariants'])
             ->paginate(24);

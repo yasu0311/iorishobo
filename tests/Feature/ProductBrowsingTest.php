@@ -128,6 +128,33 @@ class ProductBrowsingTest extends TestCase
     }
 
     #[Test]
+    public function parent_category_show_includes_products_from_child_categories(): void
+    {
+        $child = Category::query()->create([
+            'parent_id' => $this->category->id,
+            'name' => '中学',
+            'slug' => '11',
+            'sort_order' => 1,
+        ]);
+
+        Product::query()->create([
+            'category_id' => $child->id,
+            'name' => '中学向け教材',
+            'slug' => '511',
+            'base_price' => 1000,
+            'stock_managed' => false,
+            'is_published' => true,
+            'sort_order' => 1,
+        ]);
+
+        $response = $this->get(route('categories.show', $this->category->slug));
+
+        $response->assertOk();
+        $response->assertSee('中学向け教材');
+        $response->assertSee('中学', false);
+    }
+
+    #[Test]
     public function product_index_can_search_by_name(): void
     {
         $this->createProduct('国語の教科書', '701', published: true);

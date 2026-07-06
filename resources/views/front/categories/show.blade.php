@@ -15,6 +15,16 @@
 
     <h1>{{ $category->name }}</h1>
 
+    @if ($category->childrenOrdered->isNotEmpty())
+        <ul class="category-list category-list--sub">
+            @foreach ($category->childrenOrdered as $child)
+                <li>
+                    <a href="{{ route('categories.show', $child->slug) }}" class="category-chip">{{ $child->name }}</a>
+                </li>
+            @endforeach
+        </ul>
+    @endif
+
     @if ($products->isEmpty())
         <p class="text-muted">このカテゴリに掲載中の商品はありません。</p>
     @else

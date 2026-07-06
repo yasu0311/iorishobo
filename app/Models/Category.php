@@ -52,4 +52,24 @@ class Category extends Model
     {
         return $this->hasMany(Product::class);
     }
+
+    /**
+     * 自身とすべての子孫カテゴリの ID（商品一覧の絞り込み用）。
+     *
+     * @return list<int>
+     */
+    public function selfAndDescendantIds(): array
+    {
+        $ids = [$this->id];
+
+        $children = $this->relationLoaded('childrenOrdered')
+            ? $this->childrenOrdered
+            : $this->childrenOrdered()->get();
+
+        foreach ($children as $child) {
+            $ids = array_merge($ids, $child->selfAndDescendantIds());
+        }
+
+        return $ids;
+    }
 }
