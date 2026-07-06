@@ -8,8 +8,8 @@
     <section class="hero">
         <h1 class="hero__title">{{ config('shop.name') }}</h1>
         <p class="hero__lead">書籍・文具のオンラインショップ</p>
+        <x-product-search-form input-id="hero-search-q" class="product-search product-search--hero" />
         <p class="hero__actions">
-            <a href="{{ route('products.index') }}" class="btn btn--primary">商品を見る</a>
             <a href="{{ route('categories.index') }}" class="btn btn--secondary">カテゴリから探す</a>
         </p>
     </section>

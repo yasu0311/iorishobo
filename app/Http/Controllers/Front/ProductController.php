@@ -6,16 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $products = Product::query()
+        $query = Product::query()
             ->published()
             ->ordered()
-            ->with(['mainImage', 'category', 'activeVariants'])
-            ->paginate(24);
+            ->with(['mainImage', 'category', 'activeVariants']);
+
+        if ($request->filled('q')) {
+            $query->matchingKeyword($request->string('q')->trim()->toString());
+        }
+
+        $products = $query->paginate(24)->withQueryString();
 
         $products->getCollection()->each(function (Product $product) {
             $product->activeVariants->each(
@@ -23,7 +29,10 @@ class ProductController extends Controller
             );
         });
 
-        return view('front.products.index', compact('products'));
+        return view('front.products.index', [
+            'products' => $products,
+            'filters' => $request->only(['q']),
+        ]);
     }
 
     public function show(string $slug): View

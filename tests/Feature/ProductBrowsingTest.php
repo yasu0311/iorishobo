@@ -128,6 +128,45 @@ class ProductBrowsingTest extends TestCase
     }
 
     #[Test]
+    public function product_index_can_search_by_name(): void
+    {
+        $this->createProduct('国語の教科書', '701', published: true);
+        $this->createProduct('数学ドリル', '702', published: true);
+
+        $response = $this->get(route('products.index', ['q' => '国語']));
+
+        $response->assertOk();
+        $response->assertSee('国語の教科書');
+        $response->assertDontSee('数学ドリル');
+    }
+
+    #[Test]
+    public function product_index_search_excludes_unpublished_products(): void
+    {
+        $this->createProduct('公開商品', '711', published: true);
+        $this->createProduct('非公開商品', '712', published: false);
+
+        $response = $this->get(route('products.index', ['q' => '商品']));
+
+        $response->assertOk();
+        $response->assertSee('公開商品');
+        $response->assertDontSee('非公開商品');
+    }
+
+    #[Test]
+    public function product_index_search_shows_message_when_no_match(): void
+    {
+        $this->createProduct('既存商品', '721', published: true);
+
+        $response = $this->get(route('products.index', ['q' => '存在しないキーワード']));
+
+        $response->assertOk();
+        $response->assertSee('存在しないキーワード');
+        $response->assertSee('一致する商品は見つかりませんでした');
+        $response->assertDontSee('既存商品');
+    }
+
+    #[Test]
     public function product_show_displays_main_image(): void
     {
         $product = $this->createProduct('画像付き商品', '601', published: true);

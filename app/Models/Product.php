@@ -43,6 +43,14 @@ class Product extends Model
         return $query->orderBy('sort_order')->orderBy('id');
     }
 
+    public function scopeMatchingKeyword(Builder $query, string $keyword): Builder
+    {
+        return $query->where(function (Builder $builder) use ($keyword) {
+            $builder->where('name', 'like', "%{$keyword}%")
+                ->orWhere('short_description', 'like', "%{$keyword}%");
+        });
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
