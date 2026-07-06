@@ -195,6 +195,33 @@ class ProductBrowsingTest extends TestCase
     }
 
     #[Test]
+    public function product_index_shows_price_range_when_variants_differ(): void
+    {
+        $product = $this->createProduct('価格幅あり商品', '901', published: true);
+        $this->createVariant($product, '低価格', 1500, stock: 0);
+        $this->createVariant($product, '高価格', 2000, stock: 0);
+
+        $response = $this->get(route('products.index'));
+
+        $response->assertOk();
+        $response->assertSee('1,500円〜2,000円');
+    }
+
+    #[Test]
+    public function product_detail_shows_price_range_when_variants_differ(): void
+    {
+        $product = $this->createProduct('詳細価格幅商品', '902', published: true);
+        $this->createVariant($product, '低価格', 1500, stock: 0);
+        $this->createVariant($product, '高価格', 2000, stock: 0);
+
+        $response = $this->get(route('products.show', $product->slug));
+
+        $response->assertOk();
+        $response->assertSee('1,500円〜2,000円');
+        $response->assertSee('2,000円（税込）');
+    }
+
+    #[Test]
     public function product_detail_renders_description_html(): void
     {
         $product = $this->createProduct('HTML説明商品', '801', published: true);

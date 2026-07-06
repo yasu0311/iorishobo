@@ -85,14 +85,48 @@ class Product extends Model
 
     public function lowestPrice(): ?int
     {
-        if ($this->relationLoaded('activeVariants')) {
-            $price = $this->activeVariants->min('price');
+        $prices = $this->activeVariantPrices();
 
-            return $price !== null ? (int) $price : null;
+        return $prices?->min();
+    }
+
+    public function highestPrice(): ?int
+    {
+        $prices = $this->activeVariantPrices();
+
+        return $prices?->max();
+    }
+
+    public function formattedPrice(): ?string
+    {
+        $lowest = $this->lowestPrice();
+
+        if ($lowest === null) {
+            return null;
         }
 
-        $price = $this->activeVariants()->min('price');
+        $highest = $this->highestPrice();
 
-        return $price !== null ? (int) $price : null;
+        if ($highest === null || $lowest === $highest) {
+            return number_format($lowest).'円';
+        }
+
+        return number_format($lowest).'円〜'.number_format($highest).'円';
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, int>|null
+     */
+    private function activeVariantPrices(): ?\Illuminate\Support\Collection
+    {
+        $variants = $this->relationLoaded('activeVariants')
+            ? $this->activeVariants
+            : $this->activeVariants()->get(['price']);
+
+        if ($variants->isEmpty()) {
+            return null;
+        }
+
+        return $variants->pluck('price')->map(fn ($price) => (int) $price);
     }
 }

@@ -49,7 +49,7 @@
                                     </td>
                                     <td>{{ number_format($line->lineSubtotal) }}円</td>
                                     <td>
-                                        <form method="post" action="{{ route('cart.items.destroy', $line->item) }}">
+                                        <form method="post" action="{{ route('cart.items.destroy', $line->item) }}" onsubmit="return confirm('カートから削除しますか？')">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn--sm btn--ghost">削除</button>

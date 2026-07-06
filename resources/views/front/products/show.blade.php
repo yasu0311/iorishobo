@@ -38,10 +38,8 @@
         <div class="product-detail__info">
             <h1>{{ $product->name }}</h1>
 
-            @if ($product->lowestPrice() !== null)
-                <p class="product-detail__price">
-                    {{ number_format($product->lowestPrice()) }}円<span class="product-card__tax">（税込）</span>
-                </p>
+            @if ($product->formattedPrice() !== null)
+                <x-product-price :product="$product" class="product-detail__price" />
             @endif
 
             @if ($product->short_description)

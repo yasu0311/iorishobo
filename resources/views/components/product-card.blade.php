@@ -13,8 +13,6 @@
             @endif
         </div>
         <h3 class="product-card__name">{{ $product->name }}</h3>
-        @if ($product->lowestPrice() !== null)
-            <p class="product-card__price">{{ number_format($product->lowestPrice()) }}円<span class="product-card__tax">（税込）</span></p>
-        @endif
+        <x-product-price :product="$product" />
     </a>
 </article>
