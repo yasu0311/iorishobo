@@ -12,7 +12,7 @@
             <form id="payment-form">
                 <div id="payment-element"></div>
                 <p id="payment-message" role="alert"></p>
-                <button type="submit" id="submit" class="btn btn--primary">支払う</button>
+                <button type="submit" id="submit" class="btn btn--primary btn--block">注文を確定して支払う</button>
             </form>
         @else
             <x-alert type="error">Stripe の設定がありません。管理者にお問い合わせください。</x-alert>

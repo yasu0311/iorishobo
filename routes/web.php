@@ -59,7 +59,9 @@ Route::post('/cart/coupon', [CartController::class, 'applyCoupon'])->name('cart.
 Route::delete('/cart/coupon', [CartController::class, 'removeCoupon'])->name('cart.coupon.remove');
 
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout/confirm', [CheckoutController::class, 'confirm'])->name('checkout.confirm');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::post('/checkout/back', [CheckoutController::class, 'back'])->name('checkout.back');
 Route::get('/checkout/stripe/{order}', [CheckoutController::class, 'stripe'])->name('checkout.stripe');
 Route::get('/checkout/complete', [CheckoutController::class, 'complete'])->name('checkout.complete');
 

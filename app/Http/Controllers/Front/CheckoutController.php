@@ -21,7 +21,7 @@ class CheckoutController extends Controller
         private readonly CheckoutService $checkoutService,
     ) {}
 
-    public function index(): View|RedirectResponse
+    public function index(Request $request): View|RedirectResponse
     {
         $summary = $this->checkoutService->cartSummary();
 
@@ -33,6 +33,13 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->withErrors([
                 'cart' => '在庫不足の商品があるためチェックアウトできません。',
             ]);
+        }
+
+        if ($request->session()->pull('checkout_came_from_back', false)) {
+            $input = $request->session()->get('checkout_input', []);
+        } else {
+            $request->session()->forget('checkout_input');
+            $input = [];
         }
 
         $shippingMethods = ShippingMethod::query()
@@ -49,22 +56,69 @@ class CheckoutController extends Controller
             'shippingMethods',
             'defaultShipping',
             'customer',
+            'input',
         ));
     }
 
-    public function store(CheckoutStoreRequest $request): RedirectResponse
+    public function confirm(CheckoutStoreRequest $request): View|RedirectResponse
     {
+        $summary = $this->checkoutService->cartSummary();
+
+        if ($summary->isEmpty()) {
+            return redirect()->route('cart.index')->with('status', 'カートが空です。');
+        }
+
+        if (! $summary->canCheckout) {
+            return redirect()->route('cart.index')->withErrors([
+                'cart' => '在庫不足の商品があるためチェックアウトできません。',
+            ]);
+        }
+
+        $input = $request->validated();
+        $request->session()->put('checkout_input', $input);
+
+        $shippingMethod = ShippingMethod::query()
+            ->whereKey($input['shipping_method_id'])
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $paymentMethod = PaymentMethod::from($input['payment_method']);
+
+        $amounts = $this->checkoutService->previewAmounts($summary, $shippingMethod, $paymentMethod);
+
+        $usesBuyerAddress = ! filled($input['shipping_name'] ?? null);
+
+        return view('front.checkout.confirm', compact(
+            'input',
+            'summary',
+            'shippingMethod',
+            'paymentMethod',
+            'amounts',
+            'usesBuyerAddress',
+        ));
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $input = $request->session()->get('checkout_input', []);
+
+        if ($input === []) {
+            return redirect()->route('checkout.index')
+                ->withErrors(['cart' => '入力内容が見つかりません。もう一度お試しください。']);
+        }
+
         $device = $request->userAgent() && preg_match('/mobile|android|iphone/i', $request->userAgent())
             ? DeviceType::Mobile
             : DeviceType::Pc;
 
         $result = $this->checkoutService->placeOrder(
-            $request->validated(),
+            $input,
             Auth::user(),
             $device,
         );
 
         $order = $result['order'];
+        $request->session()->forget('checkout_input');
         session(['checkout_order_id' => $order->id]);
 
         if ($result['redirect'] === 'stripe') {
@@ -74,6 +128,13 @@ class CheckoutController extends Controller
         }
 
         return redirect()->route('checkout.complete');
+    }
+
+    public function back(Request $request): RedirectResponse
+    {
+        $request->session()->put('checkout_came_from_back', true);
+
+        return redirect()->route('checkout.index');
     }
 
     public function stripe(Order $order): View|RedirectResponse

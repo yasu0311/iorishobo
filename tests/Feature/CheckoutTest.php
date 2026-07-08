@@ -84,7 +84,7 @@ class CheckoutTest extends TestCase
             'quantity' => 2,
         ]);
 
-        $response = $this->actingAs($user)->post(route('checkout.store'), $this->checkoutPayload('cod'));
+        $response = $this->submitCheckout($user, $this->checkoutPayload('cod'));
 
         $response->assertRedirect(route('checkout.complete'));
 
@@ -116,7 +116,7 @@ class CheckoutTest extends TestCase
             'quantity' => 1,
         ]);
 
-        $this->actingAs($user)->post(route('checkout.store'), $this->checkoutPayload('bank_transfer'))
+        $this->submitCheckout($user, $this->checkoutPayload('bank_transfer'))
             ->assertRedirect(route('checkout.complete'));
 
         Mail::assertSent(OrderConfirmationMail::class);
@@ -164,7 +164,7 @@ class CheckoutTest extends TestCase
             $mock->shouldReceive('createPaymentIntent')->once()->andReturn($paymentIntent);
         });
 
-        $this->actingAs($user)->post(route('checkout.store'), $this->checkoutPayload('stripe'))
+        $this->submitCheckout($user, $this->checkoutPayload('stripe'))
             ->assertRedirect(route('checkout.stripe', Order::query()->first()));
 
         $order = Order::query()->first();
@@ -203,7 +203,7 @@ class CheckoutTest extends TestCase
             'quantity' => 1,
         ]);
 
-        $this->actingAs($user)->post(route('checkout.store'), $this->checkoutPayload('cod'))
+        $this->submitCheckout($user, $this->checkoutPayload('cod'))
             ->assertRedirect(route('checkout.complete'));
 
         $order = Order::query()->first();
@@ -231,7 +231,7 @@ class CheckoutTest extends TestCase
             'shipping_address_line1' => '大阪市北区1-1',
         ]);
 
-        $this->actingAs($user)->post(route('checkout.store'), $payload)
+        $this->submitCheckout($user, $payload)
             ->assertRedirect(route('checkout.complete'));
 
         $order = Order::query()->first();
@@ -254,6 +254,82 @@ class CheckoutTest extends TestCase
 
         $this->actingAs($user)->get(route('checkout.index'))
             ->assertRedirect(route('cart.index'));
+    }
+
+    #[Test]
+    public function checkout_confirm_shows_amount_breakdown(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 2,
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $this->checkoutPayload('cod'))
+            ->assertOk()
+            ->assertSee('ご注文内容の確認')
+            ->assertSee('2,200円')
+            ->assertSee('500円')
+            ->assertSee('代引手数料')
+            ->assertSee('3,030円');
+    }
+
+    #[Test]
+    public function checkout_confirm_validates_input(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.confirm'), [])
+            ->assertSessionHasErrors(['buyer_name', 'buyer_email', 'shipping_method_id', 'payment_method']);
+    }
+
+    #[Test]
+    public function checkout_store_requires_prior_confirmation(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('checkout.store'))
+            ->assertRedirect(route('checkout.index'))
+            ->assertSessionHasErrors('cart');
+    }
+
+    #[Test]
+    public function checkout_back_restores_input(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $payload = $this->checkoutPayload('cod');
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $payload);
+
+        $this->actingAs($user)->post(route('checkout.back'))
+            ->assertRedirect(route('checkout.index'));
+
+        $this->actingAs($user)->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('value="テスト太郎"', false)
+            ->assertSee('value="buyer@example.com"', false);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function submitCheckout(User $user, array $payload): \Illuminate\Testing\TestResponse
+    {
+        $this->actingAs($user)->post(route('checkout.confirm'), $payload)->assertOk();
+
+        return $this->actingAs($user)->post(route('checkout.store'));
     }
 
     /**
