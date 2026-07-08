@@ -28,8 +28,6 @@
                             <td>{{ number_format($order->total) }}円</td>
                             <td>
                                 <a href="{{ route('mypage.orders.show', $order) }}">詳細</a>
-                                ·
-                                <a href="{{ route('mypage.orders.receipt', $order) }}">領収書</a>
                             </td>
                         </tr>
                     @endforeach

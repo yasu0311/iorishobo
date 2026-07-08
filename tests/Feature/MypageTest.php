@@ -78,21 +78,10 @@ class MypageTest extends TestCase
     #[Test]
     public function receipt_shows_tax_and_invoice_number(): void
     {
-        config(['shop.invoice_registration_number' => 'T1234567890123']);
-
         $user = User::factory()->create();
-        $order = $this->createOrderForUser($user, '5555555555', [
-            'total' => 3300,
-            'tax_amount' => 300,
-        ]);
+        $order = $this->createOrderForUser($user, '5555555555');
 
-        $response = $this->actingAs($user)->get(route('mypage.orders.receipt', $order));
-
-        $response->assertOk();
-        $response->assertSee('3,300円');
-        $response->assertSee('うち消費税（10%）');
-        $response->assertSee('300円');
-        $response->assertSee('T1234567890123');
+        $this->actingAs($user)->get(route('mypage.orders.receipt', $order))->assertNotFound();
     }
 
     private function createOrderForUser(User $user, string $orderNumber, array $overrides = []): Order

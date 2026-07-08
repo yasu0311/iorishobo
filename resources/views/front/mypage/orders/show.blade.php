@@ -42,5 +42,4 @@
         </table>
     </div>
 
-    <p><a href="{{ route('mypage.orders.receipt', $order) }}" class="btn btn--secondary">領収書を表示</a></p>
 @endsection

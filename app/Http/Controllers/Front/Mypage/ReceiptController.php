@@ -15,8 +15,7 @@ class ReceiptController extends Controller
     {
         $this->authorize('view', $order);
 
-        $order->load('items');
-
-        return view('front.mypage.receipt', compact('order'));
+        // 領収書は書面で同封するため、マイページ上では表示しません。
+        abort(404);
     }
 }

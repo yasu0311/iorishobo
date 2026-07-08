@@ -46,15 +46,13 @@
                 <p>{{ strip_tags($product->short_description) }}</p>
             @endif
 
-            <h2>オプション</h2>
-
             @if ($product->activeVariants->isEmpty())
-                <p class="text-muted">現在お取り扱いのオプションはありません。</p>
+                <p class="text-muted">現在この商品はご購入いただけません。</p>
             @elseif ($product->hasPurchasableVariant())
                 <form method="post" action="{{ route('cart.items.store') }}" class="panel">
                     @csrf
                     <fieldset class="variant-options" style="border: none; margin: 0; padding: 0;">
-                        <legend class="sr-only">バリアントを選択</legend>
+                        <legend class="sr-only">種類を選択</legend>
                         @foreach ($product->activeVariants as $variant)
                             <label>
                                 <input
