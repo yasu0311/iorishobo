@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\OrderBulkAction;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -9,6 +10,8 @@ use App\Enums\ShippingExportFormat;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\ShippingMethod;
+use App\Services\Order\BulkActionResult;
+use App\Services\Order\OrderBulkActionService;
 use App\Services\Order\OrderManagementService;
 use App\Services\Order\OrderShippingExportService;
 use App\Services\Order\RefundService;
@@ -23,6 +26,7 @@ class OrderController extends Controller
 {
     public function __construct(
         private readonly OrderManagementService $orderManagementService,
+        private readonly OrderBulkActionService $orderBulkActionService,
         private readonly OrderShippingExportService $orderShippingExportService,
         private readonly RefundService $refundService,
         private readonly WatchlistService $watchlistService,
@@ -62,6 +66,7 @@ class OrderController extends Controller
             'paymentMethods' => PaymentMethod::cases(),
             'shippingMethods' => ShippingMethod::query()->orderBy('sort_order')->get(),
             'exportFormats' => ShippingExportFormat::cases(),
+            'bulkActions' => OrderBulkAction::cases(),
         ]);
     }
 
@@ -97,6 +102,63 @@ class OrderController extends Controller
             'order' => $order,
             'watchlistMatches' => $this->watchlistService->matchingForOrder($order),
         ]);
+    }
+
+    public function saveTrackingNumbers(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'tracking_numbers' => 'nullable|array',
+            'tracking_numbers.*' => 'nullable|string|max:100',
+        ]);
+
+        $result = $this->orderBulkActionService->saveTrackingNumbers(
+            $validated['tracking_numbers'] ?? [],
+        );
+
+        return redirect()
+            ->route('admin.orders.index', $this->listFilters($request))
+            ->with('status', $this->bulkStatusMessage($result, '追跡番号を保存'));
+    }
+
+    public function bulkAction(Request $request): RedirectResponse|View
+    {
+        $validated = $request->validate([
+            'order_ids' => 'required|array|min:1',
+            'order_ids.*' => 'integer|exists:orders,id',
+            'bulk_action' => 'required|in:'.implode(',', array_column(OrderBulkAction::cases(), 'value')),
+        ]);
+
+        $action = OrderBulkAction::from($validated['bulk_action']);
+        $result = $this->orderBulkActionService->execute($action, $validated['order_ids']);
+
+        if ($action === OrderBulkAction::PrintReceipt) {
+            if ($result->succeededCount() === 0) {
+                return redirect()
+                    ->route('admin.orders.index', $this->listFilters($request))
+                    ->withErrors(['bulk_action' => $this->bulkStatusMessage($result, $action->label())]);
+            }
+
+            $orders = Order::query()
+                ->with('items')
+                ->whereIn('id', collect($result->succeeded)->pluck('id'))
+                ->orderBy('ordered_at')
+                ->get();
+
+            return view('admin.orders.print-receipts', [
+                'orders' => $orders,
+                'bulkStatus' => $result->skippedCount() > 0
+                    ? $this->bulkStatusMessage($result, $action->label())
+                    : null,
+            ]);
+        }
+
+        $flashKey = $result->skippedCount() > 0 && $result->succeededCount() === 0
+            ? 'bulk_warning'
+            : 'status';
+
+        return redirect()
+            ->route('admin.orders.index', $this->listFilters($request))
+            ->with($flashKey, $this->bulkStatusMessage($result, $action->label()));
     }
 
     public function markPaid(Order $order): RedirectResponse
@@ -164,5 +226,28 @@ class OrderController extends Controller
         return redirect()
             ->route('admin.orders.show', $order)
             ->with('status', '返金を記録しました。');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function listFilters(Request $request): array
+    {
+        return $request->only(['q', 'payment_status', 'shipping_status', 'payment_method']);
+    }
+
+    private function bulkStatusMessage(BulkActionResult $result, string $actionLabel): string
+    {
+        $message = "{$actionLabel}: {$result->succeededCount()}件を処理しました。";
+
+        if ($result->skippedCount() === 0) {
+            return $message;
+        }
+
+        $details = collect($result->skipped)
+            ->map(fn (array $skipped): string => $skipped['order']->order_number.': '.$skipped['reason'])
+            ->join(' / ');
+
+        return $message." {$result->skippedCount()}件をスキップしました。（{$details}）";
     }
 }

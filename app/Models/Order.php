@@ -169,6 +169,24 @@ class Order extends Model
         };
     }
 
+    public function canUpdateTrackingNumber(): bool
+    {
+        return $this->isActive()
+            && $this->shipping_status === OrderStatus::Unshipped;
+    }
+
+    public function canPrintReceipt(): bool
+    {
+        if (! $this->isActive()) {
+            return false;
+        }
+
+        return match ($this->payment_method) {
+            PaymentMethod::Cod, PaymentMethod::AmazonPay => true,
+            default => $this->payment_status === PaymentStatus::Paid,
+        };
+    }
+
     public function canCancel(): bool
     {
         return $this->isActive() && $this->shipping_status !== OrderStatus::Shipped;

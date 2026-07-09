@@ -17,6 +17,8 @@ Route::middleware(['auth', 'verified', 'admin'])
 
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/export/shipping', [OrderController::class, 'exportShipping'])->name('orders.export-shipping');
+        Route::post('/orders/save-tracking-numbers', [OrderController::class, 'saveTrackingNumbers'])->name('orders.save-tracking-numbers');
+        Route::post('/orders/bulk-action', [OrderController::class, 'bulkAction'])->name('orders.bulk-action');
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::post('/orders/{order}/mark-paid', [OrderController::class, 'markPaid'])->name('orders.mark-paid');
         Route::post('/orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');

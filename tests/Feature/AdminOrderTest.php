@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Enums\OrderBulkAction;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Mail\OrderPaymentReceivedMail;
 use App\Mail\OrderShippedMail;
 use App\Models\Category;
 use App\Models\Order;
@@ -223,6 +225,169 @@ class AdminOrderTest extends TestCase
             'amount' => 3300,
             'stripe_refund_id' => 're_test_123',
         ]);
+    }
+
+    #[Test]
+    public function admin_can_save_tracking_numbers_from_order_list(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630888',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.save-tracking-numbers'), [
+                'tracking_numbers' => [
+                    $order->id => 'TRACK-999',
+                ],
+            ])
+            ->assertRedirect(route('admin.orders.index'))
+            ->assertSessionHas('status');
+
+        $this->assertSame('TRACK-999', $order->fresh()->tracking_number);
+    }
+
+    #[Test]
+    public function admin_can_bulk_mark_orders_as_paid(): void
+    {
+        $paidTarget = $this->createOrder([
+            'order_number' => '20260630801',
+            'payment_method' => PaymentMethod::BankTransfer,
+            'payment_status' => PaymentStatus::Pending,
+        ], quantity: 2);
+
+        $alreadyPaid = $this->createOrder([
+            'order_number' => '20260630802',
+            'payment_method' => PaymentMethod::Stripe,
+            'payment_status' => PaymentStatus::Paid,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.bulk-action'), [
+                'order_ids' => [$paidTarget->id, $alreadyPaid->id],
+                'bulk_action' => OrderBulkAction::MarkPaidOnly->value,
+            ])
+            ->assertRedirect(route('admin.orders.index'))
+            ->assertSessionHas('status');
+
+        $this->assertSame(PaymentStatus::Paid, $paidTarget->fresh()->payment_status);
+        $this->assertSame(7, $this->variant->fresh()->stock);
+    }
+
+    #[Test]
+    public function admin_can_bulk_ship_without_mail(): void
+    {
+        Mail::fake();
+
+        $order = $this->createOrder([
+            'order_number' => '20260630803',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+            'tracking_number' => 'TRACK-BULK-01',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.bulk-action'), [
+                'order_ids' => [$order->id],
+                'bulk_action' => OrderBulkAction::ShipOnly->value,
+            ])
+            ->assertRedirect(route('admin.orders.index'))
+            ->assertSessionHas('status');
+
+        $order->refresh();
+        $this->assertSame(OrderStatus::Shipped, $order->shipping_status);
+        $this->assertSame('TRACK-BULK-01', $order->tracking_number);
+        Mail::assertNothingSent();
+    }
+
+    #[Test]
+    public function admin_can_bulk_ship_with_mail(): void
+    {
+        Mail::fake();
+
+        $order = $this->createOrder([
+            'order_number' => '20260630804',
+            'buyer_email' => 'bulk-ship@example.com',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.bulk-action'), [
+                'order_ids' => [$order->id],
+                'bulk_action' => OrderBulkAction::ShipWithMail->value,
+            ])
+            ->assertRedirect(route('admin.orders.index'))
+            ->assertSessionHas('status');
+
+        Mail::assertSent(OrderShippedMail::class, function ($mail) {
+            return $mail->hasTo('bulk-ship@example.com');
+        });
+    }
+
+    #[Test]
+    public function admin_can_bulk_mark_paid_with_mail(): void
+    {
+        Mail::fake();
+
+        $order = $this->createOrder([
+            'order_number' => '20260630805',
+            'buyer_email' => 'bulk-paid@example.com',
+            'payment_method' => PaymentMethod::BankTransfer,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.bulk-action'), [
+                'order_ids' => [$order->id],
+                'bulk_action' => OrderBulkAction::MarkPaidWithMail->value,
+            ])
+            ->assertRedirect(route('admin.orders.index'))
+            ->assertSessionHas('status');
+
+        $this->assertSame(PaymentStatus::Paid, $order->fresh()->payment_status);
+        Mail::assertSent(OrderPaymentReceivedMail::class, function ($mail) {
+            return $mail->hasTo('bulk-paid@example.com');
+        });
+    }
+
+    #[Test]
+    public function admin_can_print_receipt_for_cod_order_before_payment(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630806',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.bulk-action'), [
+                'order_ids' => [$order->id],
+                'bulk_action' => OrderBulkAction::PrintReceipt->value,
+            ])
+            ->assertOk()
+            ->assertSee('納品書兼領収書')
+            ->assertSee('20260630806')
+            ->assertSee('テスト商品');
+    }
+
+    #[Test]
+    public function bank_transfer_pending_order_cannot_print_receipt(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630807',
+            'payment_method' => PaymentMethod::BankTransfer,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.bulk-action'), [
+                'order_ids' => [$order->id],
+                'bulk_action' => OrderBulkAction::PrintReceipt->value,
+            ])
+            ->assertRedirect(route('admin.orders.index'))
+            ->assertSessionHasErrors('bulk_action');
     }
 
     #[Test]

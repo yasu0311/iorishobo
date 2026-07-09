@@ -175,8 +175,12 @@
                 </label>
                 <button type="submit" onclick="return confirm('発送済みにしますか？')">発送処理</button>
             </form>
-        @elseif ($order->isActive() && $order->shipping_status === \App\Enums\OrderStatus::Unshipped && $order->payment_method === \App\Enums\PaymentMethod::BankTransfer && $order->payment_status === \App\Enums\PaymentStatus::Pending)
-            <p class="notice">振込未入金のため発送できません。先に入金確認してください。</p>
+        @elseif ($order->isActive() && $order->shipping_status === \App\Enums\OrderStatus::Unshipped && $order->payment_status === \App\Enums\PaymentStatus::Pending)
+            @if ($order->payment_method === \App\Enums\PaymentMethod::BankTransfer)
+                <p class="notice">振込未入金のため発送できません。先に入金確認してください。</p>
+            @elseif ($order->payment_method === \App\Enums\PaymentMethod::Stripe)
+                <p class="notice">カード決済が未入金のため発送できません。先に入金確認してください。</p>
+            @endif
         @endif
 
         @if ($order->canCancel())

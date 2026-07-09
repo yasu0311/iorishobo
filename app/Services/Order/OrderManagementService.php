@@ -4,6 +4,7 @@ namespace App\Services\Order;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Mail\OrderPaymentReceivedMail;
 use App\Mail\OrderShippedMail;
 use App\Models\Order;
 use App\Models\User;
@@ -19,7 +20,7 @@ class OrderManagementService
         private readonly RefundService $refundService,
     ) {}
 
-    public function markAsPaid(Order $order): void
+    public function markAsPaid(Order $order, bool $sendMail = false): void
     {
         if (! $order->canMarkAsPaid()) {
             throw ValidationException::withMessages([
@@ -36,30 +37,42 @@ class OrderManagementService
                 $this->inventoryService->decrementForOrder($order->fresh(['items.productVariant.product']));
             }
         });
+
+        if ($sendMail) {
+            $order = $order->fresh(['items']);
+            Mail::to($order->buyer_email)->send(new OrderPaymentReceivedMail($order));
+        }
     }
 
-    public function ship(Order $order, ?string $trackingNumber): void
+    public function ship(Order $order, ?string $trackingNumber = null, bool $sendMail = true): void
     {
         if (! $order->canShip()) {
-            $message = $order->payment_method === \App\Enums\PaymentMethod::BankTransfer
-                && $order->payment_status === PaymentStatus::Pending
-                ? '振込未入金の注文は発送できません。'
-                : 'この注文は発送できません。';
+            $message = match (true) {
+                $order->payment_method === \App\Enums\PaymentMethod::BankTransfer
+                    && $order->payment_status === PaymentStatus::Pending => '振込未入金の注文は発送できません。',
+                $order->payment_method === \App\Enums\PaymentMethod::Stripe
+                    && $order->payment_status === PaymentStatus::Pending => 'カード決済が未入金のため発送できません。入金確認後に発送してください。',
+                default => 'この注文は発送できません。',
+            };
 
             throw ValidationException::withMessages([
                 'order' => $message,
             ]);
         }
 
+        $tracking = filled($trackingNumber)
+            ? $trackingNumber
+            : $order->tracking_number;
+
         $order->update([
             'shipping_status' => OrderStatus::Shipped,
             'shipped_at' => now(),
-            'tracking_number' => filled($trackingNumber) ? $trackingNumber : null,
+            'tracking_number' => filled($tracking) ? $tracking : null,
         ]);
 
-        $order = $order->fresh(['items']);
-
-        Mail::to($order->buyer_email)->send(new OrderShippedMail($order));
+        if ($sendMail) {
+            Mail::to($order->fresh(['items'])->buyer_email)->send(new OrderShippedMail($order->fresh(['items'])));
+        }
     }
 
     public function cancel(Order $order, string $reason, bool $refundStripe, User $admin): void
