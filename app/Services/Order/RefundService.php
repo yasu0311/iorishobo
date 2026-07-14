@@ -80,7 +80,10 @@ class RefundService
             ]);
 
             if ($restoreInventory) {
-                $this->inventoryService->restoreForOrder($order->fresh(['items.productVariant.product']));
+                $this->inventoryService->restoreForRefund(
+                    $order->fresh(['items.productVariant.product']),
+                    $amount,
+                );
             }
 
             return $refund;

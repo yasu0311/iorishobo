@@ -191,4 +191,17 @@ class Order extends Model
     {
         return $this->isActive() && $this->shipping_status !== OrderStatus::Shipped;
     }
+
+    public function canEditDetails(): bool
+    {
+        if ($this->payment_status === PaymentStatus::Cancelled) {
+            return false;
+        }
+
+        if ($this->payment_status === PaymentStatus::Refunded && $this->refundableAmount() <= 0) {
+            return false;
+        }
+
+        return true;
+    }
 }

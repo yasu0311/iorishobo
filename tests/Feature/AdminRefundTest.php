@@ -161,6 +161,28 @@ class AdminRefundTest extends TestCase
         $this->assertSame(5, $this->variant->fresh()->stock);
     }
 
+    #[Test]
+    public function partial_refund_restore_inventory_for_single_line_order(): void
+    {
+        $order = $this->createPaidOrder([
+            'order_number' => '20260640005',
+            'total' => 3300,
+            'subtotal' => 3300,
+        ], quantity: 3);
+
+        $this->variant->update(['stock' => 2]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.refunds.store', $order), [
+                'amount' => 1100,
+                'reason' => '1冊分返金',
+                'restore_inventory' => '1',
+            ])
+            ->assertRedirect(route('admin.orders.show', $order));
+
+        $this->assertSame(3, $this->variant->fresh()->stock);
+    }
+
     /**
      * @param  array<string, mixed>  $overrides
      */

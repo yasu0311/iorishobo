@@ -319,6 +319,28 @@ button:hover,
   margin-bottom: 1rem;
 }
 
+.order-edit-form__toolbar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.order-edit-form:not(.is-editing) .order-edit-form__fields {
+  display: none;
+}
+
+.order-edit-form.is-editing .order-edit-form__view {
+  display: none;
+}
+
+.order-edit-form__cancel {
+  background: #64748b;
+}
+
+.order-edit-form__cancel:hover {
+  background: #475569;
+}
+
 .form-field label,
 .form-field > legend {
   display: block;

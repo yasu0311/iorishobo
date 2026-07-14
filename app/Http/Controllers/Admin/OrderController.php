@@ -8,7 +8,9 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\ShippingExportFormat;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateOrderRequest;
 use App\Models\Order;
+use App\Models\ProductVariant;
 use App\Models\ShippingMethod;
 use App\Services\Order\BulkActionResult;
 use App\Services\Order\OrderBulkActionService;
@@ -101,7 +103,33 @@ class OrderController extends Controller
         return view('admin.orders.show', [
             'order' => $order,
             'watchlistMatches' => $this->watchlistService->matchingForOrder($order),
+            'editing' => session()->has('errors'),
+            'productVariants' => ProductVariant::query()
+                ->with('product.category')
+                ->where('is_active', true)
+                ->whereHas('product', fn ($query) => $query->where('is_published', true))
+                ->orderBy('sort_order')
+                ->get(),
         ]);
+    }
+
+    public function update(UpdateOrderRequest $request, Order $order): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        $this->orderManagementService->saveFromAdmin($order, $validated, $request->user());
+
+        if (filled($validated['watchlist_reason'] ?? null)) {
+            $this->watchlistService->registerFromOrder(
+                $order->fresh(),
+                $validated['watchlist_reason'],
+                $request->user(),
+            );
+        }
+
+        return redirect()
+            ->route('admin.orders.show', $order)
+            ->with('status', '注文情報を更新しました。');
     }
 
     public function saveTrackingNumbers(Request $request): RedirectResponse
