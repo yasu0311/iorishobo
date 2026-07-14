@@ -7,7 +7,7 @@
     <p class="text-muted">
         内容をご確認のうえ、
         @if ($paymentMethod->value === 'stripe')
-            「決済画面へ進む」を押してください。
+            「決済画面に進む」を押してください。
         @else
             「注文を確定する」を押してください。
         @endif
@@ -148,7 +148,7 @@
                 <form method="post" action="{{ route('checkout.store') }}">
                     @csrf
                     <button type="submit" class="btn btn--primary btn--block">
-                        {{ $paymentMethod->value === 'stripe' ? '決済画面へ進む' : '注文を確定する' }}
+                        {{ $paymentMethod->value === 'stripe' ? '決済画面に進む' : '注文を確定する' }}
                     </button>
                 </form>
                 <form method="post" action="{{ route('checkout.back') }}">
@@ -192,7 +192,7 @@
                 <form method="post" action="{{ route('checkout.store') }}">
                     @csrf
                     <button type="submit" class="btn btn--primary btn--block">
-                        {{ $paymentMethod->value === 'stripe' ? '決済画面へ進む' : '注文を確定する' }}
+                        {{ $paymentMethod->value === 'stripe' ? '決済画面に進む' : '注文を確定する' }}
                     </button>
                 </form>
                 <form method="post" action="{{ route('checkout.back') }}">

@@ -37,6 +37,17 @@ class StripeWebhookController extends Controller
             $this->checkoutService->markOrderPaidFromStripe($paymentIntent->id);
         }
 
+        if ($event->type === 'checkout.session.completed') {
+            $session = $event->data->object;
+            $paymentIntentId = is_string($session->payment_intent)
+                ? $session->payment_intent
+                : ($session->payment_intent->id ?? null);
+
+            if (is_string($paymentIntentId) && $paymentIntentId !== '') {
+                $this->checkoutService->markOrderPaidFromStripe($paymentIntentId);
+            }
+        }
+
         return response()->json(['received' => true]);
     }
 }

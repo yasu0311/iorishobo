@@ -25,7 +25,15 @@
         @endif
 
         @if ($order->payment_method->value === 'stripe' && $order->payment_status->value === 'pending')
-            <x-alert type="error">決済処理中です。しばらくお待ちください。</x-alert>
+            <x-alert type="error">
+                決済が完了していません。下のボタンからお支払いを再開できます。
+            </x-alert>
+            <div class="cart-actions">
+                <form method="post" action="{{ route('checkout.resume', $order) }}">
+                    @csrf
+                    <button type="submit" class="btn btn--primary">お支払いを再開する</button>
+                </form>
+            </div>
         @endif
 
         <h2>ご注文内容</h2>

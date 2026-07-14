@@ -122,9 +122,7 @@ class CheckoutController extends Controller
         session(['checkout_order_id' => $order->id]);
 
         if ($result['redirect'] === 'stripe') {
-            session(['stripe_client_secret' => $result['client_secret']]);
-
-            return redirect()->route('checkout.stripe', $order);
+            return redirect()->away($result['checkout_url']);
         }
 
         return redirect()->route('checkout.complete');
@@ -137,7 +135,25 @@ class CheckoutController extends Controller
         return redirect()->route('checkout.index');
     }
 
-    public function stripe(Order $order): View|RedirectResponse
+    public function cancel(Order $order): View|RedirectResponse
+    {
+        if (session('checkout_order_id') !== $order->id) {
+            abort(403);
+        }
+
+        if ($order->payment_method !== PaymentMethod::Stripe) {
+            return redirect()->route('checkout.complete');
+        }
+
+        if ($order->payment_status === PaymentStatus::Paid
+            || $this->checkoutService->syncStripePaymentStatusIfSucceeded($order)) {
+            return redirect()->route('checkout.complete');
+        }
+
+        return view('front.checkout.cancel', compact('order'));
+    }
+
+    public function resume(Order $order): RedirectResponse
     {
         if (session('checkout_order_id') !== $order->id) {
             abort(403);
@@ -147,13 +163,11 @@ class CheckoutController extends Controller
             return redirect()->route('checkout.complete');
         }
 
-        $clientSecret = session('stripe_client_secret');
-
-        if ($clientSecret === null) {
-            abort(404);
+        if ($this->checkoutService->syncStripePaymentStatusIfSucceeded($order)) {
+            return redirect()->route('checkout.complete');
         }
 
-        return view('front.checkout.stripe', compact('order', 'clientSecret'));
+        return redirect()->away($this->checkoutService->resumeStripeCheckout($order));
     }
 
     public function complete(Request $request): View|RedirectResponse
@@ -171,7 +185,14 @@ class CheckoutController extends Controller
         }
 
         if ($order->payment_method === PaymentMethod::Stripe && $order->payment_status === PaymentStatus::Pending) {
-            return redirect()->route('checkout.stripe', $order);
+            $sessionId = $request->query('session_id');
+
+            if (is_string($sessionId) && $sessionId !== '') {
+                $this->checkoutService->syncOrderFromCheckoutSession($sessionId);
+                $order = $order->fresh(['items']);
+            } elseif ($this->checkoutService->syncStripePaymentStatusIfSucceeded($order)) {
+                $order = $order->fresh(['items']);
+            }
         }
 
         return view('front.checkout.complete', compact('order'));

@@ -421,25 +421,6 @@
   margin: 1rem 0;
 }
 
-/* Stripe 決済 */
-.stripe-payment {
-  max-width: 480px;
-}
-
-.stripe-payment #payment-element {
-  margin: 1rem 0;
-  padding: 1rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-}
-
-.stripe-payment #payment-message {
-  color: var(--color-danger);
-  font-size: 0.875rem;
-  min-height: 1.25rem;
-}
-
 @media (min-width: 900px) {
   .cart-layout {
     grid-template-columns: 1fr 300px;

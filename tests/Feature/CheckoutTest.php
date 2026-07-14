@@ -21,7 +21,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
-use Stripe\PaymentIntent;
 use Tests\TestCase;
 
 class CheckoutTest extends TestCase
@@ -154,18 +153,19 @@ class CheckoutTest extends TestCase
             'quantity' => 3,
         ]);
 
-        $paymentIntent = PaymentIntent::constructFrom([
-            'id' => 'pi_test_checkout_1',
-            'object' => 'payment_intent',
-            'client_secret' => 'cs_test_secret',
+        $session = \Stripe\Checkout\Session::constructFrom([
+            'id' => 'cs_test_checkout_1',
+            'object' => 'checkout.session',
+            'url' => 'https://checkout.stripe.com/c/pay/cs_test_checkout_1',
+            'payment_intent' => 'pi_test_checkout_1',
         ]);
 
-        $this->mock(StripeService::class, function ($mock) use ($paymentIntent) {
-            $mock->shouldReceive('createPaymentIntent')->once()->andReturn($paymentIntent);
+        $this->mock(StripeService::class, function ($mock) use ($session) {
+            $mock->shouldReceive('createCheckoutSession')->once()->andReturn($session);
         });
 
         $this->submitCheckout($user, $this->checkoutPayload('stripe'))
-            ->assertRedirect(route('checkout.stripe', Order::query()->first()));
+            ->assertRedirect('https://checkout.stripe.com/c/pay/cs_test_checkout_1');
 
         $order = Order::query()->first();
         $this->assertSame(10, $this->variant->fresh()->stock);

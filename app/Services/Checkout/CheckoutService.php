@@ -39,7 +39,7 @@ class CheckoutService
 
     /**
      * @param  array<string, mixed>  $input
-     * @return array{order: Order, redirect: string}
+     * @return array{order: Order, redirect: string, checkout_url?: string}
      */
     public function placeOrder(array $input, ?User $user = null, ?DeviceType $device = null): array
     {
@@ -162,13 +162,17 @@ class CheckoutService
         });
 
         if ($paymentMethod === PaymentMethod::Stripe) {
-            $paymentIntent = $this->stripeService->createPaymentIntent($order);
-            $order->update(['stripe_payment_intent_id' => $paymentIntent->id]);
+            $session = $this->stripeService->createCheckoutSession($order);
+            $paymentIntentId = $this->paymentIntentIdFromCheckoutSession($session);
+
+            if ($paymentIntentId !== null) {
+                $order->update(['stripe_payment_intent_id' => $paymentIntentId]);
+            }
 
             return [
                 'order' => $order->fresh(),
                 'redirect' => 'stripe',
-                'client_secret' => $paymentIntent->client_secret,
+                'checkout_url' => $session->url,
             ];
         }
 
@@ -184,6 +188,61 @@ class CheckoutService
         ];
     }
 
+    public function resumeStripeCheckout(Order $order): string
+    {
+        $session = $this->stripeService->createCheckoutSession($order);
+        $paymentIntentId = $this->paymentIntentIdFromCheckoutSession($session);
+
+        if ($paymentIntentId !== null && $order->stripe_payment_intent_id === null) {
+            $order->update(['stripe_payment_intent_id' => $paymentIntentId]);
+        }
+
+        return $session->url;
+    }
+
+    public function syncOrderFromCheckoutSession(string $sessionId): bool
+    {
+        $session = $this->stripeService->retrieveCheckoutSession($sessionId);
+        $order = $this->findOrderForCheckoutSession($session);
+
+        if ($order === null) {
+            return false;
+        }
+
+        $paymentIntentId = $this->paymentIntentIdFromCheckoutSession($session);
+
+        if ($paymentIntentId !== null && $order->stripe_payment_intent_id !== $paymentIntentId) {
+            $order->update(['stripe_payment_intent_id' => $paymentIntentId]);
+        }
+
+        if ($session->payment_status === 'paid' && $paymentIntentId !== null) {
+            $this->markOrderPaidFromStripe($paymentIntentId);
+
+            return true;
+        }
+
+        return $this->syncStripePaymentStatusIfSucceeded($order->fresh());
+    }
+
+    public function syncStripePaymentStatusIfSucceeded(Order $order): bool
+    {
+        if ($order->payment_method !== PaymentMethod::Stripe
+            || $order->payment_status !== PaymentStatus::Pending
+            || $order->stripe_payment_intent_id === null) {
+            return false;
+        }
+
+        $paymentIntent = $this->stripeService->retrievePaymentIntent($order->stripe_payment_intent_id);
+
+        if ($paymentIntent->status !== 'succeeded') {
+            return false;
+        }
+
+        $this->markOrderPaidFromStripe($paymentIntent->id);
+
+        return true;
+    }
+
     public function markOrderPaidFromStripe(string $paymentIntentId): void
     {
         $order = Order::query()
@@ -191,7 +250,20 @@ class CheckoutService
             ->first();
 
         if ($order === null) {
-            return;
+            $paymentIntent = $this->stripeService->retrievePaymentIntent($paymentIntentId);
+            $orderId = $paymentIntent->metadata['order_id'] ?? null;
+
+            if ($orderId === null) {
+                return;
+            }
+
+            $order = Order::query()->find($orderId);
+
+            if ($order === null) {
+                return;
+            }
+
+            $order->update(['stripe_payment_intent_id' => $paymentIntentId]);
         }
 
         if ($order->payment_status === PaymentStatus::Paid) {
@@ -204,6 +276,32 @@ class CheckoutService
         });
 
         Mail::to($order->buyer_email)->send(new OrderConfirmationMail($order->fresh(['items'])));
+    }
+
+    private function findOrderForCheckoutSession(\Stripe\Checkout\Session $session): ?Order
+    {
+        $orderId = $session->metadata['order_id'] ?? $session->client_reference_id;
+
+        if ($orderId === null || $orderId === '') {
+            return null;
+        }
+
+        return Order::query()->find($orderId);
+    }
+
+    private function paymentIntentIdFromCheckoutSession(\Stripe\Checkout\Session $session): ?string
+    {
+        $paymentIntent = $session->payment_intent;
+
+        if (is_string($paymentIntent) && $paymentIntent !== '') {
+            return $paymentIntent;
+        }
+
+        if (is_object($paymentIntent) && isset($paymentIntent->id)) {
+            return $paymentIntent->id;
+        }
+
+        return null;
     }
 
     /**
