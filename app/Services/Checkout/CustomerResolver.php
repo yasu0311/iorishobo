@@ -4,9 +4,14 @@ namespace App\Services\Checkout;
 
 use App\Models\Customer;
 use App\Models\User;
+use App\Services\Customer\MemberEmailSync;
 
 class CustomerResolver
 {
+    public function __construct(
+        private readonly MemberEmailSync $memberEmailSync,
+    ) {}
+
     /**
      * @param  array{
      *     name: string,
@@ -23,17 +28,10 @@ class CustomerResolver
     public function resolveForCheckout(?User $user, array $buyer): Customer
     {
         if ($user !== null) {
-            $customer = $user->customer;
-
-            if ($customer !== null) {
-                return $customer;
-            }
-
-            return Customer::query()->create([
-                'user_id' => $user->id,
+            // 会員は users.email を正とする（buyer_email で顧客メールを作らない／上書きしない）
+            return $this->memberEmailSync->ensureLinkedCustomer($user, [
                 'name' => $buyer['name'],
                 'name_kana' => $buyer['name_kana'] ?? null,
-                'email' => $this->normalizeEmail($buyer['email']),
                 'phone' => $buyer['phone'] ?? null,
                 'mobile' => $buyer['mobile'] ?? null,
                 'postal_code' => $buyer['postal_code'],
@@ -72,6 +70,6 @@ class CustomerResolver
 
     public function normalizeEmail(string $email): string
     {
-        return strtolower(trim($email));
+        return $this->memberEmailSync->normalize($email);
     }
 }

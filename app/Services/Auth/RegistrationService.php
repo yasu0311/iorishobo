@@ -2,20 +2,24 @@
 
 namespace App\Services\Auth;
 
-use App\Models\Customer;
 use App\Models\User;
+use App\Services\Customer\MemberEmailSync;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class RegistrationService
 {
+    public function __construct(
+        private readonly MemberEmailSync $memberEmailSync,
+    ) {}
+
     /**
      * @param  array{name: string, email: string, password: string}  $data
      */
     public function register(array $data): User
     {
-        $email = strtolower(trim($data['email']));
+        $email = $this->memberEmailSync->normalize($data['email']);
 
         return DB::transaction(function () use ($data, $email) {
             $user = User::query()->create([
@@ -25,24 +29,9 @@ class RegistrationService
                 'email_verified_at' => null,
             ]);
 
-            $existingCustomer = Customer::query()
-                ->where('email', $email)
-                ->whereNull('user_id')
-                ->first();
-
-            if ($existingCustomer !== null) {
-                $existingCustomer->update([
-                    'user_id' => $user->id,
-                    'name' => $data['name'],
-                ]);
-            } else {
-                Customer::query()->create([
-                    'user_id' => $user->id,
-                    'name' => $data['name'],
-                    'email' => $email,
-                    'registered_at' => now(),
-                ]);
-            }
+            $this->memberEmailSync->ensureLinkedCustomer($user, [
+                'name' => $data['name'],
+            ]);
 
             event(new Registered($user));
 

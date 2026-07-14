@@ -2,12 +2,16 @@
 
 namespace App\Services\Mypage;
 
-use App\Models\Customer;
 use App\Models\User;
+use App\Services\Customer\MemberEmailSync;
 use Illuminate\Support\Facades\DB;
 
 class ProfileService
 {
+    public function __construct(
+        private readonly MemberEmailSync $memberEmailSync,
+    ) {}
+
     /**
      * @param  array{
      *     name: string,
@@ -23,7 +27,7 @@ class ProfileService
      */
     public function update(User $user, array $data): User
     {
-        $email = strtolower(trim($data['email']));
+        $email = $this->memberEmailSync->normalize($data['email']);
 
         return DB::transaction(function () use ($user, $data, $email) {
             $user->update([
@@ -31,28 +35,21 @@ class ProfileService
                 'email' => $email,
             ]);
 
-            $customer = $user->customer;
+            $customer = $this->memberEmailSync->ensureLinkedCustomer($user, [
+                'name' => $data['name'],
+            ]);
 
-            if ($customer === null) {
-                $customer = Customer::query()->create([
-                    'user_id' => $user->id,
-                    'name' => $data['name'],
-                    'email' => $email,
-                    'registered_at' => now(),
-                ]);
-            } else {
-                $customer->update([
-                    'name' => $data['name'],
-                    'email' => $email,
-                    'name_kana' => $data['name_kana'] ?? null,
-                    'phone' => $data['phone'] ?? null,
-                    'mobile' => $data['mobile'] ?? null,
-                    'postal_code' => $data['postal_code'] ?? null,
-                    'prefecture' => $data['prefecture'] ?? null,
-                    'address_line1' => $data['address_line1'] ?? null,
-                    'address_line2' => $data['address_line2'] ?? null,
-                ]);
-            }
+            $customer->update([
+                'name' => $data['name'],
+                'email' => $email,
+                'name_kana' => $data['name_kana'] ?? null,
+                'phone' => $data['phone'] ?? null,
+                'mobile' => $data['mobile'] ?? null,
+                'postal_code' => $data['postal_code'] ?? null,
+                'prefecture' => $data['prefecture'] ?? null,
+                'address_line1' => $data['address_line1'] ?? null,
+                'address_line2' => $data['address_line2'] ?? null,
+            ]);
 
             return $user->fresh(['customer']);
         });

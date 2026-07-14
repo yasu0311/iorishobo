@@ -9,6 +9,7 @@ use App\Enums\PaymentStatus;
 use App\Mail\BankTransferInstructionMail;
 use App\Mail\OrderConfirmationMail;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -141,6 +142,55 @@ class CheckoutTest extends TestCase
         $order = Order::query()->first();
         $this->assertNull($order->user_id);
         $this->assertNotNull($order->customer_id);
+    }
+
+    #[Test]
+    public function member_checkout_uses_users_email_for_customer_not_buyer_email(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'member@example.com',
+        ]);
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $payload = $this->checkoutPayload('cod');
+        $payload['buyer_email'] = 'different-buyer@example.com';
+
+        $this->submitCheckout($user, $payload)
+            ->assertRedirect(route('checkout.complete'));
+
+        $order = Order::query()->first();
+        $this->assertSame('different-buyer@example.com', $order->buyer_email);
+        $this->assertSame('member@example.com', $user->fresh()->customer->email);
+        $this->assertSame($user->id, $user->fresh()->customer->user_id);
+    }
+
+    #[Test]
+    public function member_checkout_heals_drifted_customer_email(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'member@example.com',
+        ]);
+
+        Customer::query()->create([
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'email' => 'stale@example.com',
+            'registered_at' => now(),
+        ]);
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->submitCheckout($user, $this->checkoutPayload('cod'))
+            ->assertRedirect(route('checkout.complete'));
+
+        $this->assertSame('member@example.com', $user->fresh()->customer->email);
     }
 
     #[Test]
