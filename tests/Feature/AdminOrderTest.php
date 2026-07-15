@@ -636,6 +636,121 @@ class AdminOrderTest extends TestCase
         $this->actingAs($user)->get(route('admin.orders.show', $order))->assertForbidden();
     }
 
+    #[Test]
+    public function admin_can_mark_order_as_partially_shipped_with_editable_mail(): void
+    {
+        Mail::fake();
+
+        $order = $this->createOrder([
+            'order_number' => '20260630850',
+            'buyer_email' => 'partial-mail@example.com',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+            'tracking_number' => 'TRACK-PARTIAL',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+                'mark_as_partially_shipped' => '1',
+                'send_shipping_mail' => '1',
+                'shipping_mail_subject' => '一部だけ発送しました',
+                'shipping_mail_body' => "商品Aのみ発送しました。\n追跡番号: TRACK-PARTIAL\n",
+            ]))
+            ->assertRedirect(route('admin.orders.show', $order));
+
+        $order->refresh();
+        $this->assertSame(OrderStatus::PartiallyShipped, $order->shipping_status);
+        $this->assertSame('TRACK-PARTIAL', $order->tracking_number);
+        $this->assertNull($order->shipped_at);
+
+        Mail::assertSent(OrderShippedMail::class, function (OrderShippedMail $mail) {
+            return $mail->hasTo('partial-mail@example.com')
+                && $mail->customSubject === '一部だけ発送しました'
+                && str_contains((string) $mail->customBody, '商品Aのみ発送しました');
+        });
+    }
+
+    #[Test]
+    public function admin_can_mark_order_as_partially_shipped_without_mail(): void
+    {
+        Mail::fake();
+
+        $order = $this->createOrder([
+            'order_number' => '20260630853',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+                'mark_as_partially_shipped' => '1',
+            ]))
+            ->assertRedirect(route('admin.orders.show', $order));
+
+        $this->assertSame(OrderStatus::PartiallyShipped, $order->fresh()->shipping_status);
+        Mail::assertNothingSent();
+    }
+
+    #[Test]
+    public function partially_shipped_order_can_complete_shipping(): void
+    {
+        Mail::fake();
+
+        $order = $this->createOrder([
+            'order_number' => '20260630851',
+            'buyer_email' => 'partial-complete@example.com',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+            'shipping_status' => OrderStatus::PartiallyShipped,
+            'tracking_number' => 'TRACK-PARTIAL-2',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.ship', $order))
+            ->assertRedirect(route('admin.orders.show', $order));
+
+        $order->refresh();
+        $this->assertSame(OrderStatus::Shipped, $order->shipping_status);
+        $this->assertNotNull($order->shipped_at);
+        Mail::assertSent(OrderShippedMail::class);
+    }
+
+    #[Test]
+    public function partially_shipped_order_cannot_be_cancelled(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630852',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+            'shipping_status' => OrderStatus::PartiallyShipped,
+        ]);
+
+        $this->assertFalse($order->canCancel());
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+                'cancel_reason' => 'キャンセルしたい',
+            ]))
+            ->assertSessionHasErrors('cancel_reason');
+    }
+
+    #[Test]
+    public function shipping_mail_subject_and_body_are_required_when_sending(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630854',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+                'mark_as_partially_shipped' => '1',
+                'send_shipping_mail' => '1',
+            ]))
+            ->assertSessionHasErrors(['shipping_mail_subject', 'shipping_mail_body']);
+    }
+
     /**
      * @param  array<string, mixed>  $overrides
      */

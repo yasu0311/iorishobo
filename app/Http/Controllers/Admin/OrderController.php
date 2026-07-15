@@ -16,6 +16,7 @@ use App\Services\Order\BulkActionResult;
 use App\Services\Order\OrderBulkActionService;
 use App\Services\Order\OrderManagementService;
 use App\Services\Order\OrderShippingExportService;
+use App\Services\Order\OrderShippingMailComposer;
 use App\Services\Order\RefundService;
 use App\Services\Watchlist\WatchlistService;
 use Illuminate\Contracts\View\View;
@@ -28,6 +29,7 @@ class OrderController extends Controller
 {
     public function __construct(
         private readonly OrderManagementService $orderManagementService,
+        private readonly OrderShippingMailComposer $shippingMailComposer,
         private readonly OrderBulkActionService $orderBulkActionService,
         private readonly OrderShippingExportService $orderShippingExportService,
         private readonly RefundService $refundService,
@@ -100,10 +102,19 @@ class OrderController extends Controller
     {
         $order->load(['items.productVariant.product', 'customer', 'refunds.recordedBy']);
 
+        $shippingMailTemplates = null;
+        if ($order->canShip() || $order->canMarkAsPartiallyShipped()) {
+            $shippingMailTemplates = [
+                'partial' => $this->shippingMailComposer->template($order, true),
+                'full' => $this->shippingMailComposer->template($order, false),
+            ];
+        }
+
         return view('admin.orders.show', [
             'order' => $order,
             'watchlistMatches' => $this->watchlistService->matchingForOrder($order),
             'editing' => session()->has('errors'),
+            'shippingMailTemplates' => $shippingMailTemplates,
             'productVariants' => ProductVariant::query()
                 ->with('product.category')
                 ->where('is_active', true)

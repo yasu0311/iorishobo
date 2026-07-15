@@ -7,7 +7,7 @@
 
     <div class="stat-grid">
         <div class="stat-card">
-            <div class="stat-card__label">未発送注文</div>
+            <div class="stat-card__label">未完了の発送</div>
             <div class="stat-card__value">{{ number_format($unshippedCount) }}</div>
         </div>
         <div class="stat-card">

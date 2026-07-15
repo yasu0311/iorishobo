@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateOrderRequest extends FormRequest
 {
@@ -16,6 +17,9 @@ class UpdateOrderRequest extends FormRequest
      */
     public function rules(): array
     {
+        $shippingMailRequired = Rule::requiredIf(fn (): bool => $this->boolean('send_shipping_mail')
+            && ($this->boolean('mark_as_shipped') || $this->boolean('mark_as_partially_shipped')));
+
         return [
             'buyer_name' => 'required|string|max:100',
             'buyer_email' => 'required|email|max:255',
@@ -44,6 +48,10 @@ class UpdateOrderRequest extends FormRequest
             'items.*.remove' => 'boolean',
             'mark_as_paid' => 'boolean',
             'mark_as_shipped' => 'boolean',
+            'mark_as_partially_shipped' => 'boolean',
+            'send_shipping_mail' => 'boolean',
+            'shipping_mail_subject' => ['nullable', 'string', 'max:200', $shippingMailRequired],
+            'shipping_mail_body' => ['nullable', 'string', 'max:10000', $shippingMailRequired],
             'cancel_reason' => 'nullable|string|max:1000',
             'refund_stripe' => 'boolean',
             'refund_amount' => 'nullable|integer|min:1',

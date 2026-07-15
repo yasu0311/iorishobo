@@ -324,98 +324,196 @@
         </div>
     </section>
 
-    <section class="panel">
+    <section class="panel order-actions">
         <h2>操作</h2>
-        <dl class="detail-list order-edit-form__view">
+        <p class="order-actions__intro order-edit-form__view">編集を押すと、下の操作を実行できます。</p>
+
+        <div class="order-actions__groups order-edit-form__view">
             @if ($order->canMarkAsPaid())
-                <dt>入金確認</dt><dd>未実施（編集から実行できます）</dd>
+                <div class="order-action-group">
+                    <h3 class="order-action-group__title">入金確認</h3>
+                    <p class="order-action-group__status">まだ入金確認していません</p>
+                </div>
             @endif
-            @if ($order->canShip())
-                <dt>発送処理</dt><dd>未実施（編集から実行できます）</dd>
-            @elseif ($order->isActive() && $order->shipping_status === OrderStatus::Unshipped && $order->payment_status === PaymentStatus::Pending)
-                @if ($order->payment_method === PaymentMethod::BankTransfer)
-                    <dt>発送</dt><dd class="notice">振込未入金のため発送できません</dd>
-                @elseif ($order->payment_method === PaymentMethod::Stripe)
-                    <dt>発送</dt><dd class="notice">カード決済が未入金のため発送できません</dd>
-                @endif
+
+            @if ($order->canMarkAsPartiallyShipped() || $order->canShip() || ($order->isActive() && $order->shipping_status === OrderStatus::Unshipped && $order->payment_status === PaymentStatus::Pending && in_array($order->payment_method, [PaymentMethod::BankTransfer, PaymentMethod::Stripe], true)))
+                <div class="order-action-group">
+                    <h3 class="order-action-group__title">発送</h3>
+                    @if ($order->canMarkAsPartiallyShipped() || $order->canShip())
+                        <p class="order-action-group__status">
+                            現在: {{ $order->shipping_status->label() }}
+                            @if ($order->canMarkAsPartiallyShipped() && $order->canShip())
+                                （一部発送または発送完了にできます）
+                            @elseif ($order->canMarkAsPartiallyShipped())
+                                （一部発送にできます）
+                            @else
+                                （発送完了にできます）
+                            @endif
+                        </p>
+                    @elseif ($order->payment_method === PaymentMethod::BankTransfer)
+                        <p class="order-action-group__status notice">振込未入金のため発送できません</p>
+                    @elseif ($order->payment_method === PaymentMethod::Stripe)
+                        <p class="order-action-group__status notice">カード決済が未入金のため発送できません</p>
+                    @endif
+                </div>
             @endif
+
             @if ($order->canCancel())
-                <dt>キャンセル</dt><dd>—</dd>
+                <div class="order-action-group">
+                    <h3 class="order-action-group__title">キャンセル</h3>
+                    <p class="order-action-group__status">未発送のためキャンセルできます</p>
+                </div>
             @endif
+
             @if ($order->canRefund())
-                <dt>返金</dt><dd>返金可能額: {{ number_format($order->refundableAmount()) }}円</dd>
+                <div class="order-action-group">
+                    <h3 class="order-action-group__title">返金</h3>
+                    <p class="order-action-group__status">返金可能額: {{ number_format($order->refundableAmount()) }}円</p>
+                </div>
             @endif
-            <dt>要注意リスト</dt><dd>—</dd>
-        </dl>
-        <div class="form-grid order-edit-form__fields">
+
+            <div class="order-action-group">
+                <h3 class="order-action-group__title">要注意リスト</h3>
+                <p class="order-action-group__status">必要なら編集から登録できます</p>
+            </div>
+        </div>
+
+        <div class="order-actions__groups order-edit-form__fields">
             @if ($order->canMarkAsPaid())
-                <div class="form-field">
-                    <label>
-                        <input type="checkbox" name="mark_as_paid" value="1" @checked($checked('mark_as_paid'))>
-                        入金確認を行う
-                    </label>
+                <div class="order-action-group">
+                    <h3 class="order-action-group__title">入金確認</h3>
+                    <p class="order-action-group__hint">振込・代引きなどの入金が確認できたらチェックしてください。</p>
+                    <div class="form-field">
+                        <label class="order-action-option">
+                            <input type="checkbox" name="mark_as_paid" value="1" @checked($checked('mark_as_paid'))>
+                            <span>入金確認する</span>
+                        </label>
+                    </div>
                 </div>
             @endif
-            @if ($order->canShip())
-                <div class="form-field">
-                    <label>
-                        <input type="checkbox" name="mark_as_shipped" value="1" @checked($checked('mark_as_shipped'))>
-                        発送処理を行う（発送通知メールを送信）
-                    </label>
+
+            @if ($order->canMarkAsPartiallyShipped() || $order->canShip() || ($order->isActive() && $order->shipping_status === OrderStatus::Unshipped && $order->payment_status === PaymentStatus::Pending && in_array($order->payment_method, [PaymentMethod::BankTransfer, PaymentMethod::Stripe], true)))
+                <div class="order-action-group">
+                    <h3 class="order-action-group__title">発送</h3>
+                    <p class="order-action-group__hint">どちらか一方だけ選んでください。メールを送る場合は、下の件名・本文を確認・編集してから保存します。</p>
+
+                    @if ($order->canMarkAsPartiallyShipped())
+                        <div class="form-field">
+                            <label class="order-action-option">
+                                <input type="checkbox" name="mark_as_partially_shipped" value="1" @checked($checked('mark_as_partially_shipped')) data-shipping-action="partial">
+                                <span>
+                                    <strong>一部発送</strong>
+                                    <small>先に送れる分だけ発送したとき</small>
+                                </span>
+                            </label>
+                        </div>
+                    @endif
+
+                    @if ($order->canShip())
+                        <div class="form-field">
+                            <label class="order-action-option">
+                                <input type="checkbox" name="mark_as_shipped" value="1" @checked($checked('mark_as_shipped')) data-shipping-action="full">
+                                <span>
+                                    <strong>@if ($order->shipping_status === OrderStatus::PartiallyShipped)発送完了@elseすべて発送@endif</strong>
+                                    <small>注文の商品をすべて発送したとき</small>
+                                </span>
+                            </label>
+                        </div>
+                    @elseif ($order->payment_method === PaymentMethod::BankTransfer)
+                        <p class="notice">振込未入金のため発送できません。先に入金確認してください。</p>
+                    @elseif ($order->payment_method === PaymentMethod::Stripe)
+                        <p class="notice">カード決済が未入金のため発送できません。先に入金確認してください。</p>
+                    @endif
+
+                    @if (($order->canShip() || $order->canMarkAsPartiallyShipped()) && ! empty($shippingMailTemplates))
+                        <div
+                            id="shipping-mail-fields"
+                            class="order-action-mail"
+                            hidden
+                            data-templates='@json($shippingMailTemplates)'
+                        >
+                            <div class="form-field">
+                                <label class="order-action-option">
+                                    <input type="checkbox" name="send_shipping_mail" value="1" @checked(old('send_shipping_mail', true)) id="send_shipping_mail">
+                                    <span>
+                                        <strong>発送メールを送る</strong>
+                                        <small>オフにすると状態だけ更新します</small>
+                                    </span>
+                                </label>
+                            </div>
+                            <div id="shipping-mail-editor" class="order-action-mail__editor">
+                                <div class="form-field">
+                                    <label for="shipping_mail_subject">件名</label>
+                                    <input type="text" id="shipping_mail_subject" name="shipping_mail_subject" value="{{ old('shipping_mail_subject') }}" maxlength="200">
+                                </div>
+                                <div class="form-field">
+                                    <label for="shipping_mail_body">本文</label>
+                                    <textarea id="shipping_mail_body" name="shipping_mail_body" rows="14" maxlength="10000">{{ old('shipping_mail_body') }}</textarea>
+                                    <p class="form-hint">一部発送のときは、送った商品と後日送る分を本文に書いてください。</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
-            @elseif ($order->isActive() && $order->shipping_status === OrderStatus::Unshipped && $order->payment_status === PaymentStatus::Pending)
-                @if ($order->payment_method === PaymentMethod::BankTransfer)
-                    <p class="notice">振込未入金のため発送できません。先に入金確認してください。</p>
-                @elseif ($order->payment_method === PaymentMethod::Stripe)
-                    <p class="notice">カード決済が未入金のため発送できません。先に入金確認してください。</p>
-                @endif
             @endif
+
             @if ($order->canCancel())
-                <div class="form-field">
-                    <label for="cancel_reason">キャンセル理由（入力すると保存時にキャンセルします）</label>
-                    <textarea id="cancel_reason" name="cancel_reason" rows="3" maxlength="1000">{{ old('cancel_reason') }}</textarea>
-                </div>
-                @if ($order->payment_method === PaymentMethod::Stripe && $order->payment_status === PaymentStatus::Paid)
+                <div class="order-action-group">
+                    <h3 class="order-action-group__title">キャンセル</h3>
+                    <p class="order-action-group__hint">理由を入力して保存すると、この注文をキャンセルします。</p>
                     <div class="form-field">
-                        <label>
-                            <input type="checkbox" name="refund_stripe" value="1" @checked($checked('refund_stripe'))>
-                            Stripe で全額返金も行う
-                        </label>
+                        <label for="cancel_reason">キャンセル理由</label>
+                        <textarea id="cancel_reason" name="cancel_reason" rows="3" maxlength="1000">{{ old('cancel_reason') }}</textarea>
                     </div>
-                @endif
+                    @if ($order->payment_method === PaymentMethod::Stripe && $order->payment_status === PaymentStatus::Paid)
+                        <div class="form-field">
+                            <label class="order-action-option">
+                                <input type="checkbox" name="refund_stripe" value="1" @checked($checked('refund_stripe'))>
+                                <span>Stripe で全額返金も行う</span>
+                            </label>
+                        </div>
+                    @endif
+                </div>
             @endif
+
             @if ($order->canRefund())
-                <h3>返金</h3>
-                <p>返金可能額: {{ number_format($order->refundableAmount()) }}円</p>
-                <div class="form-field">
-                    <label for="refund_amount">返金額</label>
-                    <input type="number" id="refund_amount" name="refund_amount" value="{{ old('refund_amount') }}" min="1" max="{{ $order->refundableAmount() }}">
-                </div>
-                <div class="form-field">
-                    <label for="refund_reason">返金理由</label>
-                    <textarea id="refund_reason" name="refund_reason" rows="3" maxlength="1000">{{ old('refund_reason') }}</textarea>
-                </div>
-                @if ($order->payment_method === PaymentMethod::Stripe)
+                <div class="order-action-group">
+                    <h3 class="order-action-group__title">返金</h3>
+                    <p class="order-action-group__hint">返金可能額: {{ number_format($order->refundableAmount()) }}円。金額と理由を入れて保存すると記録します。</p>
                     <div class="form-field">
-                        <label>
-                            <input type="checkbox" name="refund_manual_only" value="1" @checked($checked('refund_manual_only'))>
-                            Stripe を使わず手動記録（振込返金など）
-                        </label>
+                        <label for="refund_amount">返金額</label>
+                        <input type="number" id="refund_amount" name="refund_amount" value="{{ old('refund_amount') }}" min="1" max="{{ $order->refundableAmount() }}">
                     </div>
-                @endif
-                @if ($order->inventoryWasDecremented())
                     <div class="form-field">
-                        <label>
-                            <input type="checkbox" name="refund_restore_inventory" value="1" @checked($checked('refund_restore_inventory'))>
-                            在庫を戻す
-                        </label>
+                        <label for="refund_reason">返金理由</label>
+                        <textarea id="refund_reason" name="refund_reason" rows="3" maxlength="1000">{{ old('refund_reason') }}</textarea>
                     </div>
-                @endif
+                    @if ($order->payment_method === PaymentMethod::Stripe)
+                        <div class="form-field">
+                            <label class="order-action-option">
+                                <input type="checkbox" name="refund_manual_only" value="1" @checked($checked('refund_manual_only'))>
+                                <span>Stripe を使わず手動記録（振込返金など）</span>
+                            </label>
+                        </div>
+                    @endif
+                    @if ($order->inventoryWasDecremented())
+                        <div class="form-field">
+                            <label class="order-action-option">
+                                <input type="checkbox" name="refund_restore_inventory" value="1" @checked($checked('refund_restore_inventory'))>
+                                <span>在庫を戻す</span>
+                            </label>
+                        </div>
+                    @endif
+                </div>
             @endif
-            <h3>要注意リストに登録</h3>
-            <div class="form-field">
-                <label for="watchlist_reason">理由（入力すると保存時に登録します）</label>
-                <textarea id="watchlist_reason" name="watchlist_reason" rows="3" maxlength="2000">{{ old('watchlist_reason') }}</textarea>
+
+            <div class="order-action-group">
+                <h3 class="order-action-group__title">要注意リスト</h3>
+                <p class="order-action-group__hint">理由を入力して保存すると、要注意リストに登録します。空なら何もしません。</p>
+                <div class="form-field">
+                    <label for="watchlist_reason">登録理由</label>
+                    <textarea id="watchlist_reason" name="watchlist_reason" rows="3" maxlength="2000">{{ old('watchlist_reason') }}</textarea>
+                </div>
             </div>
         </div>
     </section>

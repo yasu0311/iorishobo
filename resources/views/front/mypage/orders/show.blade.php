@@ -14,6 +14,10 @@
             <dt class="text-muted">合計</dt><dd>{{ number_format($order->total) }}円（税込）</dd>
             <dt class="text-muted">決済方法</dt><dd>{{ $order->payment_method->label() }}</dd>
             <dt class="text-muted">入金状況</dt><dd>{{ $order->payment_status->label() }}</dd>
+            <dt class="text-muted">発送状況</dt><dd>{{ $order->shipping_status->label() }}</dd>
+            @if ($order->tracking_number)
+                <dt class="text-muted">追跡番号</dt><dd>{{ $order->tracking_number }}</dd>
+            @endif
         </dl>
     </div>
 

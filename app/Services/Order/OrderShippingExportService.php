@@ -82,7 +82,10 @@ class OrderShippingExportService
     {
         $query = Order::query()
             ->with('items')
-            ->where('shipping_status', OrderStatus::Unshipped)
+            ->whereIn('shipping_status', [
+                OrderStatus::Unshipped,
+                OrderStatus::PartiallyShipped,
+            ])
             ->where('payment_status', '!=', PaymentStatus::Cancelled)
             ->where(function (Builder $builder): void {
                 $builder

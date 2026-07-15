@@ -18,7 +18,10 @@ class DashboardController extends Controller
 
         return view('admin.dashboard.index', [
             'unshippedCount' => (clone $activeOrders)
-                ->where('shipping_status', OrderStatus::Unshipped)
+                ->whereIn('shipping_status', [
+                    OrderStatus::Unshipped,
+                    OrderStatus::PartiallyShipped,
+                ])
                 ->count(),
             'pendingPaymentCount' => (clone $activeOrders)
                 ->where('payment_status', PaymentStatus::Pending)

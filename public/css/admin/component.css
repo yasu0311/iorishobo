@@ -124,6 +124,7 @@
 .badge--payment-cancelled { background: #fee2e2; color: #991b1b; }
 
 .badge--shipping-unshipped { background: #dbeafe; color: #1e40af; }
+.badge--shipping-partially_shipped { background: #fef3c7; color: #92400e; }
 .badge--shipping-shipped { background: #d1fae5; color: #065f46; }
 .badge--shipping-cancelled { background: #e2e8f0; color: #475569; }
 
@@ -462,4 +463,85 @@ button:hover,
 .image-card__actions button {
   font-size: 0.8125rem;
   padding: 0.35rem 0.65rem;
+}
+
+.order-actions__intro {
+  margin: 0 0 1rem;
+  color: var(--admin-color-muted);
+  font-size: 0.875rem;
+}
+
+.order-actions__groups {
+  display: grid;
+  gap: 1rem;
+}
+
+.order-action-group {
+  border: 1px solid var(--admin-color-border);
+  border-radius: var(--admin-radius);
+  padding: 1rem 1.1rem;
+  background: #f8fafc;
+}
+
+.order-action-group__title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--admin-color-header);
+}
+
+.order-action-group__hint,
+.order-action-group__status {
+  margin: 0 0 0.85rem;
+  color: var(--admin-color-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.order-action-group__status.notice,
+.order-action-group .notice {
+  color: #b45309;
+}
+
+.order-action-group .form-field:last-child {
+  margin-bottom: 0;
+}
+
+.order-action-option {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-weight: 500 !important;
+  margin-bottom: 0 !important;
+  cursor: pointer;
+}
+
+.order-action-option input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.order-action-option span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.order-action-option strong {
+  font-weight: 700;
+}
+
+.order-action-option small {
+  color: var(--admin-color-muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.order-action-mail {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--admin-color-border);
+}
+
+.order-action-mail__editor {
+  margin-top: 0.75rem;
 }

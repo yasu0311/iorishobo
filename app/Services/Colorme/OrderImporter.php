@@ -298,6 +298,7 @@ class OrderImporter
     {
         return match (trim($value)) {
             '発送済' => OrderStatus::Shipped,
+            '一部発送' => OrderStatus::PartiallyShipped,
             'キャンセル' => OrderStatus::Cancelled,
             default => OrderStatus::Unshipped,
         };

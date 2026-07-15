@@ -159,20 +159,26 @@ class Order extends Model
 
     public function canShip(): bool
     {
+        if (! $this->isActive() || ! $this->shipping_status->isOpenForShipping()) {
+            return false;
+        }
+
+        return $this->paymentAllowsShipping();
+    }
+
+    public function canMarkAsPartiallyShipped(): bool
+    {
         if (! $this->isActive() || $this->shipping_status !== OrderStatus::Unshipped) {
             return false;
         }
 
-        return match ($this->payment_method) {
-            PaymentMethod::BankTransfer, PaymentMethod::Stripe => $this->payment_status === PaymentStatus::Paid,
-            default => true,
-        };
+        return $this->paymentAllowsShipping();
     }
 
     public function canUpdateTrackingNumber(): bool
     {
         return $this->isActive()
-            && $this->shipping_status === OrderStatus::Unshipped;
+            && $this->shipping_status->isOpenForShipping();
     }
 
     public function canPrintReceipt(): bool
@@ -189,7 +195,7 @@ class Order extends Model
 
     public function canCancel(): bool
     {
-        return $this->isActive() && $this->shipping_status !== OrderStatus::Shipped;
+        return $this->isActive() && $this->shipping_status === OrderStatus::Unshipped;
     }
 
     public function canEditDetails(): bool
@@ -203,5 +209,13 @@ class Order extends Model
         }
 
         return true;
+    }
+
+    private function paymentAllowsShipping(): bool
+    {
+        return match ($this->payment_method) {
+            PaymentMethod::BankTransfer, PaymentMethod::Stripe => $this->payment_status === PaymentStatus::Paid,
+            default => true,
+        };
     }
 }

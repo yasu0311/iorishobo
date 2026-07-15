@@ -22,6 +22,7 @@ class OrderManagementService
         private readonly InventoryService $inventoryService,
         private readonly RefundService $refundService,
         private readonly OrderAmountCalculator $amountCalculator,
+        private readonly OrderShippingMailComposer $shippingMailComposer,
     ) {}
 
     public function markAsPaid(Order $order, bool $sendMail = false): void
@@ -48,8 +49,13 @@ class OrderManagementService
         }
     }
 
-    public function ship(Order $order, ?string $trackingNumber = null, bool $sendMail = true): void
-    {
+    public function ship(
+        Order $order,
+        ?string $trackingNumber = null,
+        bool $sendMail = true,
+        ?string $mailSubject = null,
+        ?string $mailBody = null,
+    ): void {
         if (! $order->canShip()) {
             $message = match (true) {
                 $order->payment_method === \App\Enums\PaymentMethod::BankTransfer
@@ -75,8 +81,76 @@ class OrderManagementService
         ]);
 
         if ($sendMail) {
-            Mail::to($order->fresh(['items'])->buyer_email)->send(new OrderShippedMail($order->fresh(['items'])));
+            $this->sendShippingMail($order->fresh(['items']), partial: false, subject: $mailSubject, body: $mailBody);
         }
+    }
+
+    public function markAsPartiallyShipped(
+        Order $order,
+        ?string $trackingNumber = null,
+        bool $sendMail = true,
+        ?string $mailSubject = null,
+        ?string $mailBody = null,
+    ): void {
+        if (! $order->canMarkAsPartiallyShipped()) {
+            $message = match (true) {
+                $order->payment_method === \App\Enums\PaymentMethod::BankTransfer
+                    && $order->payment_status === PaymentStatus::Pending => '振込未入金の注文は一部発送にできません。',
+                $order->payment_method === \App\Enums\PaymentMethod::Stripe
+                    && $order->payment_status === PaymentStatus::Pending => 'カード決済が未入金のため一部発送にできません。入金確認後に更新してください。',
+                default => 'この注文は一部発送にできません。',
+            };
+
+            throw ValidationException::withMessages([
+                'order' => $message,
+            ]);
+        }
+
+        $tracking = filled($trackingNumber)
+            ? $trackingNumber
+            : $order->tracking_number;
+
+        $order->update([
+            'shipping_status' => OrderStatus::PartiallyShipped,
+            'tracking_number' => filled($tracking) ? $tracking : null,
+        ]);
+
+        if ($sendMail) {
+            $this->sendShippingMail($order->fresh(['items']), partial: true, subject: $mailSubject, body: $mailBody);
+        }
+    }
+
+    private function sendShippingMail(
+        Order $order,
+        bool $partial,
+        ?string $subject = null,
+        ?string $body = null,
+    ): void {
+        $template = $this->shippingMailComposer->template($order, $partial);
+        $resolvedSubject = filled($subject) ? $subject : $template['subject'];
+        $resolvedBody = $this->finalizeMailBody(
+            filled($body) ? $body : $template['body'],
+            $order->tracking_number,
+        );
+
+        Mail::to($order->buyer_email)->send(new OrderShippedMail(
+            $order,
+            $resolvedSubject,
+            $resolvedBody,
+        ));
+    }
+
+    private function finalizeMailBody(string $body, ?string $trackingNumber): string
+    {
+        if (! str_contains($body, '{{TRACKING_LINE}}')) {
+            return $body;
+        }
+
+        $trackingLine = filled($trackingNumber) ? '追跡番号: '.$trackingNumber : '';
+        $body = str_replace('{{TRACKING_LINE}}', $trackingLine, $body);
+        $body = preg_replace("/\n{3,}/", "\n\n", $body) ?? $body;
+
+        return trim($body)."\n";
     }
 
     /**
@@ -369,7 +443,28 @@ class OrderManagementService
                 ]);
             }
 
-            $this->ship($order, $order->tracking_number);
+            $this->ship(
+                $order,
+                $order->tracking_number,
+                sendMail: (bool) ($data['send_shipping_mail'] ?? false),
+                mailSubject: $data['shipping_mail_subject'] ?? null,
+                mailBody: $data['shipping_mail_body'] ?? null,
+            );
+            $order->refresh();
+        } elseif (! empty($data['mark_as_partially_shipped'])) {
+            if (! $order->canMarkAsPartiallyShipped()) {
+                throw ValidationException::withMessages([
+                    'mark_as_partially_shipped' => 'この注文は一部発送にできません。',
+                ]);
+            }
+
+            $this->markAsPartiallyShipped(
+                $order,
+                $order->tracking_number,
+                sendMail: (bool) ($data['send_shipping_mail'] ?? false),
+                mailSubject: $data['shipping_mail_subject'] ?? null,
+                mailBody: $data['shipping_mail_body'] ?? null,
+            );
             $order->refresh();
         }
 

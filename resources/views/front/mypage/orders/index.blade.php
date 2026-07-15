@@ -17,6 +17,7 @@
                         <th>注文番号</th>
                         <th>注文日</th>
                         <th>合計</th>
+                        <th>発送</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -26,6 +27,7 @@
                             <td>{{ $order->order_number }}</td>
                             <td>{{ $order->ordered_at->format('Y-m-d') }}</td>
                             <td>{{ number_format($order->total) }}円</td>
+                            <td>{{ $order->shipping_status->label() }}</td>
                             <td>
                                 <a href="{{ route('mypage.orders.show', $order) }}">詳細</a>
                             </td>

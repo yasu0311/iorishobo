@@ -39,11 +39,40 @@ class AdminDashboardTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('未発送注文');
+        $response->assertSee('未完了の発送');
         $response->assertSee('入金確認待ち');
         $response->assertSee('本日の注文');
         $response->assertSee('>2<', false);
         $response->assertSee('>1<', false);
+    }
+
+    #[Test]
+    public function dashboard_unshipped_count_includes_partially_shipped(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        Order::query()->create($this->orderAttributes([
+            'order_number' => '1111111111',
+            'shipping_status' => OrderStatus::Unshipped,
+        ]));
+
+        Order::query()->create($this->orderAttributes([
+            'order_number' => '2222222222',
+            'payment_status' => PaymentStatus::Paid,
+            'shipping_status' => OrderStatus::PartiallyShipped,
+        ]));
+
+        Order::query()->create($this->orderAttributes([
+            'order_number' => '3333333333',
+            'payment_status' => PaymentStatus::Paid,
+            'shipping_status' => OrderStatus::Shipped,
+            'shipped_at' => now(),
+        ]));
+
+        $response = $this->actingAs($admin)->get(route('admin.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('>2<', false);
     }
 
     /**
