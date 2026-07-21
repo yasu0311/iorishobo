@@ -308,6 +308,28 @@ class CheckoutTest extends TestCase
     }
 
     #[Test]
+    public function checkout_index_shows_payment_fee_in_summary(): void
+    {
+        config(['shop.cod_fee' => 330]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($user)->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('代金引換（330円）', false)
+            ->assertSee('data-checkout-payment-select', false)
+            ->assertSee('data-fee="330"', false)
+            ->assertSee('代引手数料', false)
+            ->assertSee('data-checkout-payment-fee-row', false)
+            ->assertDontSee('data-checkout-payment-fee-row" hidden', false);
+    }
+
+    #[Test]
     public function checkout_index_shows_remaining_amount_until_free_shipping(): void
     {
         $this->shippingMethod->update([

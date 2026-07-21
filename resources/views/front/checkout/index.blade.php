@@ -110,11 +110,37 @@
                         </p>
                     </div>
                     <div class="form-field">
-                        <label>決済方法</label>
-                        <select name="payment_method" required>
-                            <option value="cod" @selected(old('payment_method', $input['payment_method'] ?? '') === 'cod')>代金引換</option>
-                            <option value="bank_transfer" @selected(old('payment_method', $input['payment_method'] ?? '') === 'bank_transfer')>銀行振込</option>
-                            <option value="stripe" @selected(old('payment_method', $input['payment_method'] ?? '') === 'stripe')>クレジットカード</option>
+                        @php
+                            $codFee = (int) config('shop.cod_fee');
+                            $codFreeThreshold = config('shop.cod_free_threshold');
+                            $effectiveCodFee = ($codFreeThreshold !== null && $goodsTotal >= $codFreeThreshold)
+                                ? 0
+                                : $codFee;
+                            $codFeeLabel = $effectiveCodFee === 0
+                                ? '無料'
+                                : number_format($effectiveCodFee).'円';
+                            $selectedPaymentMethod = old('payment_method', $input['payment_method'] ?? 'cod');
+                        @endphp
+                        <label for="payment_method">決済方法</label>
+                        <select name="payment_method" id="payment_method" required data-checkout-payment-select>
+                            <option
+                                value="cod"
+                                data-fee="{{ $effectiveCodFee }}"
+                                data-fee-label="{{ $effectiveCodFee === 0 ? '0円' : number_format($effectiveCodFee).'円' }}"
+                                @selected($selectedPaymentMethod === 'cod')
+                            >代金引換（{{ $codFeeLabel }}）</option>
+                            <option
+                                value="bank_transfer"
+                                data-fee="0"
+                                data-fee-label="0円"
+                                @selected($selectedPaymentMethod === 'bank_transfer')
+                            >銀行振込</option>
+                            <option
+                                value="stripe"
+                                data-fee="0"
+                                data-fee-label="0円"
+                                @selected($selectedPaymentMethod === 'stripe')
+                            >クレジットカード</option>
                         </select>
                     </div>
                     <div class="form-field">
@@ -156,7 +182,15 @@
                     @endif
                 </span>
             </p>
-            <p class="text-muted checkout-summary__note">代引手数料は確認画面でご確認いただけます。</p>
+            @php
+                $initialPaymentFee = $selectedPaymentMethod === 'cod' ? $effectiveCodFee : 0;
+            @endphp
+            <p class="checkout-summary__row" data-checkout-payment-fee-row @if ($initialPaymentFee <= 0) hidden @endif>
+                <span>代引手数料</span>
+                <span data-checkout-payment-fee>
+                    {{ number_format($initialPaymentFee) }}円
+                </span>
+            </p>
             <div class="checkout-summary__actions">
                 <button type="submit" form="checkout-form" class="btn btn--primary btn--block">注文内容を確認する</button>
             </div>
@@ -165,5 +199,32 @@
 @endsection
 
 @section('script')
-    <script src="{{ asset('js/front/checkout.js') }}" defer></script>
+    <script src="{{ asset('js/front/checkout.js') }}?v={{ filemtime(public_path('js/front/checkout.js')) }}" defer></script>
+    <script>
+        (function () {
+            var select = document.querySelector('[data-checkout-payment-select]');
+            var row = document.querySelector('[data-checkout-payment-fee-row]');
+            var display = document.querySelector('[data-checkout-payment-fee]');
+            if (!select || !row || !display) {
+                return;
+            }
+
+            function updatePaymentFee() {
+                var option = select.options[select.selectedIndex];
+                if (!option) {
+                    return;
+                }
+                var fee = Number(option.getAttribute('data-fee') || '0');
+                display.textContent = fee.toLocaleString('ja-JP') + '円';
+                if (fee <= 0) {
+                    row.setAttribute('hidden', 'hidden');
+                } else {
+                    row.removeAttribute('hidden');
+                }
+            }
+
+            select.addEventListener('change', updatePaymentFee);
+            updatePaymentFee();
+        })();
+    </script>
 @endsection
