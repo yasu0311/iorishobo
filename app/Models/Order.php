@@ -198,6 +198,28 @@ class Order extends Model
         return $this->isActive() && $this->shipping_status === OrderStatus::Unshipped;
     }
 
+    public function canRevertShippingStatus(): bool
+    {
+        return $this->isActive() && $this->revertableShippingStatuses() !== [];
+    }
+
+    /**
+     * @return array<int, OrderStatus>
+     */
+    public function revertableShippingStatuses(): array
+    {
+        return match ($this->shipping_status) {
+            OrderStatus::Shipped => [
+                OrderStatus::PartiallyShipped,
+                OrderStatus::Unshipped,
+            ],
+            OrderStatus::PartiallyShipped => [
+                OrderStatus::Unshipped,
+            ],
+            default => [],
+        };
+    }
+
     public function canEditDetails(): bool
     {
         if ($this->payment_status === PaymentStatus::Cancelled) {

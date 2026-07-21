@@ -230,6 +230,7 @@
         const cancelReason = form.querySelector('[name="cancel_reason"]');
         const refundAmount = form.querySelector('[name="refund_amount"]');
         const markAsPaid = form.querySelector('[name="mark_as_paid"]');
+        const revertShippingStatus = form.querySelector('[name="revert_shipping_status"]');
         const willSendMail = Boolean(selectedShippingAction() && sendShippingMail?.checked);
 
         let message = '変更を保存しますか？';
@@ -238,6 +239,9 @@
             message = '注文をキャンセルしますか？';
         } else if (refundAmount?.value) {
             message = '返金を記録しますか？';
+        } else if (revertShippingStatus?.value) {
+            const label = revertShippingStatus.selectedOptions[0]?.textContent?.trim() ?? '選択した状態';
+            message = `${label}に変更しますか？（メールは送りません）`;
         } else if (markAsPaid?.checked && markAsShipped?.checked) {
             message = willSendMail
                 ? '入金確認と発送処理を行い、メールを送信しますか？'

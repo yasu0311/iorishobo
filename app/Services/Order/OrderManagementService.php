@@ -120,6 +120,26 @@ class OrderManagementService
         }
     }
 
+    public function revertShippingStatus(Order $order, OrderStatus $target): void
+    {
+        if (! $order->canRevertShippingStatus()) {
+            throw ValidationException::withMessages([
+                'revert_shipping_status' => 'この注文の発送状態は変更できません。',
+            ]);
+        }
+
+        if (! in_array($target, $order->revertableShippingStatuses(), true)) {
+            throw ValidationException::withMessages([
+                'revert_shipping_status' => '選択した発送状態には戻せません。',
+            ]);
+        }
+
+        $order->update([
+            'shipping_status' => $target,
+            'shipped_at' => null,
+        ]);
+    }
+
     private function sendShippingMail(
         Order $order,
         bool $partial,
@@ -184,7 +204,9 @@ class OrderManagementService
             'shipping_note' => $data['shipping_note'] ?? null,
         ];
 
-        if ($order->canUpdateTrackingNumber() || $order->shipping_status === OrderStatus::Shipped) {
+        if ($order->canUpdateTrackingNumber()
+            || $order->shipping_status === OrderStatus::Shipped
+            || $order->shipping_status === OrderStatus::PartiallyShipped) {
             $attributes['tracking_number'] = filled($data['tracking_number'] ?? null)
                 ? $data['tracking_number']
                 : null;
@@ -433,6 +455,27 @@ class OrderManagementService
             }
 
             $this->markAsPaid($order);
+            $order->refresh();
+        }
+
+        if (! empty($data['mark_as_shipped']) && ! empty($data['mark_as_partially_shipped'])) {
+            throw ValidationException::withMessages([
+                'mark_as_shipped' => '一部発送と発送完了は同時に選べません。',
+            ]);
+        }
+
+        if (filled($data['revert_shipping_status'] ?? null)
+            && (! empty($data['mark_as_shipped']) || ! empty($data['mark_as_partially_shipped']))) {
+            throw ValidationException::withMessages([
+                'revert_shipping_status' => '発送状態を戻す操作と、発送処理は同時に行えません。',
+            ]);
+        }
+
+        if (filled($data['revert_shipping_status'] ?? null)) {
+            $this->revertShippingStatus(
+                $order,
+                OrderStatus::from((string) $data['revert_shipping_status']),
+            );
             $order->refresh();
         }
 

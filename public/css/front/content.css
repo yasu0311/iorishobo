@@ -348,6 +348,22 @@
   font-size: 0.875rem;
 }
 
+.checkout-summary__shipping--free {
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.checkout-shipping-notice {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+.checkout-shipping-notice__free {
+  color: var(--color-accent);
+}
+
 .checkout-summary__actions {
   margin-top: 1.25rem;
   display: flex;

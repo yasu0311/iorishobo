@@ -49,6 +49,7 @@ class UpdateOrderRequest extends FormRequest
             'mark_as_paid' => 'boolean',
             'mark_as_shipped' => 'boolean',
             'mark_as_partially_shipped' => 'boolean',
+            'revert_shipping_status' => 'nullable|string|in:unshipped,partially_shipped',
             'send_shipping_mail' => 'boolean',
             'shipping_mail_subject' => ['nullable', 'string', 'max:200', $shippingMailRequired],
             'shipping_mail_body' => ['nullable', 'string', 'max:10000', $shippingMailRequired],

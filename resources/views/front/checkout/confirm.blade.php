@@ -172,7 +172,13 @@
             @endif
             <p class="checkout-summary__row">
                 <span>送料</span>
-                <span>{{ number_format($amounts['shipping_fee']) }}円</span>
+                <span class="{{ $amounts['shipping_fee'] === 0 ? 'checkout-summary__shipping checkout-summary__shipping--free' : '' }}">
+                    @if ($amounts['shipping_fee'] === 0)
+                        送料無料
+                    @else
+                        {{ number_format($amounts['shipping_fee']) }}円
+                    @endif
+                </span>
             </p>
             @if ($amounts['payment_fee'] > 0)
                 <p class="checkout-summary__row">

@@ -10,6 +10,7 @@ use App\Http\Requests\CheckoutStoreRequest;
 use App\Models\Order;
 use App\Models\ShippingMethod;
 use App\Services\Checkout\CheckoutService;
+use App\Services\Shipping\ShippingFeeCalculator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ class CheckoutController extends Controller
 {
     public function __construct(
         private readonly CheckoutService $checkoutService,
+        private readonly ShippingFeeCalculator $shippingFeeCalculator,
     ) {}
 
     public function index(Request $request): View|RedirectResponse
@@ -42,19 +44,37 @@ class CheckoutController extends Controller
             $input = [];
         }
 
-        $shippingMethods = ShippingMethod::query()
+        $goodsTotal = $summary->totalAfterDiscount();
+
+        $shippingOptions = ShippingMethod::query()
             ->where('is_active', true)
             ->orderBy('sort_order')
-            ->get();
+            ->get()
+            ->map(fn (ShippingMethod $method): array => [
+                'method' => $method,
+                'fee' => $this->shippingFeeCalculator->calculate($method, $goodsTotal),
+            ]);
 
-        $defaultShipping = $shippingMethods->first();
+        $defaultShippingId = $shippingOptions->isNotEmpty()
+            ? $shippingOptions->first()['method']->id
+            : 0;
+
+        $selectedShippingId = (int) old(
+            'shipping_method_id',
+            $input['shipping_method_id'] ?? $defaultShippingId,
+        );
+
+        $selectedShippingOption = $shippingOptions->first(
+            fn (array $option): bool => $option['method']->id === $selectedShippingId,
+        ) ?? $shippingOptions->first();
 
         $customer = Auth::user()?->customer;
 
         return view('front.checkout.index', compact(
             'summary',
-            'shippingMethods',
-            'defaultShipping',
+            'shippingOptions',
+            'selectedShippingOption',
+            'goodsTotal',
             'customer',
             'input',
         ));

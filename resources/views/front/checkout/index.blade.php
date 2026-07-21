@@ -70,14 +70,35 @@
                 <section class="form-section panel">
                     <h2>配送・決済</h2>
                     <div class="form-field">
-                        <label>配送方法</label>
-                        <select name="shipping_method_id" required>
-                            @foreach ($shippingMethods as $method)
-                                <option value="{{ $method->id }}" @selected(old('shipping_method_id', $input['shipping_method_id'] ?? $defaultShipping?->id) == $method->id)>
-                                    {{ $method->name }}（{{ number_format($method->base_fee) }}円〜）
+                        <label for="shipping_method_id">配送方法</label>
+                        <select name="shipping_method_id" id="shipping_method_id" required data-checkout-shipping-select>
+                            @foreach ($shippingOptions as $option)
+                                @php
+                                    $method = $option['method'];
+                                    $feeLabel = $option['fee'] === 0
+                                        ? '送料無料'
+                                        : number_format($option['fee']).'円';
+                                    $threshold = $method->free_shipping_threshold;
+                                    $remaining = $threshold !== null
+                                        ? max(0, $threshold - $goodsTotal)
+                                        : null;
+                                @endphp
+                                <option
+                                    value="{{ $method->id }}"
+                                    data-fee="{{ $option['fee'] }}"
+                                    data-fee-label="{{ $feeLabel }}"
+                                    data-is-free="{{ $option['fee'] === 0 ? '1' : '0' }}"
+                                    data-threshold="{{ $threshold ?? '' }}"
+                                    data-remaining="{{ $remaining ?? '' }}"
+                                    @selected($selectedShippingOption && $selectedShippingOption['method']->id === $method->id)
+                                >
+                                    {{ $method->name }}（{{ $feeLabel }}）
                                 </option>
                             @endforeach
                         </select>
+                        <p class="checkout-shipping-notice" data-checkout-shipping-notice aria-live="polite">
+                            @include('front.checkout._shipping-notice', ['option' => $selectedShippingOption, 'goodsTotal' => $goodsTotal])
+                        </p>
                     </div>
                     <div class="form-field">
                         <label>決済方法</label>
@@ -111,14 +132,29 @@
                     <span>-{{ number_format($summary->discount) }}円</span>
                 </p>
             @endif
-            <p class="checkout-summary__row checkout-summary__total">
-                <span>@if (config('shop.coupons_enabled') && $summary->discount > 0)合計（割引後）@else合計@endif</span>
-                <span>{{ number_format($summary->totalAfterDiscount()) }}円（税込）</span>
+            <p class="checkout-summary__row">
+                <span>送料</span>
+                <span
+                    class="checkout-summary__shipping{{ ($selectedShippingOption['fee'] ?? null) === 0 ? ' checkout-summary__shipping--free' : '' }}"
+                    data-checkout-shipping-fee
+                >
+                    @if (($selectedShippingOption['fee'] ?? null) === 0)
+                        送料無料
+                    @elseif ($selectedShippingOption)
+                        {{ number_format($selectedShippingOption['fee']) }}円
+                    @else
+                        —
+                    @endif
+                </span>
             </p>
-            <p class="text-muted checkout-summary__note">送料・手数料は確認画面でご確認いただけます。</p>
+            <p class="text-muted checkout-summary__note">代引手数料は確認画面でご確認いただけます。</p>
             <div class="checkout-summary__actions">
                 <button type="submit" form="checkout-form" class="btn btn--primary btn--block">注文内容を確認する</button>
             </div>
         </aside>
     </div>
+@endsection
+
+@section('script')
+    <script src="{{ asset('js/front/checkout.js') }}" defer></script>
 @endsection

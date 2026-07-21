@@ -307,6 +307,71 @@ class CheckoutTest extends TestCase
     }
 
     #[Test]
+    public function checkout_index_shows_remaining_amount_until_free_shipping(): void
+    {
+        $this->shippingMethod->update([
+            'free_shipping_threshold' => 5000,
+        ]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 2,
+        ]);
+
+        $this->actingAs($user)->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('テスト配送（500円）', false)
+            ->assertSee('あと')
+            ->assertSee('2,800円')
+            ->assertSee('送料無料になります')
+            ->assertDontSee('円〜');
+    }
+
+    #[Test]
+    public function checkout_index_shows_free_shipping_when_threshold_is_met(): void
+    {
+        $this->shippingMethod->update([
+            'free_shipping_threshold' => 2000,
+        ]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 2,
+        ]);
+
+        $this->actingAs($user)->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('テスト配送（送料無料）', false)
+            ->assertSee('この配送方法は')
+            ->assertSee('送料無料')
+            ->assertDontSee('円〜');
+    }
+
+    #[Test]
+    public function checkout_confirm_shows_free_shipping_label(): void
+    {
+        $this->shippingMethod->update([
+            'free_shipping_threshold' => 2000,
+        ]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 2,
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $this->checkoutPayload('bank_transfer'))
+            ->assertOk()
+            ->assertSee('送料無料')
+            ->assertDontSee('>0円<', false);
+    }
+
+    #[Test]
     public function checkout_confirm_shows_amount_breakdown(): void
     {
         $user = User::factory()->create();

@@ -751,6 +751,71 @@ class AdminOrderTest extends TestCase
             ->assertSessionHasErrors(['shipping_mail_subject', 'shipping_mail_body']);
     }
 
+    #[Test]
+    public function admin_can_revert_shipped_order_to_unshipped(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630860',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+            'shipping_status' => OrderStatus::Shipped,
+            'shipped_at' => now(),
+            'tracking_number' => 'TRACK-REVERT',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+                'revert_shipping_status' => OrderStatus::Unshipped->value,
+            ]))
+            ->assertRedirect(route('admin.orders.show', $order));
+
+        $order->refresh();
+        $this->assertSame(OrderStatus::Unshipped, $order->shipping_status);
+        $this->assertNull($order->shipped_at);
+        $this->assertSame('TRACK-REVERT', $order->tracking_number);
+        $this->assertTrue($order->canCancel());
+    }
+
+    #[Test]
+    public function admin_can_revert_shipped_order_to_partially_shipped(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630861',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+            'shipping_status' => OrderStatus::Shipped,
+            'shipped_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+                'revert_shipping_status' => OrderStatus::PartiallyShipped->value,
+            ]))
+            ->assertRedirect(route('admin.orders.show', $order));
+
+        $order->refresh();
+        $this->assertSame(OrderStatus::PartiallyShipped, $order->shipping_status);
+        $this->assertNull($order->shipped_at);
+    }
+
+    #[Test]
+    public function cannot_revert_shipping_status_with_forward_shipping_action(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630862',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+            'shipping_status' => OrderStatus::PartiallyShipped,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+                'revert_shipping_status' => OrderStatus::Unshipped->value,
+                'mark_as_shipped' => '1',
+            ]))
+            ->assertSessionHasErrors('revert_shipping_status');
+    }
+
     /**
      * @param  array<string, mixed>  $overrides
      */

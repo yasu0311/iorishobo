@@ -328,6 +328,17 @@
         <h2>操作</h2>
         <p class="order-actions__intro order-edit-form__view">編集を押すと、下の操作を実行できます。</p>
 
+        @php
+            $shippingBlockedByPayment = $order->isActive()
+                && $order->shipping_status === OrderStatus::Unshipped
+                && $order->payment_status === PaymentStatus::Pending
+                && in_array($order->payment_method, [PaymentMethod::BankTransfer, PaymentMethod::Stripe], true);
+            $showShippingActions = $order->canMarkAsPartiallyShipped()
+                || $order->canShip()
+                || $order->canRevertShippingStatus()
+                || $shippingBlockedByPayment;
+        @endphp
+
         <div class="order-actions__groups order-edit-form__view">
             @if ($order->canMarkAsPaid())
                 <div class="order-action-group">
@@ -336,7 +347,7 @@
                 </div>
             @endif
 
-            @if ($order->canMarkAsPartiallyShipped() || $order->canShip() || ($order->isActive() && $order->shipping_status === OrderStatus::Unshipped && $order->payment_status === PaymentStatus::Pending && in_array($order->payment_method, [PaymentMethod::BankTransfer, PaymentMethod::Stripe], true)))
+            @if ($showShippingActions)
                 <div class="order-action-group">
                     <h3 class="order-action-group__title">発送</h3>
                     @if ($order->canMarkAsPartiallyShipped() || $order->canShip())
@@ -349,6 +360,10 @@
                             @else
                                 （発送完了にできます）
                             @endif
+                        </p>
+                    @elseif ($order->canRevertShippingStatus())
+                        <p class="order-action-group__status">
+                            現在: {{ $order->shipping_status->label() }}（編集から未発送などに戻せます）
                         </p>
                     @elseif ($order->payment_method === PaymentMethod::BankTransfer)
                         <p class="order-action-group__status notice">振込未入金のため発送できません</p>
@@ -392,10 +407,14 @@
                 </div>
             @endif
 
-            @if ($order->canMarkAsPartiallyShipped() || $order->canShip() || ($order->isActive() && $order->shipping_status === OrderStatus::Unshipped && $order->payment_status === PaymentStatus::Pending && in_array($order->payment_method, [PaymentMethod::BankTransfer, PaymentMethod::Stripe], true)))
+            @if ($showShippingActions)
                 <div class="order-action-group">
                     <h3 class="order-action-group__title">発送</h3>
-                    <p class="order-action-group__hint">どちらか一方だけ選んでください。メールを送る場合は、下の件名・本文を確認・編集してから保存します。</p>
+                    @if ($order->canMarkAsPartiallyShipped() || $order->canShip())
+                        <p class="order-action-group__hint">どちらか一方だけ選んでください。メールを送る場合は、下の件名・本文を確認・編集してから保存します。</p>
+                    @elseif ($order->canRevertShippingStatus())
+                        <p class="order-action-group__hint">現在: {{ $order->shipping_status->label() }}。誤操作のときは、下で発送状態を戻せます。</p>
+                    @endif
 
                     @if ($order->canMarkAsPartiallyShipped())
                         <div class="form-field">
@@ -452,6 +471,21 @@
                                     <p class="form-hint">一部発送のときは、送った商品と後日送る分を本文に書いてください。</p>
                                 </div>
                             </div>
+                        </div>
+                    @endif
+
+                    @if ($order->canRevertShippingStatus())
+                        <div class="form-field">
+                            <label for="revert_shipping_status">発送状態を戻す</label>
+                            <select id="revert_shipping_status" name="revert_shipping_status">
+                                <option value="">変更しない</option>
+                                @foreach ($order->revertableShippingStatuses() as $status)
+                                    <option value="{{ $status->value }}" @selected(old('revert_shipping_status') === $status->value)>
+                                        {{ $status->label() }}に戻す
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="form-hint">メールは送りません。発送処理と同時には選べません。</p>
                         </div>
                     @endif
                 </div>
