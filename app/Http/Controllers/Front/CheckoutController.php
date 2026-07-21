@@ -37,12 +37,7 @@ class CheckoutController extends Controller
             ]);
         }
 
-        if ($request->session()->pull('checkout_came_from_back', false)) {
-            $input = $request->session()->get('checkout_input', []);
-        } else {
-            $request->session()->forget('checkout_input');
-            $input = [];
-        }
+        $input = $request->session()->get('checkout_input', []);
 
         $goodsTotal = $summary->totalAfterDiscount();
 
@@ -148,11 +143,44 @@ class CheckoutController extends Controller
         return redirect()->route('checkout.complete');
     }
 
-    public function back(Request $request): RedirectResponse
+    public function back(): RedirectResponse
     {
-        $request->session()->put('checkout_came_from_back', true);
-
         return redirect()->route('checkout.index');
+    }
+
+    public function editCart(Request $request): RedirectResponse
+    {
+        $fields = [
+            'buyer_name',
+            'buyer_name_kana',
+            'buyer_email',
+            'buyer_phone',
+            'buyer_mobile',
+            'buyer_postal_code',
+            'buyer_prefecture',
+            'buyer_address_line1',
+            'buyer_address_line2',
+            'shipping_name',
+            'shipping_name_kana',
+            'shipping_phone',
+            'shipping_postal_code',
+            'shipping_prefecture',
+            'shipping_address_line1',
+            'shipping_address_line2',
+            'shipping_method_id',
+            'payment_method',
+            'customer_note',
+        ];
+
+        if ($request->hasAny($fields)) {
+            $existing = $request->session()->get('checkout_input', []);
+            $request->session()->put(
+                'checkout_input',
+                array_merge($existing, $request->only($fields)),
+            );
+        }
+
+        return redirect()->route('cart.index');
     }
 
     public function cancel(Order $order): View|RedirectResponse

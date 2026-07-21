@@ -9,6 +9,7 @@ use App\Enums\PaymentStatus;
 use App\Mail\BankTransferInstructionMail;
 use App\Mail\OrderConfirmationMail;
 use App\Models\Category;
+use App\Models\Cart;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
@@ -387,7 +388,61 @@ class CheckoutTest extends TestCase
             ->assertSee('2,200円')
             ->assertSee('500円')
             ->assertSee('代引手数料')
-            ->assertSee('3,030円');
+            ->assertSee('3,030円')
+            ->assertSee('商品・数量を変更する')
+            ->assertSee(route('cart.index'));
+    }
+
+    #[Test]
+    public function checkout_input_is_preserved_after_returning_from_cart(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $payload = $this->checkoutPayload('cod');
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $payload)->assertOk();
+
+        $itemId = Cart::query()->where('user_id', $user->id)->first()->items()->first()->id;
+
+        $this->actingAs($user)->patch(route('cart.items.update', $itemId), [
+            'quantity' => 2,
+        ])->assertRedirect(route('cart.index'));
+
+        $this->actingAs($user)->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('value="テスト太郎"', false)
+            ->assertSee('value="buyer@example.com"', false);
+    }
+
+    #[Test]
+    public function checkout_edit_cart_saves_draft_input(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.edit-cart'), [
+            'buyer_name' => '下書き太郎',
+            'buyer_email' => 'draft@example.com',
+            'buyer_postal_code' => '1000001',
+            'buyer_prefecture' => '東京都',
+            'buyer_address_line1' => '千代田区1-1',
+            'shipping_method_id' => $this->shippingMethod->id,
+            'payment_method' => 'cod',
+        ])->assertRedirect(route('cart.index'));
+
+        $this->actingAs($user)->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('value="下書き太郎"', false)
+            ->assertSee('value="draft@example.com"', false);
     }
 
     #[Test]

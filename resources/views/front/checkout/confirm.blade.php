@@ -16,7 +16,10 @@
     <div class="checkout-layout">
         <div class="checkout-main">
             <section class="panel">
-                <h2>ご注文商品</h2>
+                <div class="checkout-panel-heading">
+                    <h2>ご注文商品</h2>
+                    <a href="{{ route('cart.index') }}" class="btn btn--sm btn--secondary">商品・数量を変更する</a>
+                </div>
                 @include('front.checkout._items', ['summary' => $summary])
             </section>
 

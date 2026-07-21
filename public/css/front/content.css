@@ -297,6 +297,19 @@
   font-size: 1.125rem;
 }
 
+.checkout-panel-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.checkout-panel-heading h2 {
+  margin: 0;
+}
+
 .checkout-form__actions {
   display: flex;
   flex-direction: column;
@@ -304,12 +317,12 @@
   margin-top: 0.25rem;
 }
 
-.checkout-form__actions form {
+.checkout-form__actions > * {
   margin: 0;
   width: 100%;
 }
 
-.checkout-form__actions form + form {
+.checkout-form__actions > * + * {
   padding-top: 1rem;
   border-top: 1px solid var(--color-border);
 }
@@ -371,12 +384,12 @@
   gap: 1rem;
 }
 
-.checkout-summary__actions form {
+.checkout-summary__actions > * {
   margin: 0;
   width: 100%;
 }
 
-.checkout-summary__actions form + form {
+.checkout-summary__actions > * + * {
   padding-top: 1rem;
   border-top: 1px solid var(--color-border);
 }

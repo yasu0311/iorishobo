@@ -14,24 +14,20 @@ class ShippingMethodSeeder extends Seeder
      */
     public function run(): void
     {
-        $freeThreshold = filled(env('SHIPPING_FREE_THRESHOLD'))
-            ? (int) env('SHIPPING_FREE_THRESHOLD')
-            : 5000;
-
         $methods = [
             [
                 'slug' => 'clickpost',
                 'name' => 'クリックポスト',
-                'base_fee' => (int) env('SHIPPING_CLICKPOST_FEE', 185),
-                'free_shipping_threshold' => $freeThreshold,
+                'base_fee' => (int) env('SHIPPING_CLICKPOST_FEE', 150),
+                'free_shipping_threshold' => 3000,
                 'is_active' => true,
                 'sort_order' => 1,
             ],
             [
                 'slug' => 'yu-pack',
                 'name' => 'ゆうパック',
-                'base_fee' => (int) env('SHIPPING_YUPACK_FEE', 770),
-                'free_shipping_threshold' => $freeThreshold,
+                'base_fee' => (int) env('SHIPPING_YUPACK_FEE', 600),
+                'free_shipping_threshold' => 8000,
                 'is_active' => true,
                 'sort_order' => 2,
             ],

@@ -8,7 +8,16 @@
     <div class="checkout-layout">
         <div class="checkout-main">
             <section class="panel">
-                <h2>ご注文商品</h2>
+                <div class="checkout-panel-heading">
+                    <h2>ご注文商品</h2>
+                    <button
+                        type="submit"
+                        form="checkout-form"
+                        formaction="{{ route('checkout.edit-cart') }}"
+                        formnovalidate
+                        class="btn btn--sm btn--secondary"
+                    >商品・数量を変更する</button>
+                </div>
                 @include('front.checkout._items', ['summary' => $summary])
             </section>
 
