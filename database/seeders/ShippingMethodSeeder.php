@@ -17,7 +17,7 @@ class ShippingMethodSeeder extends Seeder
         $methods = [
             [
                 'slug' => 'clickpost',
-                'name' => 'クリックポスト',
+                'name' => '指定なし',
                 'base_fee' => (int) env('SHIPPING_CLICKPOST_FEE', 150),
                 'free_shipping_threshold' => 3000,
                 'is_active' => true,

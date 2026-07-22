@@ -63,12 +63,18 @@ class CheckoutController extends Controller
             fn (array $option): bool => $option['method']->id === $selectedShippingId,
         ) ?? $shippingOptions->first();
 
+        $selectedPaymentMethod = old(
+            'payment_method',
+            $input['payment_method'] ?? PaymentMethod::Stripe->value,
+        );
+
         $customer = Auth::user()?->customer;
 
         return view('front.checkout.index', compact(
             'summary',
             'shippingOptions',
             'selectedShippingOption',
+            'selectedPaymentMethod',
             'goodsTotal',
             'customer',
             'input',

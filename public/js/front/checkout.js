@@ -44,4 +44,5 @@
   };
 
   shippingSelect.addEventListener('change', updateShippingDisplay);
+  updateShippingDisplay();
 })();

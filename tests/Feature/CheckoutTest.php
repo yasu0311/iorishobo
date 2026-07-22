@@ -308,6 +308,65 @@ class CheckoutTest extends TestCase
     }
 
     #[Test]
+    public function checkout_index_defaults_to_first_shipping_and_stripe_payment(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('checkout.index'));
+        $response->assertOk();
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($dom);
+
+        $selectedShipping = $xpath->query('//select[@name="shipping_method_id"]/option[@selected]');
+        $this->assertNotNull($selectedShipping->item(0));
+        $this->assertSame((string) $this->shippingMethod->id, $selectedShipping->item(0)->getAttribute('value'));
+
+        $selectedPayment = $xpath->query('//select[@name="payment_method"]/option[@selected]');
+        $this->assertNotNull($selectedPayment->item(0));
+        $this->assertSame('stripe', $selectedPayment->item(0)->getAttribute('value'));
+        $this->assertSame('クレジットカード', trim($selectedPayment->item(0)->textContent));
+    }
+
+    #[Test]
+    public function checkout_index_restores_previous_shipping_and_payment_selection(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $response = $this->withSession([
+            'checkout_input' => [
+                'shipping_method_id' => $this->shippingMethod->id,
+                'payment_method' => 'cod',
+            ],
+        ])->actingAs($user)->get(route('checkout.index'));
+
+        $response->assertOk();
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($dom);
+
+        $selectedShipping = $xpath->query('//select[@name="shipping_method_id"]/option[@selected]');
+        $this->assertNotNull($selectedShipping->item(0));
+        $this->assertSame((string) $this->shippingMethod->id, $selectedShipping->item(0)->getAttribute('value'));
+
+        $selectedPayment = $xpath->query('//select[@name="payment_method"]/option[@selected]');
+        $this->assertNotNull($selectedPayment->item(0));
+        $this->assertSame('cod', $selectedPayment->item(0)->getAttribute('value'));
+    }
+
+    #[Test]
     public function checkout_index_shows_payment_fee_in_summary(): void
     {
         config(['shop.cod_fee' => 330]);
@@ -319,7 +378,11 @@ class CheckoutTest extends TestCase
             'quantity' => 1,
         ]);
 
-        $this->actingAs($user)->get(route('checkout.index'))
+        $this->withSession([
+            'checkout_input' => [
+                'payment_method' => 'cod',
+            ],
+        ])->actingAs($user)->get(route('checkout.index'))
             ->assertOk()
             ->assertSee('代金引換（330円）', false)
             ->assertSee('data-checkout-payment-select', false)

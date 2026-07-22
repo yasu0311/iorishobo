@@ -119,16 +119,15 @@
                             $codFeeLabel = $effectiveCodFee === 0
                                 ? '無料'
                                 : number_format($effectiveCodFee).'円';
-                            $selectedPaymentMethod = old('payment_method', $input['payment_method'] ?? 'cod');
                         @endphp
                         <label for="payment_method">決済方法</label>
                         <select name="payment_method" id="payment_method" required data-checkout-payment-select>
                             <option
-                                value="cod"
-                                data-fee="{{ $effectiveCodFee }}"
-                                data-fee-label="{{ $effectiveCodFee === 0 ? '0円' : number_format($effectiveCodFee).'円' }}"
-                                @selected($selectedPaymentMethod === 'cod')
-                            >代金引換（{{ $codFeeLabel }}）</option>
+                                value="stripe"
+                                data-fee="0"
+                                data-fee-label="0円"
+                                @selected($selectedPaymentMethod === 'stripe')
+                            >クレジットカード</option>
                             <option
                                 value="bank_transfer"
                                 data-fee="0"
@@ -136,11 +135,11 @@
                                 @selected($selectedPaymentMethod === 'bank_transfer')
                             >銀行振込</option>
                             <option
-                                value="stripe"
-                                data-fee="0"
-                                data-fee-label="0円"
-                                @selected($selectedPaymentMethod === 'stripe')
-                            >クレジットカード</option>
+                                value="cod"
+                                data-fee="{{ $effectiveCodFee }}"
+                                data-fee-label="{{ $effectiveCodFee === 0 ? '0円' : number_format($effectiveCodFee).'円' }}"
+                                @selected($selectedPaymentMethod === 'cod')
+                            >代金引換（{{ $codFeeLabel }}）</option>
                         </select>
                     </div>
                     <div class="form-field">
