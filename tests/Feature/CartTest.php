@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Listeners\MergeCartOnLogin;
 use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Coupon;
@@ -10,9 +9,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\Cart\CartService;
-use Illuminate\Auth\Events\Login;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -185,6 +182,39 @@ class CartTest extends TestCase
     }
 
     #[Test]
+    public function login_via_http_merges_guest_cart(): void
+    {
+        $this->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 2,
+        ]);
+
+        $user = User::factory()->create([
+            'email' => 'member@example.com',
+            'password' => 'password',
+        ]);
+
+        $this->post(route('login'), [
+            'email' => 'member@example.com',
+            'password' => 'password',
+        ])->assertRedirect(route('home'));
+
+        $this->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('テスト商品', false)
+            ->assertSee('2', false);
+
+        $this->assertDatabaseHas('carts', [
+            'user_id' => $user->id,
+            'session_id' => null,
+        ]);
+        $this->assertDatabaseHas('cart_items', [
+            'product_variant_id' => $this->variant->id,
+            'quantity' => 2,
+        ]);
+    }
+
+    #[Test]
     public function login_merges_guest_cart_into_user_cart(): void
     {
         $this->post(route('cart.items.store'), [
@@ -233,14 +263,6 @@ class CartTest extends TestCase
             'product_variant_id' => $this->variant->id,
             'quantity' => 3,
         ]);
-    }
-
-    #[Test]
-    public function login_event_triggers_cart_merge(): void
-    {
-        Event::fake([Login::class]);
-
-        Event::assertListening(Login::class, MergeCartOnLogin::class);
     }
 
     #[Test]

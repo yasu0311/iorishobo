@@ -37,7 +37,6 @@ class CheckoutTest extends TestCase
     {
         parent::setUp();
 
-        $this->startSession();
         Mail::fake();
 
         $category = Category::query()->create([
@@ -552,6 +551,60 @@ class CheckoutTest extends TestCase
         $this->actingAs($user)->post(route('checkout.store'))
             ->assertRedirect(route('checkout.index'))
             ->assertSessionHasErrors('cart');
+    }
+
+    #[Test]
+    public function checkout_confirm_remembers_cart_for_back_navigation(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $cart = Cart::query()->where('user_id', $user->id)->first();
+        $this->assertNotNull($cart);
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $this->checkoutPayload('cod'))
+            ->assertOk();
+
+        $this->assertSame($cart->id, session('checkout_cart_id'));
+
+        $this->actingAs($user)->post(route('checkout.back'))
+            ->assertRedirect(route('checkout.index'));
+
+        $this->actingAs($user)->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('テスト商品', false);
+
+        $this->assertDatabaseCount('cart_items', 1);
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    #[Test]
+    public function checkout_back_preserves_guest_cart_after_session_regeneration(): void
+    {
+        $this->startSession();
+        $summary = app(CartService::class)->addItem($this->variant, 1);
+        app(CartService::class)->rememberForCheckout($summary->cart);
+
+        $this->withSession([
+            'checkout_cart_id' => $summary->cart->id,
+            'checkout_input' => $this->checkoutPayload('cod'),
+        ]);
+
+        session()->regenerate();
+
+        $this->post(route('checkout.back'))
+            ->assertRedirect(route('checkout.index'));
+
+        $this->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('テスト商品', false);
+
+        $this->assertDatabaseCount('cart_items', 1);
+        $this->assertDatabaseCount('orders', 0);
     }
 
     #[Test]

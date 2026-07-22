@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CheckoutStoreRequest;
 use App\Models\Order;
 use App\Models\ShippingMethod;
+use App\Services\Cart\CartService;
 use App\Services\Checkout\CheckoutService;
 use App\Services\Shipping\ShippingFeeCalculator;
 use Illuminate\Contracts\View\View;
@@ -21,6 +22,7 @@ class CheckoutController extends Controller
     public function __construct(
         private readonly CheckoutService $checkoutService,
         private readonly ShippingFeeCalculator $shippingFeeCalculator,
+        private readonly CartService $cartService,
     ) {}
 
     public function index(Request $request): View|RedirectResponse
@@ -38,6 +40,8 @@ class CheckoutController extends Controller
         }
 
         $input = $request->session()->get('checkout_input', []);
+
+        $this->cartService->rememberForCheckout($summary->cart);
 
         $goodsTotal = $summary->totalAfterDiscount();
 
@@ -97,6 +101,7 @@ class CheckoutController extends Controller
 
         $input = $request->validated();
         $request->session()->put('checkout_input', $input);
+        $this->cartService->rememberForCheckout($summary->cart);
 
         $shippingMethod = ShippingMethod::query()
             ->whereKey($input['shipping_method_id'])
@@ -140,6 +145,7 @@ class CheckoutController extends Controller
 
         $order = $result['order'];
         $request->session()->forget('checkout_input');
+        $this->cartService->forgetCheckoutCart();
         session(['checkout_order_id' => $order->id]);
 
         if ($result['redirect'] === 'stripe') {

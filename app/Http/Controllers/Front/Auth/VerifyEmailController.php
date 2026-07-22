@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Front\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Cart\CartService;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -12,6 +13,10 @@ use Illuminate\Support\Facades\Auth;
 
 class VerifyEmailController extends Controller
 {
+    public function __construct(
+        private readonly CartService $cartService,
+    ) {}
+
     public function notice(): View
     {
         return view('front.auth.verify-email');
@@ -30,7 +35,11 @@ class VerifyEmailController extends Controller
             event(new Verified($user));
         }
 
+        $guestSessionId = $request->session()->get('cart_session_id', $request->session()->getId());
+
         Auth::login($user);
+
+        $this->cartService->mergeGuestCartIntoUserCart($user, $guestSessionId);
 
         return redirect()
             ->to($user->defaultHomeUrl())

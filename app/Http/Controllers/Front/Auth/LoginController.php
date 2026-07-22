@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Front\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\Cart\CartService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,10 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
+    public function __construct(
+        private readonly CartService $cartService,
+    ) {}
+
     public function create(): View
     {
         return view('front.auth.login');
@@ -19,6 +24,8 @@ class LoginController extends Controller
 
     public function store(LoginRequest $request): RedirectResponse
     {
+        $guestSessionId = $request->session()->get('cart_session_id', $request->session()->getId());
+
         if (! Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'email' => 'メールアドレスまたはパスワードが正しくありません。',
@@ -36,6 +43,8 @@ class LoginController extends Controller
                 'email' => 'メール認証が完了していません。登録時のメールをご確認ください。',
             ]);
         }
+
+        $this->cartService->mergeGuestCartIntoUserCart($user, $guestSessionId);
 
         $request->session()->regenerate();
 

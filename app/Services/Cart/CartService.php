@@ -15,6 +15,11 @@ class CartService
 {
     public function currentCart(?User $user = null, ?string $sessionId = null): Cart
     {
+        $checkoutCart = $this->resolveCheckoutCart($user);
+        if ($checkoutCart !== null) {
+            return $checkoutCart;
+        }
+
         $user ??= Auth::user();
         $sessionId ??= session()->getId();
 
@@ -25,10 +30,14 @@ class CartService
             );
         }
 
-        return Cart::query()->firstOrCreate(
+        $cart = Cart::query()->firstOrCreate(
             ['session_id' => $sessionId],
             ['user_id' => null],
         );
+
+        session(['cart_session_id' => $sessionId]);
+
+        return $cart;
     }
 
     public function summary(?Cart $cart = null): CartSummary
@@ -188,6 +197,18 @@ class CartService
         $cart->items()->delete();
         $cart->update(['coupon_id' => null]);
         $cart->touch();
+
+        $this->forgetCheckoutCart();
+    }
+
+    public function rememberForCheckout(Cart $cart): void
+    {
+        session(['checkout_cart_id' => $cart->id]);
+    }
+
+    public function forgetCheckoutCart(): void
+    {
+        session()->forget('checkout_cart_id');
     }
 
     public function mergeGuestCartIntoUserCart(User $user, string $sessionId): void
@@ -232,7 +253,46 @@ class CartService
             $guestCart->delete();
             $userCart->update(['session_id' => null]);
             $userCart->touch();
+
+            if (session('checkout_cart_id') === $guestCart->id) {
+                session(['checkout_cart_id' => $userCart->id]);
+            }
+
+            session()->forget('cart_session_id');
         });
+    }
+
+    private function resolveCheckoutCart(?User $user = null): ?Cart
+    {
+        $cartId = session('checkout_cart_id');
+
+        if ($cartId === null) {
+            return null;
+        }
+
+        $cart = Cart::query()->find($cartId);
+
+        if ($cart === null) {
+            return null;
+        }
+
+        $user ??= Auth::user();
+
+        if ($user !== null) {
+            return $cart->user_id === $user->id ? $cart : null;
+        }
+
+        if ($cart->user_id !== null) {
+            return null;
+        }
+
+        $sessionId = session()->getId();
+
+        if ($cart->session_id !== $sessionId) {
+            $cart->update(['session_id' => $sessionId]);
+        }
+
+        return $cart;
     }
 
     private function resolveApplicableCoupon(Cart $cart, int $subtotal): ?Coupon

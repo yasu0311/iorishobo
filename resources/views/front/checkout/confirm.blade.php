@@ -148,15 +148,15 @@
             </section>
 
             <div class="checkout-form__actions">
+                <form method="post" action="{{ route('checkout.back') }}">
+                    @csrf
+                    <button type="submit" class="btn btn--secondary btn--block">入力内容を修正する</button>
+                </form>
                 <form method="post" action="{{ route('checkout.store') }}">
                     @csrf
                     <button type="submit" class="btn btn--primary btn--block">
                         {{ $paymentMethod->value === 'stripe' ? '決済画面に進む' : '注文を確定する' }}
                     </button>
-                </form>
-                <form method="post" action="{{ route('checkout.back') }}">
-                    @csrf
-                    <button type="submit" class="btn btn--secondary btn--block">入力内容を修正する</button>
                 </form>
             </div>
         </div>
@@ -198,15 +198,15 @@
                 <span>{{ number_format($amounts['total']) }}円（税込）</span>
             </p>
             <div class="checkout-summary__actions">
+                <form method="post" action="{{ route('checkout.back') }}">
+                    @csrf
+                    <button type="submit" class="btn btn--secondary btn--block">入力内容を修正する</button>
+                </form>
                 <form method="post" action="{{ route('checkout.store') }}">
                     @csrf
                     <button type="submit" class="btn btn--primary btn--block">
                         {{ $paymentMethod->value === 'stripe' ? '決済画面に進む' : '注文を確定する' }}
                     </button>
-                </form>
-                <form method="post" action="{{ route('checkout.back') }}">
-                    @csrf
-                    <button type="submit" class="btn btn--secondary btn--block">入力内容を修正する</button>
                 </form>
             </div>
         </aside>
