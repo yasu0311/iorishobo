@@ -7,7 +7,7 @@
 
     @if ($summary->isEmpty())
         <p class="text-muted">カートに商品はありません。</p>
-        <p><a href="{{ route('products.index') }}" class="btn btn--primary">商品一覧へ</a></p>
+        <p><a href="{{ route('products.index') }}" class="btn btn--primary">買い物を続ける</a></p>
     @else
         @if ($summary->hasStockIssues)
             <x-alert type="error">在庫不足の商品があります。{{ config('shop.quantity_unit') }}数を調整するか削除してください。チェックアウトはできません。</x-alert>
@@ -91,11 +91,12 @@
                     <span>{{ number_format($summary->totalAfterDiscount()) }}円</span>
                 </p>
 
-                @if ($summary->canCheckout)
-                    <div class="cart-actions">
+                <div class="cart-actions">
+                    @if ($summary->canCheckout)
                         <a href="{{ route('checkout.index') }}" class="btn btn--primary">レジに進む</a>
-                    </div>
-                @endif
+                    @endif
+                    <a href="{{ route('products.index') }}" class="btn btn--secondary">買い物を続ける</a>
+                </div>
             </aside>
         </div>
     @endif

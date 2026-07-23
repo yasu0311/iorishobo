@@ -18,6 +18,14 @@ class CheckoutStoreRequest extends FormRequest
      */
     public function rules(): array
     {
+        return self::ruleSet();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function ruleSet(): array
+    {
         return [
             'buyer_name' => 'required|string|max:100',
             'buyer_name_kana' => 'nullable|string|max:100',
@@ -42,5 +50,14 @@ class CheckoutStoreRequest extends FormRequest
             ))],
             'customer_note' => 'nullable|string|max:1000',
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    public static function validatePayload(array $input): array
+    {
+        return validator($input, self::ruleSet())->validate();
     }
 }

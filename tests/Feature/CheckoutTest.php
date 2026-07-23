@@ -554,6 +554,67 @@ class CheckoutTest extends TestCase
     }
 
     #[Test]
+    public function checkout_store_revalidates_session_input(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->withSession([
+            'checkout_input' => [
+                'buyer_name' => '不完全太郎',
+                'payment_method' => 'cod',
+            ],
+        ])->actingAs($user)->post(route('checkout.store'))
+            ->assertRedirect(route('checkout.index'))
+            ->assertSessionHasErrors(['buyer_email', 'buyer_postal_code', 'shipping_method_id']);
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertNull(session('checkout_input'));
+    }
+
+    #[Test]
+    public function checkout_edit_cart_does_not_overwrite_confirmed_input(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $this->checkoutPayload('cod'))
+            ->assertOk();
+
+        $this->assertSame('テスト太郎', session('checkout_input')['buyer_name']);
+
+        $this->actingAs($user)->post(route('checkout.edit-cart'), [
+            'buyer_name' => '改ざん太郎',
+            'buyer_email' => 'tampered@example.com',
+            'buyer_phone' => '09000000000',
+            'buyer_postal_code' => '9999999',
+            'buyer_prefecture' => '大阪府',
+            'buyer_address_line1' => '改ざん住所',
+            'shipping_method_id' => $this->shippingMethod->id,
+            'payment_method' => 'cod',
+        ])->assertRedirect(route('cart.index'));
+
+        $this->assertSame('改ざん太郎', session('checkout_draft')['buyer_name']);
+        $this->assertSame('テスト太郎', session('checkout_input')['buyer_name']);
+
+        $this->actingAs($user)->post(route('checkout.store'))
+            ->assertRedirect(route('checkout.complete'));
+
+        $order = Order::query()->first();
+        $this->assertNotNull($order);
+        $this->assertSame('テスト太郎', $order->buyer_name);
+        $this->assertSame('buyer@example.com', $order->buyer_email);
+    }
+
+    #[Test]
     public function checkout_confirm_remembers_cart_for_back_navigation(): void
     {
         $user = User::factory()->create();

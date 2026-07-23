@@ -16,6 +16,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
 {
@@ -39,7 +40,8 @@ class CheckoutController extends Controller
             ]);
         }
 
-        $input = $request->session()->get('checkout_input', []);
+        $input = $request->session()->get('checkout_draft')
+            ?? $request->session()->get('checkout_input', []);
 
         $this->cartService->rememberForCheckout($summary->cart);
 
@@ -101,6 +103,7 @@ class CheckoutController extends Controller
 
         $input = $request->validated();
         $request->session()->put('checkout_input', $input);
+        $request->session()->forget('checkout_draft');
         $this->cartService->rememberForCheckout($summary->cart);
 
         $shippingMethod = ShippingMethod::query()
@@ -133,6 +136,16 @@ class CheckoutController extends Controller
                 ->withErrors(['cart' => '入力内容が見つかりません。もう一度お試しください。']);
         }
 
+        try {
+            $input = CheckoutStoreRequest::validatePayload($input);
+        } catch (ValidationException $e) {
+            $request->session()->forget('checkout_input');
+
+            return redirect()->route('checkout.index')
+                ->withErrors($e->errors())
+                ->withInput($input);
+        }
+
         $device = $request->userAgent() && preg_match('/mobile|android|iphone/i', $request->userAgent())
             ? DeviceType::Mobile
             : DeviceType::Pc;
@@ -144,7 +157,7 @@ class CheckoutController extends Controller
         );
 
         $order = $result['order'];
-        $request->session()->forget('checkout_input');
+        $request->session()->forget(['checkout_input', 'checkout_draft']);
         $this->cartService->forgetCheckoutCart();
         session(['checkout_order_id' => $order->id]);
 
@@ -185,9 +198,9 @@ class CheckoutController extends Controller
         ];
 
         if ($request->hasAny($fields)) {
-            $existing = $request->session()->get('checkout_input', []);
+            $existing = $request->session()->get('checkout_draft', []);
             $request->session()->put(
-                'checkout_input',
+                'checkout_draft',
                 array_merge($existing, $request->only($fields)),
             );
         }
