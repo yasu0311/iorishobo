@@ -544,6 +544,62 @@ class CheckoutTest extends TestCase
     }
 
     #[Test]
+    public function checkout_confirm_normalizes_full_width_postal_and_phone(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $payload = $this->checkoutPayload('cod');
+        $payload['buyer_postal_code'] = '１００－０００１';
+        $payload['buyer_phone'] = '０３－１２３４－５６７８';
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $payload)
+            ->assertOk();
+
+        $this->assertSame('1000001', session('checkout_input')['buyer_postal_code']);
+        $this->assertSame('03-1234-5678', session('checkout_input')['buyer_phone']);
+    }
+
+    #[Test]
+    public function checkout_confirm_rejects_invalid_prefecture(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $payload = $this->checkoutPayload('cod');
+        $payload['buyer_prefecture'] = '東京';
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $payload)
+            ->assertSessionHasErrors(['buyer_prefecture']);
+    }
+
+    #[Test]
+    public function checkout_confirm_rejects_overlong_name_without_truncating(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $payload = $this->checkoutPayload('cod');
+        $payload['buyer_name'] = str_repeat('あ', 21);
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $payload)
+            ->assertSessionHasErrors(['buyer_name'])
+            ->assertSessionMissing('checkout_input');
+    }
+
+    #[Test]
     public function checkout_store_requires_prior_confirmation(): void
     {
         $user = User::factory()->create();

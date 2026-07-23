@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Rules;
 
+use App\Http\Requests\CheckoutStoreRequest;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -12,10 +13,13 @@ class CheckoutPhoneValidationTest extends TestCase
     public function it_requires_phone_or_mobile_for_buyer(): void
     {
         $validator = Validator::make(
-            ['buyer_phone' => '', 'buyer_mobile' => ''],
+            CheckoutStoreRequest::normalizeInput([
+                'buyer_phone' => '',
+                'buyer_mobile' => '',
+            ]),
             [
-                'buyer_phone' => 'nullable|required_without:buyer_mobile',
-                'buyer_mobile' => 'nullable|required_without:buyer_phone',
+                'buyer_phone' => CheckoutStoreRequest::ruleSet()['buyer_phone'],
+                'buyer_mobile' => CheckoutStoreRequest::ruleSet()['buyer_mobile'],
             ],
         );
 
@@ -30,10 +34,13 @@ class CheckoutPhoneValidationTest extends TestCase
     public function it_passes_when_buyer_phone_is_provided(): void
     {
         $validator = Validator::make(
-            ['buyer_phone' => '0312345678', 'buyer_mobile' => ''],
+            CheckoutStoreRequest::normalizeInput([
+                'buyer_phone' => '0312345678',
+                'buyer_mobile' => '',
+            ]),
             [
-                'buyer_phone' => 'nullable|required_without:buyer_mobile',
-                'buyer_mobile' => 'nullable|required_without:buyer_phone',
+                'buyer_phone' => CheckoutStoreRequest::ruleSet()['buyer_phone'],
+                'buyer_mobile' => CheckoutStoreRequest::ruleSet()['buyer_mobile'],
             ],
         );
 
@@ -44,13 +51,52 @@ class CheckoutPhoneValidationTest extends TestCase
     public function it_passes_when_buyer_mobile_is_provided(): void
     {
         $validator = Validator::make(
-            ['buyer_phone' => '', 'buyer_mobile' => '09012345678'],
+            CheckoutStoreRequest::normalizeInput([
+                'buyer_phone' => '',
+                'buyer_mobile' => '09012345678',
+            ]),
             [
-                'buyer_phone' => 'nullable|required_without:buyer_mobile',
-                'buyer_mobile' => 'nullable|required_without:buyer_phone',
+                'buyer_phone' => CheckoutStoreRequest::ruleSet()['buyer_phone'],
+                'buyer_mobile' => CheckoutStoreRequest::ruleSet()['buyer_mobile'],
             ],
         );
 
         $this->assertFalse($validator->fails());
+    }
+
+    #[Test]
+    public function it_normalizes_full_width_phone_and_accepts_hyphen(): void
+    {
+        $input = CheckoutStoreRequest::normalizeInput([
+            'buyer_phone' => '０３－１２３４－５６７８',
+            'buyer_mobile' => '',
+        ]);
+
+        $this->assertSame('03-1234-5678', $input['buyer_phone']);
+
+        $validator = Validator::make($input, [
+            'buyer_phone' => CheckoutStoreRequest::ruleSet()['buyer_phone'],
+            'buyer_mobile' => CheckoutStoreRequest::ruleSet()['buyer_mobile'],
+        ]);
+
+        $this->assertFalse($validator->fails());
+    }
+
+    #[Test]
+    public function it_rejects_phone_with_letters(): void
+    {
+        $validator = Validator::make(
+            CheckoutStoreRequest::normalizeInput([
+                'buyer_phone' => '03-abcd-5678',
+                'buyer_mobile' => '',
+            ]),
+            [
+                'buyer_phone' => CheckoutStoreRequest::ruleSet()['buyer_phone'],
+                'buyer_mobile' => CheckoutStoreRequest::ruleSet()['buyer_mobile'],
+            ],
+        );
+
+        $this->assertTrue($validator->fails());
+        $this->assertTrue($validator->errors()->has('buyer_phone'));
     }
 }

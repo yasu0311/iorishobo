@@ -2,6 +2,32 @@
   const formatYen = (amount) =>
     `${Number(amount).toLocaleString('ja-JP')}円`;
 
+  const toHalfWidthDigitsAndHyphens = (value) => {
+    const half = value.replace(/[０-９]/g, (ch) =>
+      String.fromCharCode(ch.charCodeAt(0) - 0xfee0),
+    );
+
+    return half.replace(/[－−‐‒–—ー]/g, '-');
+  };
+
+  const normalizePostalCode = (value) =>
+    toHalfWidthDigitsAndHyphens(value).replace(/[\s-]+/g, '');
+
+  const normalizePhone = (value) =>
+    toHalfWidthDigitsAndHyphens(value).replace(/\s+/g, '');
+
+  document.querySelectorAll('[data-checkout-postal]').forEach((input) => {
+    input.addEventListener('blur', () => {
+      input.value = normalizePostalCode(input.value);
+    });
+  });
+
+  document.querySelectorAll('[data-checkout-phone]').forEach((input) => {
+    input.addEventListener('blur', () => {
+      input.value = normalizePhone(input.value);
+    });
+  });
+
   const shippingSelect = document.querySelector('[data-checkout-shipping-select]');
   const shippingFeeDisplay = document.querySelector('[data-checkout-shipping-fee]');
   const shippingNotice = document.querySelector('[data-checkout-shipping-notice]');

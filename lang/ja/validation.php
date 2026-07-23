@@ -150,9 +150,14 @@ return [
     'custom' => [
         'buyer_phone' => [
             'required_without' => '電話番号または携帯番号のいずれかを入力してください。',
+            'regex' => '購入者電話番号は半角数字とハイフンのみで入力してください。',
         ],
         'buyer_mobile' => [
             'required_without' => '電話番号または携帯番号のいずれかを入力してください。',
+            'regex' => '購入者携帯番号は半角数字とハイフンのみで入力してください。',
+        ],
+        'shipping_phone' => [
+            'regex' => '配送先電話番号は半角数字とハイフンのみで入力してください。',
         ],
         'phone' => [
             'required_without' => '電話番号または携帯番号のいずれかを入力してください。',
@@ -188,6 +193,9 @@ return [
         'shipping_prefecture' => '配送先都道府県',
         'shipping_address_line1' => '配送先住所',
         'shipping_address_line2' => '配送先建物名・部屋番号',
+        'shipping_method_id' => '配送方法',
+        'payment_method' => '決済方法',
+        'customer_note' => '備考',
     ],
 
 ];

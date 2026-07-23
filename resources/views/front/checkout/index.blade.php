@@ -40,23 +40,27 @@
                     </div>
                     <div class="form-field">
                         <label>電話番号</label>
-                        <input type="text" name="buyer_phone" value="{{ old('buyer_phone', $input['buyer_phone'] ?? $customer?->phone) }}">
+                        <input type="tel" name="buyer_phone" value="{{ old('buyer_phone', $input['buyer_phone'] ?? $customer?->phone) }}" inputmode="tel" autocomplete="tel" placeholder="例: 03-1234-5678" data-checkout-phone>
                     </div>
                     <div class="form-field">
                         <label>携帯番号</label>
-                        <input type="text" name="buyer_mobile" value="{{ old('buyer_mobile', $input['buyer_mobile'] ?? $customer?->mobile) }}">
+                        <input type="tel" name="buyer_mobile" value="{{ old('buyer_mobile', $input['buyer_mobile'] ?? $customer?->mobile) }}" inputmode="tel" autocomplete="tel" placeholder="例: 090-1234-5678" data-checkout-phone>
                     </div>
                     <div class="form-field">
                         <label>郵便番号（必須）</label>
-                        <input type="text" name="buyer_postal_code" value="{{ old('buyer_postal_code', $input['buyer_postal_code'] ?? $customer?->postal_code) }}" required maxlength="7">
+                        <input type="text" name="buyer_postal_code" value="{{ old('buyer_postal_code', $input['buyer_postal_code'] ?? $customer?->postal_code) }}" required inputmode="numeric" autocomplete="postal-code" placeholder="例: 100-0001" data-checkout-postal>
                     </div>
                     <div class="form-field">
                         <label>都道府県（必須）</label>
-                        <input type="text" name="buyer_prefecture" value="{{ old('buyer_prefecture', $input['buyer_prefecture'] ?? $customer?->prefecture) }}" required>
+                        @include('front.checkout._prefecture-select', [
+                            'name' => 'buyer_prefecture',
+                            'value' => $input['buyer_prefecture'] ?? $customer?->prefecture,
+                            'required' => true,
+                        ])
                     </div>
                     <div class="form-field">
                         <label>住所（必須）</label>
-                        <input type="text" name="buyer_address_line1" value="{{ old('buyer_address_line1', $input['buyer_address_line1'] ?? $customer?->address_line1) }}" required>
+                        <input type="text" name="buyer_address_line1" value="{{ old('buyer_address_line1', $input['buyer_address_line1'] ?? $customer?->address_line1) }}" required placeholder="市区町村・番地">
                     </div>
                     <div class="form-field">
                         <label>建物名・部屋番号（任意）</label>
@@ -67,13 +71,37 @@
                 <section class="form-section panel">
                     <h2>配送先（任意）</h2>
                     <p class="text-muted">未入力の場合は購入者住所へお届けします。</p>
-                    <div class="form-field"><label>配送先氏名<input type="text" name="shipping_name" value="{{ old('shipping_name', $input['shipping_name'] ?? '') }}"></label></div>
-                    <div class="form-field"><label>配送先フリガナ<input type="text" name="shipping_name_kana" value="{{ old('shipping_name_kana', $input['shipping_name_kana'] ?? '') }}"></label></div>
-                    <div class="form-field"><label>配送先電話<input type="text" name="shipping_phone" value="{{ old('shipping_phone', $input['shipping_phone'] ?? '') }}"></label></div>
-                    <div class="form-field"><label>郵便番号<input type="text" name="shipping_postal_code" value="{{ old('shipping_postal_code', $input['shipping_postal_code'] ?? '') }}" maxlength="7"></label></div>
-                    <div class="form-field"><label>都道府県<input type="text" name="shipping_prefecture" value="{{ old('shipping_prefecture', $input['shipping_prefecture'] ?? '') }}"></label></div>
-                    <div class="form-field"><label>住所<input type="text" name="shipping_address_line1" value="{{ old('shipping_address_line1', $input['shipping_address_line1'] ?? '') }}"></label></div>
-                    <div class="form-field"><label>建物名<input type="text" name="shipping_address_line2" value="{{ old('shipping_address_line2', $input['shipping_address_line2'] ?? '') }}"></label></div>
+                    <div class="form-field">
+                        <label>配送先氏名</label>
+                        <input type="text" name="shipping_name" value="{{ old('shipping_name', $input['shipping_name'] ?? '') }}">
+                    </div>
+                    <div class="form-field">
+                        <label>配送先フリガナ</label>
+                        <input type="text" name="shipping_name_kana" value="{{ old('shipping_name_kana', $input['shipping_name_kana'] ?? '') }}">
+                    </div>
+                    <div class="form-field">
+                        <label>配送先電話</label>
+                        <input type="tel" name="shipping_phone" value="{{ old('shipping_phone', $input['shipping_phone'] ?? '') }}" inputmode="tel" placeholder="例: 03-1234-5678" data-checkout-phone>
+                    </div>
+                    <div class="form-field">
+                        <label>郵便番号</label>
+                        <input type="text" name="shipping_postal_code" value="{{ old('shipping_postal_code', $input['shipping_postal_code'] ?? '') }}" inputmode="numeric" placeholder="例: 100-0001" data-checkout-postal>
+                    </div>
+                    <div class="form-field">
+                        <label>都道府県</label>
+                        @include('front.checkout._prefecture-select', [
+                            'name' => 'shipping_prefecture',
+                            'value' => $input['shipping_prefecture'] ?? '',
+                        ])
+                    </div>
+                    <div class="form-field">
+                        <label>住所</label>
+                        <input type="text" name="shipping_address_line1" value="{{ old('shipping_address_line1', $input['shipping_address_line1'] ?? '') }}">
+                    </div>
+                    <div class="form-field">
+                        <label>建物名</label>
+                        <input type="text" name="shipping_address_line2" value="{{ old('shipping_address_line2', $input['shipping_address_line2'] ?? '') }}">
+                    </div>
                 </section>
 
                 <section class="form-section panel">
