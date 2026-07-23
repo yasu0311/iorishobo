@@ -582,6 +582,66 @@ class CheckoutTest extends TestCase
     }
 
     #[Test]
+    public function checkout_confirm_rejects_inactive_shipping_method(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $inactive = ShippingMethod::query()->create([
+            'slug' => 'inactive-ship',
+            'name' => '無効配送',
+            'base_fee' => 0,
+            'free_shipping_threshold' => null,
+            'is_active' => false,
+            'sort_order' => 99,
+        ]);
+
+        $payload = $this->checkoutPayload('cod');
+        $payload['shipping_method_id'] = $inactive->id;
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $payload)
+            ->assertSessionHasErrors(['shipping_method_id']);
+    }
+
+    #[Test]
+    public function checkout_confirm_rejects_partial_shipping_without_name(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $payload = $this->checkoutPayload('cod');
+        $payload['shipping_prefecture'] = '大阪府';
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $payload)
+            ->assertSessionHasErrors(['shipping_name']);
+    }
+
+    #[Test]
+    public function checkout_confirm_rejects_short_phone(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $payload = $this->checkoutPayload('cod');
+        $payload['buyer_phone'] = '090';
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $payload)
+            ->assertSessionHasErrors(['buyer_phone']);
+    }
+
+    #[Test]
     public function checkout_confirm_rejects_overlong_name_without_truncating(): void
     {
         $user = User::factory()->create();
@@ -592,7 +652,7 @@ class CheckoutTest extends TestCase
         ]);
 
         $payload = $this->checkoutPayload('cod');
-        $payload['buyer_name'] = str_repeat('あ', 21);
+        $payload['buyer_name'] = str_repeat('あ', 101);
 
         $this->actingAs($user)->post(route('checkout.confirm'), $payload)
             ->assertSessionHasErrors(['buyer_name'])

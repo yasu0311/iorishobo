@@ -159,6 +159,9 @@ return [
         'shipping_phone' => [
             'regex' => '配送先電話番号は半角数字とハイフンのみで入力してください。',
         ],
+        'shipping_method_id' => [
+            'exists' => '選択された配送方法はご利用いただけません。',
+        ],
         'phone' => [
             'required_without' => '電話番号または携帯番号のいずれかを入力してください。',
         ],

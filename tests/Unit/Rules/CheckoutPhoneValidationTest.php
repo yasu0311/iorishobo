@@ -99,4 +99,42 @@ class CheckoutPhoneValidationTest extends TestCase
         $this->assertTrue($validator->fails());
         $this->assertTrue($validator->errors()->has('buyer_phone'));
     }
+
+    #[Test]
+    public function it_rejects_phone_with_too_few_digits(): void
+    {
+        foreach (['-', '1', '090', '03-1234'] as $phone) {
+            $validator = Validator::make(
+                CheckoutStoreRequest::normalizeInput([
+                    'buyer_phone' => $phone,
+                    'buyer_mobile' => '',
+                ]),
+                [
+                    'buyer_phone' => CheckoutStoreRequest::ruleSet()['buyer_phone'],
+                    'buyer_mobile' => CheckoutStoreRequest::ruleSet()['buyer_mobile'],
+                ],
+            );
+
+            $this->assertTrue($validator->fails(), "Expected rejection for: {$phone}");
+            $this->assertTrue($validator->errors()->has('buyer_phone'));
+        }
+    }
+
+    #[Test]
+    public function it_rejects_phone_with_too_many_digits(): void
+    {
+        $validator = Validator::make(
+            CheckoutStoreRequest::normalizeInput([
+                'buyer_phone' => '090123456789',
+                'buyer_mobile' => '',
+            ]),
+            [
+                'buyer_phone' => CheckoutStoreRequest::ruleSet()['buyer_phone'],
+                'buyer_mobile' => CheckoutStoreRequest::ruleSet()['buyer_mobile'],
+            ],
+        );
+
+        $this->assertTrue($validator->fails());
+        $this->assertTrue($validator->errors()->has('buyer_phone'));
+    }
 }

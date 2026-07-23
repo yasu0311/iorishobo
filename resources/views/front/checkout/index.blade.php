@@ -39,11 +39,11 @@
                         <input type="email" name="buyer_email" value="{{ old('buyer_email', $input['buyer_email'] ?? $customer?->email ?? Auth::user()?->email) }}" required>
                     </div>
                     <div class="form-field">
-                        <label>電話番号</label>
+                        <label>電話番号（いずれか必須）</label>
                         <input type="tel" name="buyer_phone" value="{{ old('buyer_phone', $input['buyer_phone'] ?? $customer?->phone) }}" inputmode="tel" autocomplete="tel" placeholder="例: 03-1234-5678" data-checkout-phone>
                     </div>
                     <div class="form-field">
-                        <label>携帯番号</label>
+                        <label>携帯番号（いずれか必須）</label>
                         <input type="tel" name="buyer_mobile" value="{{ old('buyer_mobile', $input['buyer_mobile'] ?? $customer?->mobile) }}" inputmode="tel" autocomplete="tel" placeholder="例: 090-1234-5678" data-checkout-phone>
                     </div>
                     <div class="form-field">
