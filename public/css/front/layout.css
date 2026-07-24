@@ -129,6 +129,37 @@ img { max-width: 100%; height: auto; display: block; }
   height: 1.125em;
 }
 
+.site-nav__cart-icon {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.site-nav .site-nav__cart-badge {
+  position: absolute;
+  top: -0.6em;
+  right: -0.75em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25em;
+  height: 1.25em;
+  padding: 0 0.28em;
+  border-radius: 999px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 0.65em;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.site-nav a:hover .site-nav__cart-badge {
+  color: #fff;
+}
+
 .site-nav-toggle {
   display: none;
   flex-direction: column;

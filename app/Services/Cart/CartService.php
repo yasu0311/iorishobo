@@ -40,6 +40,48 @@ class CartService
         return $cart;
     }
 
+    /**
+     * ヘッダー表示用。カートが無ければ作成せず 0 を返す。
+     */
+    public function itemQuantityTotal(): int
+    {
+        $cart = $this->findExistingCart();
+
+        if ($cart === null) {
+            return 0;
+        }
+
+        return (int) $cart->items()->sum('quantity');
+    }
+
+    public function findExistingCart(?User $user = null, ?string $sessionId = null): ?Cart
+    {
+        $checkoutCart = $this->resolveCheckoutCart($user);
+        if ($checkoutCart !== null) {
+            return $checkoutCart;
+        }
+
+        $user ??= Auth::user();
+        $sessionId ??= session()->getId();
+
+        if ($user !== null) {
+            return Cart::query()->where('user_id', $user->id)->first();
+        }
+
+        $guestSessionId = session('cart_session_id', $sessionId);
+
+        return Cart::query()
+            ->whereNull('user_id')
+            ->where(function ($query) use ($sessionId, $guestSessionId) {
+                $query->where('session_id', $sessionId);
+
+                if ($guestSessionId !== $sessionId) {
+                    $query->orWhere('session_id', $guestSessionId);
+                }
+            })
+            ->first();
+    }
+
     public function summary(?Cart $cart = null): CartSummary
     {
         $cart ??= $this->currentCart();

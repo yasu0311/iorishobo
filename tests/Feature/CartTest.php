@@ -71,6 +71,37 @@ class CartTest extends TestCase
     }
 
     #[Test]
+    public function header_shows_cart_item_count_badge(): void
+    {
+        $this->get(route('products.index'))
+            ->assertOk()
+            ->assertDontSee('site-nav__cart-badge', false)
+            ->assertDontSee('カート（', false);
+
+        $this->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 2,
+        ]);
+
+        $this->get(route('products.index'))
+            ->assertOk()
+            ->assertSee('site-nav__cart-badge', false)
+            ->assertSee('>2</span>', false)
+            ->assertSee('aria-label="カート（2点）"', false);
+
+        $this->assertDatabaseCount('carts', 1);
+    }
+
+    #[Test]
+    public function browsing_pages_does_not_create_empty_cart(): void
+    {
+        $this->get(route('products.index'))->assertOk();
+        $this->get(route('categories.index'))->assertOk();
+
+        $this->assertDatabaseCount('carts', 0);
+    }
+
+    #[Test]
     public function it_rejects_adding_more_than_available_stock(): void
     {
         $response = $this->post(route('cart.items.store'), [
