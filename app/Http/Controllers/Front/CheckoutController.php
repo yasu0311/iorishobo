@@ -150,6 +150,11 @@ class CheckoutController extends Controller
             ? DeviceType::Mobile
             : DeviceType::Pc;
 
+        $previousOrderId = $request->session()->get('checkout_order_id');
+        $this->checkoutService->cancelPreviousIncompleteStripeCheckout(
+            $previousOrderId !== null ? (int) $previousOrderId : null,
+        );
+
         $result = $this->checkoutService->placeOrder(
             $input,
             Auth::user(),
@@ -218,6 +223,10 @@ class CheckoutController extends Controller
             return redirect()->route('checkout.complete');
         }
 
+        if ($order->payment_status === PaymentStatus::Cancelled) {
+            return redirect()->route('cart.index');
+        }
+
         if ($order->payment_status === PaymentStatus::Paid
             || $this->checkoutService->syncStripePaymentStatusIfSucceeded($order)) {
             return redirect()->route('checkout.complete');
@@ -226,13 +235,44 @@ class CheckoutController extends Controller
         return view('front.checkout.cancel', compact('order'));
     }
 
+    public function returnToCart(Order $order): RedirectResponse
+    {
+        if (session('checkout_order_id') !== $order->id) {
+            abort(403);
+        }
+
+        if ($order->payment_method !== PaymentMethod::Stripe) {
+            return redirect()->route('checkout.complete');
+        }
+
+        if ($order->payment_status === PaymentStatus::Paid
+            || $this->checkoutService->syncStripePaymentStatusIfSucceeded($order)) {
+            return redirect()->route('checkout.complete');
+        }
+
+        $this->checkoutService->cancelIncompleteStripeCheckout(
+            $order,
+            CheckoutService::CANCEL_REASON_RETURN_TO_CART,
+        );
+
+        session()->forget('checkout_order_id');
+
+        return redirect()->route('cart.index')
+            ->with('status', 'お支払いを中止しました。カートの内容は保持されています。');
+    }
+
     public function resume(Order $order): RedirectResponse
     {
         if (session('checkout_order_id') !== $order->id) {
             abort(403);
         }
 
-        if ($order->payment_method !== PaymentMethod::Stripe || $order->payment_status !== PaymentStatus::Pending) {
+        if ($order->payment_method !== PaymentMethod::Stripe
+            || $order->payment_status === PaymentStatus::Cancelled) {
+            return redirect()->route('cart.index');
+        }
+
+        if ($order->payment_status !== PaymentStatus::Pending) {
             return redirect()->route('checkout.complete');
         }
 
@@ -266,6 +306,12 @@ class CheckoutController extends Controller
             } elseif ($this->checkoutService->syncStripePaymentStatusIfSucceeded($order)) {
                 $order = $order->fresh(['items']);
             }
+        }
+
+        // ゲストは Webhook 時点でセッションが無いため、success 復帰時にカートを空にする。
+        if ($order->payment_method === PaymentMethod::Stripe
+            && $order->payment_status === PaymentStatus::Paid) {
+            $this->checkoutService->clearCartsForPaidOrder($order);
         }
 
         return view('front.checkout.complete', compact('order'));

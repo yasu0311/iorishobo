@@ -75,6 +75,30 @@ class AdminDashboardTest extends TestCase
         $response->assertSee('>2<', false);
     }
 
+    #[Test]
+    public function dashboard_counts_exclude_incomplete_stripe_checkouts(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        Order::query()->create($this->orderAttributes([
+            'order_number' => '1111111111',
+            'payment_method' => PaymentMethod::Stripe,
+            'payment_status' => PaymentStatus::Pending,
+        ]));
+
+        Order::query()->create($this->orderAttributes([
+            'order_number' => '2222222222',
+            'payment_method' => PaymentMethod::BankTransfer,
+            'payment_status' => PaymentStatus::Pending,
+        ]));
+
+        $response = $this->actingAs($admin)->get(route('admin.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('>1<', false);
+        $response->assertDontSee('>2<', false);
+    }
+
     /**
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>

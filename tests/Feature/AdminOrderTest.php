@@ -85,6 +85,33 @@ class AdminOrderTest extends TestCase
     }
 
     #[Test]
+    public function admin_order_index_hides_incomplete_stripe_checkouts(): void
+    {
+        $this->createOrder([
+            'order_number' => '20260630010',
+            'payment_method' => PaymentMethod::Stripe,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+        $this->createOrder([
+            'order_number' => '20260630011',
+            'payment_method' => PaymentMethod::Stripe,
+            'payment_status' => PaymentStatus::Paid,
+        ]);
+        $this->createOrder([
+            'order_number' => '20260630012',
+            'payment_method' => PaymentMethod::BankTransfer,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.orders.index'))
+            ->assertOk()
+            ->assertDontSee('20260630010')
+            ->assertSee('20260630011')
+            ->assertSee('20260630012');
+    }
+
+    #[Test]
     public function admin_can_view_order_detail(): void
     {
         $order = $this->createOrder(['order_number' => '20260630111']);

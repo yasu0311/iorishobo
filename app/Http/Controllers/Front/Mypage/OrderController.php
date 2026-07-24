@@ -16,6 +16,7 @@ class OrderController extends Controller
     {
         $orders = Order::query()
             ->where('user_id', Auth::id())
+            ->excludeIncompleteStripeCheckouts()
             ->orderByDesc('ordered_at')
             ->paginate(20);
 

@@ -38,7 +38,10 @@ class OrderController extends Controller
 
     public function index(Request $request): View
     {
-        $query = Order::query()->with('customer')->latest('ordered_at');
+        $query = Order::query()
+            ->with('customer')
+            ->excludeIncompleteStripeCheckouts()
+            ->latest('ordered_at');
 
         if ($request->filled('q')) {
             $keyword = $request->string('q')->trim()->toString();

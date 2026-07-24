@@ -6,6 +6,7 @@ use App\Enums\DeviceType;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -122,6 +123,29 @@ class Order extends Model
     public function isMigrated(): bool
     {
         return $this->colorme_sales_id !== null;
+    }
+
+    /**
+     * Stripe Checkout へ進んだが決済未完了の注文。
+     * カート確定時点で作られるため、一覧には出さない。
+     */
+    public function isIncompleteStripeCheckout(): bool
+    {
+        return $this->payment_method === PaymentMethod::Stripe
+            && $this->payment_status === PaymentStatus::Pending;
+    }
+
+    /**
+     * @param  Builder<Order>  $query
+     * @return Builder<Order>
+     */
+    public function scopeExcludeIncompleteStripeCheckouts(Builder $query): Builder
+    {
+        return $query->where(function (Builder $builder): void {
+            $builder
+                ->where('payment_method', '!=', PaymentMethod::Stripe->value)
+                ->orWhere('payment_status', '!=', PaymentStatus::Pending->value);
+        });
     }
 
     public function isActive(): bool

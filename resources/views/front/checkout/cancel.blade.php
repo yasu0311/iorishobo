@@ -15,6 +15,10 @@
                 @csrf
                 <button type="submit" class="btn btn--primary">もう一度支払う</button>
             </form>
+            <form method="post" action="{{ route('checkout.return-to-cart', $order) }}" style="display: inline;">
+                @csrf
+                <button type="submit" class="btn btn--secondary">カートへ戻る</button>
+            </form>
             <a href="{{ route('products.index') }}" class="btn btn--secondary">商品一覧へ戻る</a>
         </div>
     </div>

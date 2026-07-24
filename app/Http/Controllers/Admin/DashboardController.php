@@ -13,6 +13,7 @@ class DashboardController extends Controller
     public function index(): View
     {
         $activeOrders = Order::query()
+            ->excludeIncompleteStripeCheckouts()
             ->where('shipping_status', '!=', OrderStatus::Cancelled)
             ->where('payment_status', '!=', PaymentStatus::Cancelled);
 
@@ -27,6 +28,7 @@ class DashboardController extends Controller
                 ->where('payment_status', PaymentStatus::Pending)
                 ->count(),
             'todayOrderCount' => Order::query()
+                ->excludeIncompleteStripeCheckouts()
                 ->whereDate('ordered_at', today())
                 ->count(),
         ]);

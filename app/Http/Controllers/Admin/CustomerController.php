@@ -48,6 +48,7 @@ class CustomerController extends Controller
         $customer->load('user');
 
         $orders = $customer->orders()
+            ->excludeIncompleteStripeCheckouts()
             ->latest('ordered_at')
             ->paginate(10);
 

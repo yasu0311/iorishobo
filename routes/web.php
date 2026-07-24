@@ -65,6 +65,7 @@ Route::post('/checkout/back', [CheckoutController::class, 'back'])->name('checko
 Route::post('/checkout/edit-cart', [CheckoutController::class, 'editCart'])->name('checkout.edit-cart');
 Route::get('/checkout/cancel/{order}', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
 Route::post('/checkout/resume/{order}', [CheckoutController::class, 'resume'])->name('checkout.resume');
+Route::post('/checkout/return-to-cart/{order}', [CheckoutController::class, 'returnToCart'])->name('checkout.return-to-cart');
 Route::get('/checkout/complete', [CheckoutController::class, 'complete'])->name('checkout.complete');
 
 Route::post('/webhook/stripe', StripeWebhookController::class)->name('webhook.stripe');

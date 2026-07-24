@@ -65,6 +65,44 @@ class MypageTest extends TestCase
     }
 
     #[Test]
+    public function order_history_hides_incomplete_stripe_checkouts(): void
+    {
+        $user = User::factory()->create();
+
+        $this->createOrderForUser($user, '1111111111', [
+            'payment_method' => PaymentMethod::Stripe,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+        $this->createOrderForUser($user, '1111111112', [
+            'payment_method' => PaymentMethod::Stripe,
+            'payment_status' => PaymentStatus::Paid,
+        ]);
+        $this->createOrderForUser($user, '1111111113', [
+            'payment_method' => PaymentMethod::BankTransfer,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('mypage.orders.index'))
+            ->assertOk()
+            ->assertDontSee('1111111111')
+            ->assertSee('1111111112')
+            ->assertSee('1111111113');
+    }
+
+    #[Test]
+    public function user_cannot_view_incomplete_stripe_checkout(): void
+    {
+        $user = User::factory()->create();
+        $order = $this->createOrderForUser($user, '1111111114', [
+            'payment_method' => PaymentMethod::Stripe,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($user)->get(route('mypage.orders.show', $order))->assertForbidden();
+    }
+
+    #[Test]
     public function user_cannot_view_another_users_order(): void
     {
         $user = User::factory()->create();

@@ -194,7 +194,7 @@ class CheckoutTest extends TestCase
     }
 
     #[Test]
-    public function stripe_webhook_marks_order_paid_and_decrements_stock(): void
+    public function stripe_checkout_keeps_cart_until_paid(): void
     {
         $user = User::factory()->create();
 
@@ -219,12 +219,14 @@ class CheckoutTest extends TestCase
 
         $order = Order::query()->first();
         $this->assertSame(10, $this->variant->fresh()->stock);
+        $this->assertDatabaseCount('cart_items', 1);
 
         app(CheckoutService::class)->markOrderPaidFromStripe('pi_test_checkout_1');
 
         $order->refresh();
         $this->assertSame(PaymentStatus::Paid, $order->payment_status);
         $this->assertSame(7, $this->variant->fresh()->stock);
+        $this->assertDatabaseCount('cart_items', 0);
         Mail::assertSent(OrderConfirmationMail::class);
     }
 
@@ -241,6 +243,150 @@ class CheckoutTest extends TestCase
 
         Mail::assertNothingSent();
         $this->assertSame(PaymentStatus::Paid, $order->fresh()->payment_status);
+    }
+
+    #[Test]
+    public function stripe_webhook_ignores_cancelled_orders(): void
+    {
+        $order = Order::query()->create($this->minimalOrderAttributes([
+            'stripe_payment_intent_id' => 'pi_cancelled_1',
+            'payment_status' => PaymentStatus::Cancelled,
+            'payment_method' => PaymentMethod::Stripe,
+            'shipping_status' => OrderStatus::Cancelled,
+        ]));
+
+        app(CheckoutService::class)->markOrderPaidFromStripe('pi_cancelled_1');
+
+        Mail::assertNothingSent();
+        $this->assertSame(PaymentStatus::Cancelled, $order->fresh()->payment_status);
+        $this->assertSame(10, $this->variant->fresh()->stock);
+    }
+
+    #[Test]
+    public function stripe_recheckout_cancels_previous_incomplete_order(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $session1 = \Stripe\Checkout\Session::constructFrom([
+            'id' => 'cs_test_a',
+            'object' => 'checkout.session',
+            'url' => 'https://checkout.stripe.com/c/pay/cs_test_a',
+            'payment_intent' => 'pi_test_a',
+        ]);
+        $session2 = \Stripe\Checkout\Session::constructFrom([
+            'id' => 'cs_test_b',
+            'object' => 'checkout.session',
+            'url' => 'https://checkout.stripe.com/c/pay/cs_test_b',
+            'payment_intent' => 'pi_test_b',
+        ]);
+
+        $this->mock(StripeService::class, function ($mock) use ($session1, $session2) {
+            $mock->shouldReceive('createCheckoutSession')->once()->andReturn($session1);
+            $mock->shouldReceive('createCheckoutSession')->once()->andReturn($session2);
+        });
+
+        $this->submitCheckout($user, $this->checkoutPayload('stripe'))
+            ->assertRedirect('https://checkout.stripe.com/c/pay/cs_test_a');
+
+        $firstOrder = Order::query()->first();
+        $this->assertSame(PaymentStatus::Pending, $firstOrder->payment_status);
+        $this->assertDatabaseCount('cart_items', 1);
+
+        $this->submitCheckout($user, $this->checkoutPayload('stripe'))
+            ->assertRedirect('https://checkout.stripe.com/c/pay/cs_test_b');
+
+        $firstOrder->refresh();
+        $this->assertSame(PaymentStatus::Cancelled, $firstOrder->payment_status);
+        $this->assertSame(OrderStatus::Cancelled, $firstOrder->shipping_status);
+        $this->assertSame(CheckoutService::CANCEL_REASON_REPLACED, $firstOrder->cancel_reason);
+
+        $this->assertSame(2, Order::query()->count());
+        $secondOrder = Order::query()->whereKeyNot($firstOrder->id)->first();
+        $this->assertSame(PaymentStatus::Pending, $secondOrder->payment_status);
+        $this->assertDatabaseCount('cart_items', 1);
+    }
+
+    #[Test]
+    public function stripe_cancel_return_to_cart_cancels_order_and_keeps_cart(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 2,
+        ]);
+
+        $session = \Stripe\Checkout\Session::constructFrom([
+            'id' => 'cs_test_return',
+            'object' => 'checkout.session',
+            'url' => 'https://checkout.stripe.com/c/pay/cs_test_return',
+            'payment_intent' => 'pi_test_return',
+        ]);
+
+        $this->mock(StripeService::class, function ($mock) use ($session) {
+            $mock->shouldReceive('createCheckoutSession')->once()->andReturn($session);
+            $mock->shouldReceive('retrievePaymentIntent')->andReturn(
+                \Stripe\PaymentIntent::constructFrom([
+                    'id' => 'pi_test_return',
+                    'status' => 'requires_payment_method',
+                ]),
+            );
+        });
+
+        $this->submitCheckout($user, $this->checkoutPayload('stripe'));
+
+        $order = Order::query()->first();
+
+        $this->actingAs($user)
+            ->post(route('checkout.return-to-cart', $order))
+            ->assertRedirect(route('cart.index'));
+
+        $order->refresh();
+        $this->assertSame(PaymentStatus::Cancelled, $order->payment_status);
+        $this->assertSame(CheckoutService::CANCEL_REASON_RETURN_TO_CART, $order->cancel_reason);
+        $this->assertDatabaseCount('cart_items', 1);
+        $this->assertNull(session('checkout_order_id'));
+    }
+
+    #[Test]
+    public function cancel_expired_stripe_checkouts_command_cancels_old_pending_only(): void
+    {
+        $oldStripe = Order::query()->create($this->minimalOrderAttributes([
+            'order_number' => '1000000001',
+            'payment_method' => PaymentMethod::Stripe,
+            'payment_status' => PaymentStatus::Pending,
+            'ordered_at' => now()->subDays(8),
+        ]));
+
+        $recentStripe = Order::query()->create($this->minimalOrderAttributes([
+            'order_number' => '1000000002',
+            'payment_method' => PaymentMethod::Stripe,
+            'payment_status' => PaymentStatus::Pending,
+            'ordered_at' => now()->subDays(3),
+        ]));
+
+        $oldBank = Order::query()->create($this->minimalOrderAttributes([
+            'order_number' => '1000000003',
+            'payment_method' => PaymentMethod::BankTransfer,
+            'payment_status' => PaymentStatus::Pending,
+            'ordered_at' => now()->subDays(8),
+        ]));
+
+        $this->artisan('orders:cancel-expired-stripe-checkouts')
+            ->expectsOutput('キャンセルした未完了 Stripe 注文: 1 件')
+            ->assertSuccessful();
+
+        $this->assertSame(PaymentStatus::Cancelled, $oldStripe->fresh()->payment_status);
+        $this->assertSame(OrderStatus::Cancelled, $oldStripe->fresh()->shipping_status);
+        $this->assertSame(CheckoutService::CANCEL_REASON_EXPIRED, $oldStripe->fresh()->cancel_reason);
+
+        $this->assertSame(PaymentStatus::Pending, $recentStripe->fresh()->payment_status);
+        $this->assertSame(PaymentStatus::Pending, $oldBank->fresh()->payment_status);
     }
 
     #[Test]

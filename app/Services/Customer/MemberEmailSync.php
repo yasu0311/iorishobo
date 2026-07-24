@@ -23,12 +23,16 @@ class MemberEmailSync
         $email = $this->normalize($user->email);
         $name = $createAttributes['name'] ?? $user->name;
 
-        $customer = $user->customer;
+        // actingAs 等で同一 User インスタンスが再利用されると、作成前に解決した
+        // null リレーションが残り続けるため、常に DB を参照する。
+        $customer = Customer::query()->where('user_id', $user->id)->first();
 
         if ($customer !== null) {
             if ($this->normalize((string) $customer->email) !== $email) {
                 $customer->update(['email' => $email]);
             }
+
+            $user->setRelation('customer', $customer);
 
             return $customer->refresh();
         }

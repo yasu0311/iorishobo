@@ -8,6 +8,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Mail\BankTransferInstructionMail;
 use App\Mail\OrderConfirmationMail;
+use App\Models\Cart;
 use App\Models\Order;
 use App\Models\ShippingMethod;
 use App\Models\User;
@@ -18,11 +19,18 @@ use App\Services\Order\OrderNumberGenerator;
 use App\Services\Payment\StripeService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class CheckoutService
 {
+    public const CANCEL_REASON_REPLACED = '再チェックアウトのため未完了の Stripe 注文をキャンセル';
+
+    public const CANCEL_REASON_RETURN_TO_CART = 'ユーザーが決済を中止しカートへ戻ったため';
+
+    public const CANCEL_REASON_EXPIRED = 'Stripe 未完了注文の有効期限（7日）経過による自動キャンセル';
+
     public function __construct(
         private readonly CartService $cartService,
         private readonly OrderAmountCalculator $amountCalculator,
@@ -156,7 +164,10 @@ class CheckoutService
                 $this->inventoryService->decrementForOrder($order);
             }
 
-            $this->cartService->clear($summary->cart);
+            // Stripe は入金完了までカートを残す。代引き・銀行振込は注文作成時に空にする。
+            if ($paymentMethod !== PaymentMethod::Stripe) {
+                $this->cartService->clear($summary->cart);
+            }
 
             return $order->fresh(['items']);
         });
@@ -188,12 +199,49 @@ class CheckoutService
         ];
     }
 
+    /**
+     * セッション上の直前の未完了 Stripe 注文をキャンセルする（再チェックアウト時）。
+     */
+    public function cancelPreviousIncompleteStripeCheckout(?int $orderId): void
+    {
+        if ($orderId === null) {
+            return;
+        }
+
+        $order = Order::query()->find($orderId);
+
+        if ($order === null) {
+            return;
+        }
+
+        $this->cancelIncompleteStripeCheckout($order, self::CANCEL_REASON_REPLACED);
+    }
+
+    /**
+     * stripe + pending の未完了注文をキャンセルする。在庫は減算前のため戻し不要。
+     */
+    public function cancelIncompleteStripeCheckout(Order $order, string $reason): bool
+    {
+        if (! $order->isIncompleteStripeCheckout()) {
+            return false;
+        }
+
+        $order->update([
+            'payment_status' => PaymentStatus::Cancelled,
+            'shipping_status' => OrderStatus::Cancelled,
+            'cancelled_at' => now(),
+            'cancel_reason' => $reason,
+        ]);
+
+        return true;
+    }
+
     public function resumeStripeCheckout(Order $order): string
     {
         $session = $this->stripeService->createCheckoutSession($order);
         $paymentIntentId = $this->paymentIntentIdFromCheckoutSession($session);
 
-        if ($paymentIntentId !== null && $order->stripe_payment_intent_id === null) {
+        if ($paymentIntentId !== null && $order->stripe_payment_intent_id !== $paymentIntentId) {
             $order->update(['stripe_payment_intent_id' => $paymentIntentId]);
         }
 
@@ -270,12 +318,66 @@ class CheckoutService
             return;
         }
 
+        if ($order->payment_status !== PaymentStatus::Pending) {
+            Log::warning('stripe.paid_ignored_non_pending_order', [
+                'order_id' => $order->id,
+                'payment_status' => $order->payment_status->value,
+                'payment_intent_id' => $paymentIntentId,
+            ]);
+
+            return;
+        }
+
+        if ($order->payment_method !== PaymentMethod::Stripe) {
+            Log::warning('stripe.paid_ignored_non_stripe_order', [
+                'order_id' => $order->id,
+                'payment_method' => $order->payment_method->value,
+                'payment_intent_id' => $paymentIntentId,
+            ]);
+
+            return;
+        }
+
         DB::transaction(function () use ($order) {
             $order->update(['payment_status' => PaymentStatus::Paid]);
             $this->inventoryService->decrementForOrder($order);
         });
 
-        Mail::to($order->buyer_email)->send(new OrderConfirmationMail($order->fresh(['items'])));
+        $order = $order->fresh(['items']);
+        $this->clearCartsForPaidOrder($order);
+
+        Mail::to($order->buyer_email)->send(new OrderConfirmationMail($order));
+    }
+
+    /**
+     * Stripe 入金完了後にカートを空にする。
+     * Webhook 時は会員カートのみ確実。ゲストは success URL 復帰時のセッションで clear する。
+     */
+    public function clearCartsForPaidOrder(Order $order): void
+    {
+        $cartIds = [];
+
+        if ($order->user_id !== null) {
+            $memberCart = Cart::query()->where('user_id', $order->user_id)->first();
+
+            if ($memberCart !== null) {
+                $cartIds[$memberCart->id] = $memberCart;
+            }
+        }
+
+        $sessionCart = $this->cartService->findExistingCart(
+            $order->user_id !== null ? User::query()->find($order->user_id) : null,
+        );
+
+        if ($sessionCart !== null) {
+            $cartIds[$sessionCart->id] = $sessionCart;
+        }
+
+        foreach ($cartIds as $cart) {
+            if ($cart->items()->exists()) {
+                $this->cartService->clear($cart);
+            }
+        }
     }
 
     private function findOrderForCheckoutSession(\Stripe\Checkout\Session $session): ?Order
