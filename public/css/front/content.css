@@ -1,20 +1,21 @@
 .hero {
   text-align: center;
-  padding: 2.5rem 1rem 3rem;
+  padding: 0 0 2.5rem;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   margin-bottom: 2.5rem;
+  overflow: hidden;
 }
 
 .hero__title {
   font-size: 2rem;
-  margin-bottom: 0.5rem;
+  margin: 1.5rem 1rem 0.5rem;
 }
 
 .hero__lead {
   color: var(--color-muted);
-  margin: 0 0 1.25rem;
+  margin: 0 1rem 1.25rem;
 }
 
 .hero__actions {
@@ -22,7 +23,12 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin: 0;
+  margin: 0 1rem;
+}
+
+.hero .product-search--hero {
+  margin: 0 auto 1rem;
+  max-width: min(28rem, calc(100% - 2rem));
 }
 
 .page-header {
