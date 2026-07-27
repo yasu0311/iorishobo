@@ -6,7 +6,6 @@ use App\Enums\DeviceType;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
-use App\Mail\BankTransferInstructionMail;
 use App\Mail\OrderConfirmationMail;
 use App\Models\Category;
 use App\Models\Cart;
@@ -103,11 +102,11 @@ class CheckoutTest extends TestCase
         $this->assertSame('1000001', $order->shipping_postal_code);
 
         Mail::assertSent(OrderConfirmationMail::class, fn ($mail) => $mail->hasTo('buyer@example.com'));
-        Mail::assertNotSent(BankTransferInstructionMail::class);
+        Mail::assertSentCount(1);
     }
 
     #[Test]
-    public function bank_transfer_checkout_sends_transfer_instruction_mail(): void
+    public function bank_transfer_checkout_includes_transfer_instructions_in_confirmation_mail(): void
     {
         $user = User::factory()->create();
 
@@ -119,8 +118,14 @@ class CheckoutTest extends TestCase
         $this->submitCheckout($user, $this->checkoutPayload('bank_transfer'))
             ->assertRedirect(route('checkout.complete'));
 
-        Mail::assertSent(OrderConfirmationMail::class);
-        Mail::assertSent(BankTransferInstructionMail::class);
+        Mail::assertSent(OrderConfirmationMail::class, function (OrderConfirmationMail $mail) {
+            $html = $mail->render();
+
+            return $mail->hasTo('buyer@example.com')
+                && str_contains($html, '振込先')
+                && str_contains($html, '7日以内にお振込みください');
+        });
+        Mail::assertSentCount(1);
     }
 
     #[Test]

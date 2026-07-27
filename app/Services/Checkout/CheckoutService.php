@@ -6,7 +6,6 @@ use App\Enums\DeviceType;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
-use App\Mail\BankTransferInstructionMail;
 use App\Mail\OrderConfirmationMail;
 use App\Models\Cart;
 use App\Models\Order;
@@ -188,10 +187,6 @@ class CheckoutService
         }
 
         Mail::to($order->buyer_email)->send(new OrderConfirmationMail($order));
-
-        if ($paymentMethod === PaymentMethod::BankTransfer) {
-            Mail::to($order->buyer_email)->send(new BankTransferInstructionMail($order));
-        }
 
         return [
             'order' => $order,
