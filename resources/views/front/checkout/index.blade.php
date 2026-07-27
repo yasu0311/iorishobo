@@ -108,6 +108,12 @@
                     <h2>配送・決済</h2>
                     <div class="form-field">
                         <label for="shipping_method_id">配送方法</label>
+                        @php
+                            $codAllowed = ($selectedShippingOption['method']->slug ?? null) === \App\Models\ShippingMethod::SLUG_YU_PACK;
+                            if ($selectedPaymentMethod === 'cod' && ! $codAllowed) {
+                                $selectedPaymentMethod = 'stripe';
+                            }
+                        @endphp
                         <select name="shipping_method_id" id="shipping_method_id" required data-checkout-shipping-select>
                             @foreach ($shippingOptions as $option)
                                 @php
@@ -122,6 +128,7 @@
                                 @endphp
                                 <option
                                     value="{{ $method->id }}"
+                                    data-slug="{{ $method->slug }}"
                                     data-fee="{{ $option['fee'] }}"
                                     data-fee-label="{{ $feeLabel }}"
                                     data-is-free="{{ $option['fee'] === 0 ? '1' : '0' }}"
@@ -149,7 +156,7 @@
                                 : number_format($effectiveCodFee).'円';
                         @endphp
                         <label for="payment_method">決済方法</label>
-                        <select name="payment_method" id="payment_method" required data-checkout-payment-select>
+                        <select name="payment_method" id="payment_method" required data-checkout-payment-select data-yu-pack-slug="{{ \App\Models\ShippingMethod::SLUG_YU_PACK }}">
                             <option
                                 value="stripe"
                                 data-fee="0"
@@ -166,9 +173,14 @@
                                 value="cod"
                                 data-fee="{{ $effectiveCodFee }}"
                                 data-fee-label="{{ $effectiveCodFee === 0 ? '0円' : number_format($effectiveCodFee).'円' }}"
+                                data-requires-yu-pack="1"
                                 @selected($selectedPaymentMethod === 'cod')
+                                @disabled(! $codAllowed)
                             >代金引換（{{ $codFeeLabel }}）</option>
                         </select>
+                        <p class="checkout-payment-notice" data-checkout-cod-notice @if ($codAllowed) hidden @endif>
+                            代金引換はゆうパック選択時のみご利用いただけます。
+                        </p>
                     </div>
                     <div class="form-field">
                         <label>備考（任意）</label>
@@ -227,31 +239,4 @@
 
 @section('script')
     <script src="{{ asset('js/front/checkout.js') }}?v={{ filemtime(public_path('js/front/checkout.js')) }}" defer></script>
-    <script>
-        (function () {
-            var select = document.querySelector('[data-checkout-payment-select]');
-            var row = document.querySelector('[data-checkout-payment-fee-row]');
-            var display = document.querySelector('[data-checkout-payment-fee]');
-            if (!select || !row || !display) {
-                return;
-            }
-
-            function updatePaymentFee() {
-                var option = select.options[select.selectedIndex];
-                if (!option) {
-                    return;
-                }
-                var fee = Number(option.getAttribute('data-fee') || '0');
-                display.textContent = fee.toLocaleString('ja-JP') + '円';
-                if (fee <= 0) {
-                    row.setAttribute('hidden', 'hidden');
-                } else {
-                    row.removeAttribute('hidden');
-                }
-            }
-
-            select.addEventListener('change', updatePaymentFee);
-            updatePaymentFee();
-        })();
-    </script>
 @endsection

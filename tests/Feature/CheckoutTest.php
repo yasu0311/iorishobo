@@ -65,8 +65,8 @@ class CheckoutTest extends TestCase
         ]);
 
         $this->shippingMethod = ShippingMethod::query()->create([
-            'slug' => 'test-ship',
-            'name' => 'テスト配送',
+            'slug' => ShippingMethod::SLUG_YU_PACK,
+            'name' => 'ゆうパック',
             'base_fee' => 500,
             'free_shipping_threshold' => null,
             'is_active' => true,
@@ -553,7 +553,7 @@ class CheckoutTest extends TestCase
 
         $this->actingAs($user)->get(route('checkout.index'))
             ->assertOk()
-            ->assertSee('テスト配送（500円）', false)
+            ->assertSee('ゆうパック（500円）', false)
             ->assertSee('あと')
             ->assertSee('2,800円')
             ->assertSee('送料無料になります')
@@ -576,7 +576,7 @@ class CheckoutTest extends TestCase
 
         $this->actingAs($user)->get(route('checkout.index'))
             ->assertOk()
-            ->assertSee('テスト配送（送料無料）', false)
+            ->assertSee('ゆうパック（送料無料）', false)
             ->assertSee('この配送方法は')
             ->assertSee('送料無料')
             ->assertDontSee('円〜');
@@ -725,6 +725,32 @@ class CheckoutTest extends TestCase
 
         $this->actingAs($user)->post(route('checkout.confirm'), $payload)
             ->assertSessionHasErrors(['buyer_prefecture']);
+    }
+
+    #[Test]
+    public function checkout_confirm_rejects_cod_without_yu_pack(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $clickpost = ShippingMethod::query()->create([
+            'slug' => 'clickpost',
+            'name' => '指定なし',
+            'base_fee' => 150,
+            'free_shipping_threshold' => null,
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        $payload = $this->checkoutPayload('cod');
+        $payload['shipping_method_id'] = $clickpost->id;
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $payload)
+            ->assertSessionHasErrors(['payment_method']);
     }
 
     #[Test]

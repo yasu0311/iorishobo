@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ShippingMethod extends Model
 {
+    /** ゆうパック（代金引換が利用可能な配送） */
+    public const SLUG_YU_PACK = 'yu-pack';
+
     protected $fillable = [
         'name',
         'slug',

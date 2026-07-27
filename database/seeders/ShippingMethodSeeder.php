@@ -24,7 +24,7 @@ class ShippingMethodSeeder extends Seeder
                 'sort_order' => 1,
             ],
             [
-                'slug' => 'yu-pack',
+                'slug' => ShippingMethod::SLUG_YU_PACK,
                 'name' => 'ゆうパック',
                 'base_fee' => (int) env('SHIPPING_YUPACK_FEE', 600),
                 'free_shipping_threshold' => 8000,

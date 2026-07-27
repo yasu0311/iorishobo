@@ -31,12 +31,16 @@
   const shippingSelect = document.querySelector('[data-checkout-shipping-select]');
   const shippingFeeDisplay = document.querySelector('[data-checkout-shipping-fee]');
   const shippingNotice = document.querySelector('[data-checkout-shipping-notice]');
-
-  if (!shippingSelect || !shippingFeeDisplay) {
-    return;
-  }
+  const paymentSelect = document.querySelector('[data-checkout-payment-select]');
+  const paymentFeeRow = document.querySelector('[data-checkout-payment-fee-row]');
+  const paymentFeeDisplay = document.querySelector('[data-checkout-payment-fee]');
+  const codNotice = document.querySelector('[data-checkout-cod-notice]');
 
   const updateShippingDisplay = () => {
+    if (!shippingSelect || !shippingFeeDisplay) {
+      return;
+    }
+
     const option = shippingSelect.options[shippingSelect.selectedIndex];
     if (!option) {
       return;
@@ -69,6 +73,65 @@
     shippingNotice.textContent = `この配送方法の送料は${feeLabel}です。`;
   };
 
-  shippingSelect.addEventListener('change', updateShippingDisplay);
-  updateShippingDisplay();
+  const updatePaymentFee = () => {
+    if (!paymentSelect || !paymentFeeRow || !paymentFeeDisplay) {
+      return;
+    }
+
+    const option = paymentSelect.options[paymentSelect.selectedIndex];
+    if (!option) {
+      return;
+    }
+
+    const fee = Number(option.getAttribute('data-fee') || '0');
+    paymentFeeDisplay.textContent = `${fee.toLocaleString('ja-JP')}円`;
+
+    if (fee <= 0) {
+      paymentFeeRow.setAttribute('hidden', 'hidden');
+    } else {
+      paymentFeeRow.removeAttribute('hidden');
+    }
+  };
+
+  const syncCodAvailability = () => {
+    if (!shippingSelect || !paymentSelect) {
+      return;
+    }
+
+    const shippingOption = shippingSelect.options[shippingSelect.selectedIndex];
+    const yuPackSlug = paymentSelect.getAttribute('data-yu-pack-slug') || 'yu-pack';
+    const isYuPack = shippingOption?.getAttribute('data-slug') === yuPackSlug;
+    const codOption = paymentSelect.querySelector('option[data-requires-yu-pack]');
+
+    if (codOption) {
+      codOption.disabled = !isYuPack;
+
+      if (!isYuPack && paymentSelect.value === 'cod') {
+        paymentSelect.value = 'stripe';
+      }
+    }
+
+    if (codNotice) {
+      if (isYuPack) {
+        codNotice.setAttribute('hidden', 'hidden');
+      } else {
+        codNotice.removeAttribute('hidden');
+      }
+    }
+
+    updatePaymentFee();
+  };
+
+  if (shippingSelect && shippingFeeDisplay) {
+    shippingSelect.addEventListener('change', () => {
+      updateShippingDisplay();
+      syncCodAvailability();
+    });
+    updateShippingDisplay();
+  }
+
+  if (paymentSelect) {
+    paymentSelect.addEventListener('change', updatePaymentFee);
+    syncCodAvailability();
+  }
 })();

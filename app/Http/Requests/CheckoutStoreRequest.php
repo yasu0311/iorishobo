@@ -3,11 +3,13 @@
 namespace App\Http\Requests;
 
 use App\Enums\PaymentMethod;
+use App\Models\ShippingMethod;
 use App\Support\NumericInput;
 use App\Support\Prefectures;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class CheckoutStoreRequest extends FormRequest
 {
@@ -28,6 +30,11 @@ class CheckoutStoreRequest extends FormRequest
     public function rules(): array
     {
         return self::ruleSet();
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        self::addCodRequiresYuPackConstraint($validator);
     }
 
     /**
@@ -111,7 +118,40 @@ class CheckoutStoreRequest extends FormRequest
     {
         $input = self::normalizeInput($input);
 
-        return validator($input, self::ruleSet())->validate();
+        $validator = validator($input, self::ruleSet());
+        self::addCodRequiresYuPackConstraint($validator);
+
+        return $validator->validate();
+    }
+
+    /**
+     * 代金引換はゆうパック選択時のみ許可する。
+     */
+    private static function addCodRequiresYuPackConstraint(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $data = $validator->getData();
+
+            if (($data['payment_method'] ?? null) !== PaymentMethod::Cod->value) {
+                return;
+            }
+
+            $shippingMethodId = $data['shipping_method_id'] ?? null;
+
+            $isYuPack = is_numeric($shippingMethodId)
+                && ShippingMethod::query()
+                    ->whereKey((int) $shippingMethodId)
+                    ->where('slug', ShippingMethod::SLUG_YU_PACK)
+                    ->where('is_active', true)
+                    ->exists();
+
+            if (! $isYuPack) {
+                $validator->errors()->add(
+                    'payment_method',
+                    '代金引換はゆうパックを選択した場合のみご利用いただけます。',
+                );
+            }
+        });
     }
 
     /**
