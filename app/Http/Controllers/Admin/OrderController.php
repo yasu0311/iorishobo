@@ -27,6 +27,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OrderController extends Controller
 {
+    private const DEFAULT_SHIPPING_STATUS_FILTER = 'open';
+
     public function __construct(
         private readonly OrderManagementService $orderManagementService,
         private readonly OrderShippingMailComposer $shippingMailComposer,
@@ -38,6 +40,10 @@ class OrderController extends Controller
 
     public function index(Request $request): View
     {
+        $shippingStatusFilter = $request->filled('shipping_status')
+            ? $request->string('shipping_status')->toString()
+            : self::DEFAULT_SHIPPING_STATUS_FILTER;
+
         $query = Order::query()
             ->with('customer')
             ->excludeIncompleteStripeCheckouts()
@@ -57,8 +63,13 @@ class OrderController extends Controller
             $query->where('payment_status', $request->string('payment_status')->toString());
         }
 
-        if ($request->filled('shipping_status')) {
-            $query->where('shipping_status', $request->string('shipping_status')->toString());
+        if ($shippingStatusFilter === self::DEFAULT_SHIPPING_STATUS_FILTER) {
+            $query->whereIn('shipping_status', [
+                OrderStatus::Unshipped,
+                OrderStatus::PartiallyShipped,
+            ]);
+        } elseif ($shippingStatusFilter !== 'all') {
+            $query->where('shipping_status', $shippingStatusFilter);
         }
 
         if ($request->filled('payment_method')) {
@@ -67,7 +78,10 @@ class OrderController extends Controller
 
         return view('admin.orders.index', [
             'orders' => $query->paginate(20)->withQueryString(),
-            'filters' => $request->only(['q', 'payment_status', 'shipping_status', 'payment_method']),
+            'filters' => array_merge(
+                $request->only(['q', 'payment_status', 'payment_method']),
+                ['shipping_status' => $shippingStatusFilter],
+            ),
             'paymentStatuses' => PaymentStatus::cases(),
             'shippingStatuses' => OrderStatus::cases(),
             'paymentMethods' => PaymentMethod::cases(),

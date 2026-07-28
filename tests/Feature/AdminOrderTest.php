@@ -112,6 +112,52 @@ class AdminOrderTest extends TestCase
     }
 
     #[Test]
+    public function admin_order_index_defaults_to_open_shipping_statuses(): void
+    {
+        $this->createOrder([
+            'order_number' => '20260630020',
+            'shipping_status' => OrderStatus::Unshipped,
+        ]);
+        $this->createOrder([
+            'order_number' => '20260630021',
+            'shipping_status' => OrderStatus::PartiallyShipped,
+        ]);
+        $this->createOrder([
+            'order_number' => '20260630022',
+            'shipping_status' => OrderStatus::Shipped,
+            'shipped_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.orders.index'))
+            ->assertOk()
+            ->assertSee('20260630020')
+            ->assertSee('20260630021')
+            ->assertDontSee('20260630022')
+            ->assertSee('発送状態（未発送・一部発送）');
+    }
+
+    #[Test]
+    public function admin_order_index_can_show_all_shipping_statuses(): void
+    {
+        $this->createOrder([
+            'order_number' => '20260630030',
+            'shipping_status' => OrderStatus::Unshipped,
+        ]);
+        $this->createOrder([
+            'order_number' => '20260630031',
+            'shipping_status' => OrderStatus::Shipped,
+            'shipped_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.orders.index', ['shipping_status' => 'all']))
+            ->assertOk()
+            ->assertSee('20260630030')
+            ->assertSee('20260630031');
+    }
+
+    #[Test]
     public function admin_can_view_order_detail(): void
     {
         $order = $this->createOrder(['order_number' => '20260630111']);

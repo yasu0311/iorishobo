@@ -36,7 +36,8 @@
             @endforeach
         </select>
         <select name="shipping_status">
-            <option value="">発送状態（すべて）</option>
+            <option value="open" @selected(($filters['shipping_status'] ?? 'open') === 'open')>発送状態（未発送・一部発送）</option>
+            <option value="all" @selected(($filters['shipping_status'] ?? '') === 'all')>発送状態（すべて）</option>
             @foreach ($shippingStatuses as $status)
                 <option value="{{ $status->value }}" @selected(($filters['shipping_status'] ?? '') === $status->value)>
                     {{ $status->label() }}
