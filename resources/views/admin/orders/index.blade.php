@@ -133,7 +133,7 @@
                                 class="order-select-checkbox"
                             >
                         </td>
-                        <td>{{ $order->order_number }}</td>
+                        <td><a href="{{ route('admin.orders.show', $order) }}">{{ $order->order_number }}</a></td>
                         <td>{{ $order->ordered_at?->format('Y-m-d H:i') }}</td>
                         <td>{{ $order->buyer_name }}</td>
                         <td>{{ number_format($order->total) }}円</td>
