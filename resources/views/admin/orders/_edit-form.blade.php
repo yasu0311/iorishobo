@@ -256,15 +256,23 @@
 
         <section class="panel">
             <h2>配送先</h2>
+            @if ($order->shippingMatchesBuyer())
+                <p class="text-muted order-edit-form__view">購入者と同じ住所へお届けします。</p>
+                <p class="text-muted order-edit-form__fields">現在は購入者と同じ住所です。変更する場合は以下を編集してください。</p>
+            @endif
             <dl class="detail-list order-edit-form__view">
                 <dt>氏名</dt><dd>{{ $order->shipping_name }}</dd>
                 @if ($order->shipping_name_kana)<dt>フリガナ</dt><dd>{{ $order->shipping_name_kana }}</dd>@endif
                 <dt>電話</dt><dd>{{ $order->shipping_phone }}</dd>
                 <dt>住所</dt>
                 <dd>
-                    〒{{ $order->shipping_postal_code }}<br>
-                    {{ $order->shipping_prefecture }}{{ $order->shipping_address_line1 }}
-                    @if ($order->shipping_address_line2)<br>{{ $order->shipping_address_line2 }}@endif
+                    @if ($order->shippingMatchesBuyer())
+                        購入者と同じ
+                    @else
+                        〒{{ $order->shipping_postal_code }}<br>
+                        {{ $order->shipping_prefecture }}{{ $order->shipping_address_line1 }}
+                        @if ($order->shipping_address_line2)<br>{{ $order->shipping_address_line2 }}@endif
+                    @endif
                 </dd>
                 @if ($order->shipping_method_name)
                     <dt>配送方法</dt><dd>{{ $order->shipping_method_name }}</dd>

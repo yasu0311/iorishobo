@@ -257,6 +257,18 @@ class Order extends Model
         return true;
     }
 
+    /**
+     * 配送先が購入者と同一か（チェックアウト時に配送先未入力でコピーされた場合を含む）。
+     */
+    public function shippingMatchesBuyer(): bool
+    {
+        return $this->buyer_name === $this->shipping_name
+            && $this->buyer_postal_code === $this->shipping_postal_code
+            && $this->buyer_prefecture === $this->shipping_prefecture
+            && $this->buyer_address_line1 === $this->shipping_address_line1
+            && $this->buyer_address_line2 === $this->shipping_address_line2;
+    }
+
     private function paymentAllowsShipping(): bool
     {
         return match ($this->payment_method) {

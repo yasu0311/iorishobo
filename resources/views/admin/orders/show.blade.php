@@ -87,15 +87,22 @@
 
             <section class="panel">
                 <h2>配送先</h2>
+                @if ($order->shippingMatchesBuyer())
+                    <p class="text-muted">購入者と同じ住所へお届けします。</p>
+                @endif
                 <dl class="detail-list">
                     <dt>氏名</dt><dd>{{ $order->shipping_name }}</dd>
                     @if ($order->shipping_name_kana)<dt>フリガナ</dt><dd>{{ $order->shipping_name_kana }}</dd>@endif
                     <dt>電話</dt><dd>{{ $order->shipping_phone }}</dd>
                     <dt>住所</dt>
                     <dd>
-                        〒{{ $order->shipping_postal_code }}<br>
-                        {{ $order->shipping_prefecture }}{{ $order->shipping_address_line1 }}
-                        @if ($order->shipping_address_line2)<br>{{ $order->shipping_address_line2 }}@endif
+                        @if ($order->shippingMatchesBuyer())
+                            購入者と同じ
+                        @else
+                            〒{{ $order->shipping_postal_code }}<br>
+                            {{ $order->shipping_prefecture }}{{ $order->shipping_address_line1 }}
+                            @if ($order->shipping_address_line2)<br>{{ $order->shipping_address_line2 }}@endif
+                        @endif
                     </dd>
                     @if ($order->shipping_method_name)
                         <dt>配送方法</dt><dd>{{ $order->shipping_method_name }}</dd>

@@ -166,7 +166,28 @@ class AdminOrderTest extends TestCase
             ->get(route('admin.orders.show', $order))
             ->assertOk()
             ->assertSee('20260630111')
-            ->assertSee('テスト商品');
+            ->assertSee('テスト商品')
+            ->assertSee('購入者と同じ住所へお届けします。')
+            ->assertSee('購入者と同じ');
+    }
+
+    #[Test]
+    public function admin_order_detail_shows_distinct_shipping_address(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630112',
+            'shipping_name' => '配送先花子',
+            'shipping_postal_code' => '5300001',
+            'shipping_prefecture' => '大阪府',
+            'shipping_address_line1' => '大阪市北区1-1',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.orders.show', $order))
+            ->assertOk()
+            ->assertDontSee('購入者と同じ住所へお届けします。')
+            ->assertSee('配送先花子')
+            ->assertSee('大阪府大阪市北区1-1');
     }
 
     #[Test]

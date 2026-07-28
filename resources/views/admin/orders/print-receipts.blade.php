@@ -14,11 +14,7 @@
     @foreach ($orders as $order)
         @php
             $address = config('shop.address');
-            $sameAsBuyer = $order->buyer_name === $order->shipping_name
-                && $order->buyer_postal_code === $order->shipping_postal_code
-                && $order->buyer_prefecture === $order->shipping_prefecture
-                && $order->buyer_address_line1 === $order->shipping_address_line1
-                && $order->buyer_address_line2 === $order->shipping_address_line2;
+            $sameAsBuyer = $order->shippingMatchesBuyer();
             $storeAddress = trim(($address['prefecture'] ?? '').($address['address_line1'] ?? '').($address['address_line2'] ?? ''));
         @endphp
         <article class="delivery-receipt @if (! $loop->last) delivery-receipt--page-break @endif">
