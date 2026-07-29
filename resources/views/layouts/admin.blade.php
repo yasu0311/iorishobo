@@ -26,6 +26,7 @@
                 <a href="{{ route('admin.customers.index') }}" @class(['is-active' => request()->routeIs('admin.customers.*')])>顧客</a>
                 <a href="{{ route('admin.coupons.index') }}" @class(['is-active' => request()->routeIs('admin.coupons.*')])>クーポン</a>
                 <a href="{{ route('admin.shipping-methods.index') }}" @class(['is-active' => request()->routeIs('admin.shipping-methods.*')])>配送</a>
+                <a href="{{ route('admin.email-templates.index') }}" @class(['is-active' => request()->routeIs('admin.email-templates.*')])>メール</a>
                 <a href="{{ route('admin.watchlist.index') }}" @class(['is-active' => request()->routeIs('admin.watchlist.*')])>要注意</a>
             </nav>
         </aside>

@@ -1,17 +1,18 @@
-{{ config('shop.name') }}
-
-ご入金を確認いたしました。
+このたびはご注文いただきありがとうございます。
+お客様からの振込みを確認いたしました。
+商品発送手続きが完了いたしましたら改めてご連絡差し上げます。
+よろしくお願いいたします。
 
 注文番号: {{ $order->order_number }}
-ご入金額: {{ number_format($order->total) }}円
-
-商品の発送準備を進めてまいります。発送が完了しましたら、改めてご連絡いたします。
 
 【ご注文内容】
 @foreach ($order->items as $item)
 - {{ $item->product_name }}@if ($item->variant_label)（{{ $item->variant_label }}）@endif × {{ $item->quantity }}{{ config('shop.quantity_unit') }}
 @endforeach
 
-ご不明な点がございましたら、お気軽にお問い合わせください。
+ご入金額: {{ number_format($order->total) }}円
 
-{{ config('shop.name') }}
+================================
+庵書房　https://iorishobo.com/
+庵書房詳細　https://iorishobo.com/?mode=f3
+================================

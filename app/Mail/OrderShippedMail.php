@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\EmailTemplate;
 use App\Models\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -13,18 +14,27 @@ class OrderShippedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    private ?EmailTemplate $template;
+
     public function __construct(
         public Order $order,
         public ?string $customSubject = null,
         public ?string $customBody = null,
-    ) {}
+    ) {
+        $this->template = EmailTemplate::findBySlug('order-shipped');
+    }
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: $this->customSubject
-                ?? '【'.config('shop.name').'】商品を発送しました（注文番号: '.$this->order->order_number.'）',
-        );
+        if ($this->customSubject !== null) {
+            return new Envelope(subject: $this->customSubject);
+        }
+
+        $subject = $this->template
+            ? $this->template->renderSubject(['order' => $this->order])
+            : '商品の発送について　'.config('shop.name');
+
+        return new Envelope(subject: $subject);
     }
 
     public function content(): Content
@@ -36,8 +46,13 @@ class OrderShippedMail extends Mailable
             );
         }
 
-        return new Content(
-            text: 'mail.order-shipped',
-        );
+        if ($this->template) {
+            return new Content(
+                text: 'mail.custom-text',
+                with: ['body' => $this->template->renderBody(['order' => $this->order])],
+            );
+        }
+
+        return new Content(text: 'mail.order-shipped');
     }
 }
