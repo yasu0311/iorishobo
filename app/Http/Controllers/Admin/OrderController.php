@@ -22,6 +22,7 @@ use App\Services\Watchlist\WatchlistService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -143,17 +144,7 @@ class OrderController extends Controller
 
     public function update(UpdateOrderRequest $request, Order $order): RedirectResponse
     {
-        $validated = $request->validated();
-
-        $this->orderManagementService->saveFromAdmin($order, $validated, $request->user());
-
-        if (filled($validated['watchlist_reason'] ?? null)) {
-            $this->watchlistService->registerFromOrder(
-                $order->fresh(),
-                $validated['watchlist_reason'],
-                $request->user(),
-            );
-        }
+        $this->orderManagementService->saveFromAdmin($order, $request->validated());
 
         return redirect()
             ->route('admin.orders.show', $order)
@@ -228,18 +219,70 @@ class OrderController extends Controller
 
     public function ship(Request $request, Order $order): RedirectResponse
     {
+        $sendMail = $request->exists('send_shipping_mail')
+            ? $request->boolean('send_shipping_mail')
+            : true;
+        // 発送画面で本文を編集したときだけ件名・本文を必須にする。
+        // 未編集のときは DB のメールテンプレートを使う。
+        $shippingMailRequired = Rule::requiredIf(
+            fn (): bool => $request->boolean('shipping_mail_customized')
+        );
+
         $validated = $request->validate([
+            'shipping_type' => 'nullable|in:full,partial',
             'tracking_number' => 'nullable|string|max:100',
+            'send_shipping_mail' => 'boolean',
+            'shipping_mail_customized' => 'boolean',
+            'shipping_mail_subject' => ['nullable', 'string', 'max:200', $shippingMailRequired],
+            'shipping_mail_body' => ['nullable', 'string', 'max:10000', $shippingMailRequired],
         ]);
+
+        $shippingType = $validated['shipping_type'] ?? 'full';
+        $trackingNumber = $validated['tracking_number'] ?? null;
+        $mailSubject = $validated['shipping_mail_subject'] ?? null;
+        $mailBody = $validated['shipping_mail_body'] ?? null;
+
+        if ($shippingType === 'partial') {
+            $this->orderManagementService->markAsPartiallyShipped(
+                $order,
+                $trackingNumber,
+                sendMail: $sendMail,
+                mailSubject: $mailSubject,
+                mailBody: $mailBody,
+            );
+
+            return redirect()
+                ->route('admin.orders.show', $order)
+                ->with('status', '一部発送に更新しました。');
+        }
 
         $this->orderManagementService->ship(
             $order,
-            $validated['tracking_number'] ?? null,
+            $trackingNumber,
+            sendMail: $sendMail,
+            mailSubject: $mailSubject,
+            mailBody: $mailBody,
         );
 
         return redirect()
             ->route('admin.orders.show', $order)
             ->with('status', '発送処理を完了しました。');
+    }
+
+    public function revertShipping(Request $request, Order $order): RedirectResponse
+    {
+        $validated = $request->validate([
+            'revert_shipping_status' => 'required|in:unshipped,partially_shipped',
+        ]);
+
+        $this->orderManagementService->revertShippingStatus(
+            $order,
+            OrderStatus::from($validated['revert_shipping_status']),
+        );
+
+        return redirect()
+            ->route('admin.orders.show', $order)
+            ->with('status', '発送状態を戻しました。');
     }
 
     public function cancel(Request $request, Order $order): RedirectResponse

@@ -10,7 +10,7 @@
     @endif
 
     <p class="notice" style="color: #6b7280; margin-bottom: 1rem;">
-        件名や本文を編集できます。Bladeの変数（<code>@{{ $order->order_number }}</code> 等）はそのまま使用できます。
+        件名・本文は固定文言のみ編集できます。注文番号やお客様名などの差し込みはシステム側で自動挿入されます。
     </p>
 
     <table class="admin-table">

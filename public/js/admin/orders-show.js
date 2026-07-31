@@ -1,103 +1,114 @@
 (function () {
     const form = document.getElementById('order-edit-form');
-    if (!form) {
+    const shipForm = document.getElementById('order-ship-form');
+
+    if (form) {
+        const startButton = form.querySelector('.order-edit-form__start');
+        const saveButton = form.querySelector('.order-edit-form__save');
+        const cancelButton = form.querySelector('.order-edit-form__cancel');
+        const viewBlocks = form.querySelectorAll('.order-edit-form__view');
+        const fieldBlocks = form.querySelectorAll('.order-edit-form__fields');
+        const itemsBody = document.getElementById('order-items-body');
+        const itemTemplate = document.getElementById('order-item-row-template');
+        const addItemButton = form.querySelector('.order-items-add');
+        const initialValues = new Map();
+        let nextItemIndex = itemsBody ? itemsBody.querySelectorAll('.order-item-row').length : 0;
+
+        const fieldInputs = () => form.querySelectorAll('input, textarea, select');
+
+        const captureValues = () => {
+            initialValues.clear();
+            fieldInputs().forEach((input) => {
+                if (!input.name) {
+                    return;
+                }
+
+                if (input.type === 'checkbox') {
+                    initialValues.set(input.name, input.checked);
+                } else {
+                    initialValues.set(input.name, input.value);
+                }
+            });
+        };
+
+        captureValues();
+
+        const setEditing = (editing) => {
+            form.classList.toggle('is-editing', editing);
+            startButton.hidden = editing;
+            saveButton.hidden = !editing;
+            cancelButton.hidden = !editing;
+            viewBlocks.forEach((block) => {
+                block.hidden = editing;
+            });
+            fieldBlocks.forEach((block) => {
+                block.hidden = !editing;
+            });
+        };
+
+        if (form.classList.contains('is-editing')) {
+            setEditing(true);
+        } else {
+            setEditing(false);
+        }
+
+        startButton.addEventListener('click', () => {
+            setEditing(true);
+        });
+
+        cancelButton.addEventListener('click', () => {
+            fieldInputs().forEach((input) => {
+                if (!input.name) {
+                    return;
+                }
+
+                if (input.type === 'checkbox') {
+                    input.checked = initialValues.get(input.name) ?? false;
+                } else {
+                    input.value = initialValues.get(input.name) ?? '';
+                }
+            });
+
+            if (itemsBody && itemTemplate) {
+                itemsBody.querySelectorAll('.order-item-row--new').forEach((row) => row.remove());
+                nextItemIndex = itemsBody.querySelectorAll('.order-item-row').length;
+            }
+
+            setEditing(false);
+        });
+
+        if (addItemButton && itemsBody && itemTemplate) {
+            addItemButton.addEventListener('click', () => {
+                const index = `new_${nextItemIndex++}`;
+                const html = itemTemplate.innerHTML.replaceAll('__INDEX__', index);
+                const wrapper = document.createElement('tbody');
+                wrapper.innerHTML = html.trim();
+                const row = wrapper.firstElementChild;
+                itemsBody.appendChild(row);
+            });
+        }
+
+        form.addEventListener('submit', (event) => {
+            if (!window.confirm('変更を保存しますか？')) {
+                event.preventDefault();
+                return;
+            }
+
+            captureValues();
+        });
+    }
+
+    if (!shipForm) {
         return;
     }
 
-    const startButton = form.querySelector('.order-edit-form__start');
-    const saveButton = form.querySelector('.order-edit-form__save');
-    const cancelButton = form.querySelector('.order-edit-form__cancel');
-    const viewBlocks = form.querySelectorAll('.order-edit-form__view');
-    const fieldBlocks = form.querySelectorAll('.order-edit-form__fields');
-    const itemsBody = document.getElementById('order-items-body');
-    const itemTemplate = document.getElementById('order-item-row-template');
-    const addItemButton = form.querySelector('.order-items-add');
-    const initialValues = new Map();
-    let nextItemIndex = itemsBody ? itemsBody.querySelectorAll('.order-item-row').length : 0;
-
-    const fieldInputs = () => form.querySelectorAll('input, textarea, select');
-
-    const captureValues = () => {
-        initialValues.clear();
-        fieldInputs().forEach((input) => {
-            if (!input.name) {
-                return;
-            }
-
-            if (input.type === 'checkbox') {
-                initialValues.set(input.name, input.checked);
-            } else {
-                initialValues.set(input.name, input.value);
-            }
-        });
-    };
-
-    captureValues();
-
-    const setEditing = (editing) => {
-        form.classList.toggle('is-editing', editing);
-        startButton.hidden = editing;
-        saveButton.hidden = !editing;
-        cancelButton.hidden = !editing;
-        viewBlocks.forEach((block) => {
-            block.hidden = editing;
-        });
-        fieldBlocks.forEach((block) => {
-            block.hidden = !editing;
-        });
-    };
-
-    if (form.classList.contains('is-editing')) {
-        setEditing(true);
-    } else {
-        setEditing(false);
-    }
-
-    startButton.addEventListener('click', () => {
-        setEditing(true);
-    });
-
-    cancelButton.addEventListener('click', () => {
-        fieldInputs().forEach((input) => {
-            if (!input.name) {
-                return;
-            }
-
-            if (input.type === 'checkbox') {
-                input.checked = initialValues.get(input.name) ?? false;
-            } else {
-                input.value = initialValues.get(input.name) ?? '';
-            }
-        });
-
-        if (itemsBody && itemTemplate) {
-            itemsBody.querySelectorAll('.order-item-row--new').forEach((row) => row.remove());
-            nextItemIndex = itemsBody.querySelectorAll('.order-item-row').length;
-        }
-
-        setEditing(false);
-        syncShippingMailFields();
-    });
-
-    if (addItemButton && itemsBody && itemTemplate) {
-        addItemButton.addEventListener('click', () => {
-            const index = `new_${nextItemIndex++}`;
-            const html = itemTemplate.innerHTML.replaceAll('__INDEX__', index);
-            const wrapper = document.createElement('tbody');
-            wrapper.innerHTML = html.trim();
-            const row = wrapper.firstElementChild;
-            itemsBody.appendChild(row);
-        });
-    }
-
-    const markAsShipped = form.querySelector('[name="mark_as_shipped"]');
-    const markAsPartiallyShipped = form.querySelector('[name="mark_as_partially_shipped"]');
+    const shippingTypeInputs = shipForm.querySelectorAll('[name="shipping_type"]');
     const shippingMailFields = document.getElementById('shipping-mail-fields');
     const sendShippingMail = document.getElementById('send_shipping_mail');
     const shippingMailEditor = document.getElementById('shipping-mail-editor');
     const shippingMailSubject = document.getElementById('shipping_mail_subject');
     const shippingMailBody = document.getElementById('shipping_mail_body');
-    const trackingNumberInput = form.querySelector('[name="tracking_number"]');
+    const trackingNumberInput = shipForm.querySelector('[name="tracking_number"]');
     let appliedShippingAction = null;
     let mailEditorDirty = false;
 
@@ -123,15 +134,17 @@
     };
 
     const selectedShippingAction = () => {
-        if (markAsPartiallyShipped?.checked) {
-            return 'partial';
+        const checked = shipForm.querySelector('[name="shipping_type"]:checked');
+        if (checked) {
+            return checked.value === 'partial' ? 'partial' : 'full';
         }
 
-        if (markAsShipped?.checked) {
-            return 'full';
+        const hidden = shipForm.querySelector('[name="shipping_type"][type="hidden"]');
+        if (hidden) {
+            return hidden.value === 'partial' ? 'partial' : 'full';
         }
 
-        return null;
+        return 'full';
     };
 
     const applyShippingTemplate = (action, force = false) => {
@@ -160,12 +173,6 @@
         }
 
         const action = selectedShippingAction();
-        shippingMailFields.hidden = !action;
-
-        if (!action) {
-            appliedShippingAction = null;
-            return;
-        }
 
         if (sendShippingMail && !sendShippingMail.dataset.userToggled) {
             sendShippingMail.checked = true;
@@ -182,18 +189,8 @@
         }
     };
 
-    [markAsShipped, markAsPartiallyShipped].forEach((checkbox) => {
-        checkbox?.addEventListener('change', () => {
-            if (!checkbox.checked) {
-                syncShippingMailFields();
-                return;
-            }
-
-            const other = checkbox === markAsShipped ? markAsPartiallyShipped : markAsShipped;
-            if (other?.checked) {
-                other.checked = false;
-            }
-
+    shippingTypeInputs.forEach((input) => {
+        input.addEventListener('change', () => {
             if (sendShippingMail) {
                 delete sendShippingMail.dataset.userToggled;
             }
@@ -226,47 +223,37 @@
 
     syncShippingMailFields();
 
-    form.addEventListener('submit', (event) => {
-        const cancelReason = form.querySelector('[name="cancel_reason"]');
-        const refundAmount = form.querySelector('[name="refund_amount"]');
-        const markAsPaid = form.querySelector('[name="mark_as_paid"]');
-        const revertShippingStatus = form.querySelector('[name="revert_shipping_status"]');
-        const willSendMail = Boolean(selectedShippingAction() && sendShippingMail?.checked);
+    shipForm.addEventListener('submit', (event) => {
+        const customizedInput = shipForm.querySelector('[name="shipping_mail_customized"]');
+        if (customizedInput) {
+            customizedInput.value = mailEditorDirty ? '1' : '0';
+        }
 
-        let message = '変更を保存しますか？';
+        if (!mailEditorDirty) {
+            if (shippingMailSubject) {
+                shippingMailSubject.disabled = true;
+            }
+            if (shippingMailBody) {
+                shippingMailBody.disabled = true;
+            }
+        }
 
-        if (cancelReason?.value.trim()) {
-            message = '注文をキャンセルしますか？';
-        } else if (refundAmount?.value) {
-            message = '返金を記録しますか？';
-        } else if (revertShippingStatus?.value) {
-            const label = revertShippingStatus.selectedOptions[0]?.textContent?.trim() ?? '選択した状態';
-            message = `${label}に変更しますか？（メールは送りません）`;
-        } else if (markAsPaid?.checked && markAsShipped?.checked) {
-            message = willSendMail
-                ? '入金確認と発送処理を行い、メールを送信しますか？'
-                : '入金確認と発送処理を行いますか？';
-        } else if (markAsPaid?.checked && markAsPartiallyShipped?.checked) {
-            message = willSendMail
-                ? '入金確認と一部発送を行い、メールを送信しますか？'
-                : '入金確認と一部発送を行いますか？';
-        } else if (markAsPaid?.checked) {
-            message = '入金確認しますか？';
-        } else if (markAsShipped?.checked) {
-            message = willSendMail
-                ? '発送済みにし、メールを送信しますか？'
-                : '発送済みにしますか？（メールは送りません）';
-        } else if (markAsPartiallyShipped?.checked) {
+        const action = selectedShippingAction();
+        const willSendMail = Boolean(sendShippingMail?.checked);
+
+        let message = '発送処理を行いますか？';
+        if (action === 'partial') {
             message = willSendMail
                 ? '一部発送にし、メールを送信しますか？'
                 : '一部発送にしますか？（メールは送りません）';
+        } else {
+            message = willSendMail
+                ? '発送済みにし、メールを送信しますか？'
+                : '発送済みにしますか？（メールは送りません）';
         }
 
         if (!window.confirm(message)) {
             event.preventDefault();
-            return;
         }
-
-        captureValues();
     });
 })();

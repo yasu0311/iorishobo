@@ -3,6 +3,7 @@
 namespace App\Services\Order;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Mail\OrderPaymentReceivedMail;
 use App\Mail\OrderShippedMail;
@@ -146,6 +147,15 @@ class OrderManagementService
         ?string $subject = null,
         ?string $body = null,
     ): void {
+        if (! filled($subject) && ! filled($body)) {
+            Mail::to($order->buyer_email)->send(new OrderShippedMail(
+                $order,
+                partial: $partial,
+            ));
+
+            return;
+        }
+
         $template = $this->shippingMailComposer->template($order, $partial);
         $resolvedSubject = filled($subject) ? $subject : $template['subject'];
         $resolvedBody = $this->finalizeMailBody(
@@ -157,6 +167,7 @@ class OrderManagementService
             $order,
             $resolvedSubject,
             $resolvedBody,
+            partial: $partial,
         ));
     }
 
@@ -212,12 +223,98 @@ class OrderManagementService
                 : null;
         }
 
+        $paymentMethodChanged = false;
+        if (filled($data['payment_method'] ?? null)) {
+            $newMethod = PaymentMethod::from((string) $data['payment_method']);
+
+            if ($newMethod !== $order->payment_method) {
+                $this->changePaymentMethod($order, $newMethod);
+                $paymentMethodChanged = true;
+            }
+        }
+
         if (array_key_exists('items', $data)) {
             $this->updateItems($order, $data['items']);
+        } elseif ($paymentMethodChanged) {
+            $this->refreshOrderAmounts($order);
         }
 
         $order->update($attributes);
         $this->reactivateCancelledPaidOrder($order);
+    }
+
+    public function changePaymentMethod(Order $order, PaymentMethod $newMethod): void
+    {
+        if (! $order->canChangePaymentMethod()) {
+            throw ValidationException::withMessages([
+                'payment_method' => 'この注文の決済方法は変更できません。',
+            ]);
+        }
+
+        if (! in_array($newMethod, $order->swappablePaymentMethods(), true)) {
+            throw ValidationException::withMessages([
+                'payment_method' => '選択した決済方法には変更できません。',
+            ]);
+        }
+
+        if ($newMethod === $order->payment_method) {
+            return;
+        }
+
+        $wasDecremented = $order->inventoryWasDecremented();
+        $willBeDecremented = $this->inventoryWouldBeDecremented($order, $newMethod);
+
+        DB::transaction(function () use ($order, $newMethod, $wasDecremented, $willBeDecremented) {
+            $order->load('items.productVariant.product');
+            $quantities = $this->aggregateVariantQuantities($order->items);
+
+            if ($wasDecremented && ! $willBeDecremented) {
+                $this->inventoryService->adjustVariantQuantities($quantities, []);
+            } elseif (! $wasDecremented && $willBeDecremented) {
+                $this->inventoryService->adjustVariantQuantities([], $quantities);
+            }
+
+            $order->update(['payment_method' => $newMethod]);
+        });
+
+        $order->refresh();
+    }
+
+    private function inventoryWouldBeDecremented(Order $order, PaymentMethod $method): bool
+    {
+        return match ($method) {
+            PaymentMethod::Cod => true,
+            PaymentMethod::Stripe,
+            PaymentMethod::BankTransfer,
+            PaymentMethod::AmazonPay => in_array($order->payment_status, [
+                PaymentStatus::Paid,
+                PaymentStatus::Refunded,
+            ], true),
+        };
+    }
+
+    private function refreshOrderAmounts(Order $order): void
+    {
+        $order->load(['items', 'coupon', 'shippingMethod']);
+        $amounts = $this->recalculateOrderAmounts($order);
+
+        if ($order->refund_amount > $amounts['total']) {
+            throw ValidationException::withMessages([
+                'payment_method' => '返金済み金額が変更後の合計金額を超えるため、決済方法を変更できません。',
+            ]);
+        }
+
+        $order->update([
+            'subtotal' => $amounts['subtotal'],
+            'tax_amount' => $amounts['tax_amount'],
+            'shipping_fee' => $amounts['shipping_fee'],
+            'payment_fee' => $amounts['payment_fee'],
+            'discount' => $amounts['discount'],
+            'discount_name' => $amounts['coupon']?->name,
+            'coupon_id' => $amounts['coupon']?->id,
+            'coupon_code' => $amounts['coupon']?->code,
+            'total' => $amounts['total'],
+        ]);
     }
 
     /**
@@ -415,7 +512,7 @@ class OrderManagementService
         return $quantities;
     }
 
-    public function saveFromAdmin(Order $order, array $data, User $admin): void
+    public function saveFromAdmin(Order $order, array $data): void
     {
         if (! $order->canEditDetails()) {
             throw ValidationException::withMessages([
@@ -423,118 +520,7 @@ class OrderManagementService
             ]);
         }
 
-        if (filled($data['cancel_reason'] ?? null)) {
-            if (! $order->canCancel()) {
-                throw ValidationException::withMessages([
-                    'cancel_reason' => 'この注文はキャンセルできません。',
-                ]);
-            }
-
-            $this->cancel(
-                $order,
-                $data['cancel_reason'],
-                (bool) ($data['refund_stripe'] ?? false),
-                $admin,
-            );
-
-            return;
-        }
-
-        $previousItemsSubtotal = array_key_exists('items', $data)
-            ? (int) $order->items->sum('subtotal')
-            : null;
-
         $this->updateDetails($order, $data);
-        $order->refresh();
-
-        if (! empty($data['mark_as_paid'])) {
-            if (! $order->canMarkAsPaid()) {
-                throw ValidationException::withMessages([
-                    'mark_as_paid' => 'この注文は入金確認できません。',
-                ]);
-            }
-
-            $this->markAsPaid($order);
-            $order->refresh();
-        }
-
-        if (! empty($data['mark_as_shipped']) && ! empty($data['mark_as_partially_shipped'])) {
-            throw ValidationException::withMessages([
-                'mark_as_shipped' => '一部発送と発送完了は同時に選べません。',
-            ]);
-        }
-
-        if (filled($data['revert_shipping_status'] ?? null)
-            && (! empty($data['mark_as_shipped']) || ! empty($data['mark_as_partially_shipped']))) {
-            throw ValidationException::withMessages([
-                'revert_shipping_status' => '発送状態を戻す操作と、発送処理は同時に行えません。',
-            ]);
-        }
-
-        if (filled($data['revert_shipping_status'] ?? null)) {
-            $this->revertShippingStatus(
-                $order,
-                OrderStatus::from((string) $data['revert_shipping_status']),
-            );
-            $order->refresh();
-        }
-
-        if (! empty($data['mark_as_shipped'])) {
-            if (! $order->canShip()) {
-                throw ValidationException::withMessages([
-                    'mark_as_shipped' => 'この注文は発送できません。',
-                ]);
-            }
-
-            $this->ship(
-                $order,
-                $order->tracking_number,
-                sendMail: (bool) ($data['send_shipping_mail'] ?? false),
-                mailSubject: $data['shipping_mail_subject'] ?? null,
-                mailBody: $data['shipping_mail_body'] ?? null,
-            );
-            $order->refresh();
-        } elseif (! empty($data['mark_as_partially_shipped'])) {
-            if (! $order->canMarkAsPartiallyShipped()) {
-                throw ValidationException::withMessages([
-                    'mark_as_partially_shipped' => 'この注文は一部発送にできません。',
-                ]);
-            }
-
-            $this->markAsPartiallyShipped(
-                $order,
-                $order->tracking_number,
-                sendMail: (bool) ($data['send_shipping_mail'] ?? false),
-                mailSubject: $data['shipping_mail_subject'] ?? null,
-                mailBody: $data['shipping_mail_body'] ?? null,
-            );
-            $order->refresh();
-        }
-
-        if (! empty($data['refund_amount'])) {
-            if (! $order->canRefund()) {
-                throw ValidationException::withMessages([
-                    'refund_amount' => 'この注文は返金できません。',
-                ]);
-            }
-
-            $amount = (int) $data['refund_amount'];
-
-            if ($amount > $order->refundableAmount()) {
-                throw ValidationException::withMessages([
-                    'refund_amount' => '返金額が返金可能額を超えています。',
-                ]);
-            }
-
-            $this->refundService->record(
-                $order,
-                $amount,
-                $data['refund_reason'],
-                $admin,
-                viaStripe: ! ($data['refund_manual_only'] ?? false),
-                restoreInventory: (bool) ($data['refund_restore_inventory'] ?? false),
-            );
-        }
     }
 
     public function cancel(Order $order, string $reason, bool $refundStripe, User $admin): void

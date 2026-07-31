@@ -2,6 +2,7 @@
 
 namespace App\Services\Order;
 
+use App\Models\EmailTemplate;
 use App\Models\Order;
 
 class OrderShippingMailComposer
@@ -19,11 +20,19 @@ class OrderShippingMailComposer
 
     public function subject(Order $order, bool $partial): string
     {
+        $template = EmailTemplate::findBySlug(
+            $partial ? 'order-partially-shipped' : 'order-shipped'
+        );
+
+        if (filled($template?->subject)) {
+            return $template->subject.'　'.config('shop.name');
+        }
+
         $label = $partial
             ? 'ご注文の一部を発送しました'
-            : '商品を発送しました';
+            : '商品の発送について';
 
-        return '【'.config('shop.name').'】'.$label.'（注文番号: '.$order->order_number.'）';
+        return $label.'　'.config('shop.name');
     }
 
     public function body(Order $order, bool $partial): string
@@ -31,13 +40,15 @@ class OrderShippingMailComposer
         $order->loadMissing('items');
 
         $unit = config('shop.quantity_unit');
+        $template = EmailTemplate::findBySlug(
+            $partial ? 'order-partially-shipped' : 'order-shipped'
+        );
 
-        $lines = [
-            (string) config('shop.name'),
-            '',
-        ];
+        $lines = [];
 
-        if ($partial) {
+        if (filled($template?->body)) {
+            $lines[] = trim($template->body);
+        } elseif ($partial) {
             $lines[] = 'ご注文の一部を発送いたしました。';
             $lines[] = '残りの商品は準備ができ次第、あらためて発送いたします。';
         } else {
@@ -70,9 +81,9 @@ class OrderShippingMailComposer
         $lines[] = '〒'.$order->shipping_postal_code.' '.$order->shipping_prefecture.$order->shipping_address_line1
             .(filled($order->shipping_address_line2) ? ' '.$order->shipping_address_line2 : '');
         $lines[] = '';
-        $lines[] = '到着まで今しばらくお待ちください。';
-        $lines[] = '';
-        $lines[] = (string) config('shop.name');
+        $lines[] = '================================';
+        $lines[] = config('shop.name').'　'.config('app.url');
+        $lines[] = '================================';
 
         return implode("\n", $lines);
     }

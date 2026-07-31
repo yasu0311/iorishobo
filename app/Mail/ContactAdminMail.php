@@ -24,25 +24,22 @@ class ContactAdminMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $subject = $this->template
-            ? $this->template->renderSubject(['contact' => $this->contact])
-            : '【'.config('shop.name').'】お問い合わせ: '.$this->contact['inquiry_type'];
+        $label = $this->template?->subject ?: 'お問い合わせ';
 
         return new Envelope(
-            subject: $subject,
+            subject: '【'.config('shop.name').'】'.$label.': '.$this->contact['inquiry_type'],
             replyTo: [$this->contact['email']],
         );
     }
 
     public function content(): Content
     {
-        if ($this->template) {
-            return new Content(
-                text: 'mail.custom-text',
-                with: ['body' => $this->template->renderBody(['contact' => $this->contact])],
-            );
-        }
-
-        return new Content(text: 'mail.contact-admin');
+        return new Content(
+            text: 'mail.contact-admin',
+            with: [
+                'contact' => $this->contact,
+                'body' => $this->template?->body,
+            ],
+        );
     }
 }

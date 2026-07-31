@@ -24,22 +24,21 @@ class ContactReceivedMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $subject = $this->template
-            ? $this->template->renderSubject(['contact' => $this->contact])
-            : '【'.config('shop.name').'】お問い合わせを受け付けました';
+        $label = $this->template?->subject ?: 'お問い合わせを受け付けました';
 
-        return new Envelope(subject: $subject);
+        return new Envelope(
+            subject: '【'.config('shop.name').'】'.$label,
+        );
     }
 
     public function content(): Content
     {
-        if ($this->template) {
-            return new Content(
-                text: 'mail.custom-text',
-                with: ['body' => $this->template->renderBody(['contact' => $this->contact])],
-            );
-        }
-
-        return new Content(text: 'mail.contact-received');
+        return new Content(
+            text: 'mail.contact-received',
+            with: [
+                'contact' => $this->contact,
+                'body' => $this->template?->body,
+            ],
+        );
     }
 }

@@ -24,22 +24,21 @@ class OrderPaymentReceivedMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $subject = $this->template
-            ? $this->template->renderSubject(['order' => $this->order])
-            : 'ご入金の確認　'.config('shop.name');
+        $label = $this->template?->subject ?: 'ご入金の確認';
 
-        return new Envelope(subject: $subject);
+        return new Envelope(
+            subject: $label.'　'.config('shop.name'),
+        );
     }
 
     public function content(): Content
     {
-        if ($this->template) {
-            return new Content(
-                text: 'mail.custom-text',
-                with: ['body' => $this->template->renderBody(['order' => $this->order])],
-            );
-        }
-
-        return new Content(text: 'mail.order-payment-received');
+        return new Content(
+            text: 'mail.order-payment-received',
+            with: [
+                'order' => $this->order,
+                'body' => $this->template?->body,
+            ],
+        );
     }
 }

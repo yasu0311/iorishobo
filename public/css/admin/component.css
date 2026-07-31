@@ -128,6 +128,46 @@
 .badge--shipping-shipped { background: #d1fae5; color: #065f46; }
 .badge--shipping-cancelled { background: #e2e8f0; color: #475569; }
 
+.order-header {
+  margin-bottom: 1.5rem;
+}
+
+.order-header h1 {
+  margin: 0 0 0.5rem;
+}
+
+.order-header__statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.order-header__meta {
+  margin: 0;
+  color: var(--admin-color-muted);
+  font-size: 0.875rem;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.status-pill--payment-pending { background: #fef3c7; color: #92400e; }
+.status-pill--payment-paid { background: #d1fae5; color: #065f46; }
+.status-pill--payment-refunded { background: #e2e8f0; color: #475569; }
+.status-pill--payment-cancelled { background: #fee2e2; color: #991b1b; }
+.status-pill--shipping-unshipped { background: #dbeafe; color: #1e40af; }
+.status-pill--shipping-partially_shipped { background: #fef3c7; color: #92400e; }
+.status-pill--shipping-shipped { background: #d1fae5; color: #065f46; }
+.status-pill--shipping-cancelled { background: #e2e8f0; color: #475569; }
+.status-pill--cancelled { background: #fee2e2; color: #991b1b; }
+
 .flash {
   padding: 0.75rem 1rem;
   background: #ecfdf5;
@@ -503,8 +543,35 @@ button:hover,
   color: #b45309;
 }
 
+.order-action-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.order-action-form--secondary {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--admin-color-border);
+}
+
 .order-action-group .form-field:last-child {
   margin-bottom: 0;
+}
+
+.button-secondary {
+  background: #64748b;
+}
+
+.button-secondary:hover {
+  background: #475569;
+}
+
+.button-danger {
+  background: #b91c1c;
+}
+
+.button-danger:hover {
+  background: #991b1b;
 }
 
 .order-action-option {

@@ -9,6 +9,7 @@ use App\Enums\PaymentStatus;
 use App\Mail\OrderPaymentReceivedMail;
 use App\Mail\OrderShippedMail;
 use App\Models\Category;
+use App\Models\EmailTemplate;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -167,7 +168,6 @@ class AdminOrderTest extends TestCase
             ->assertOk()
             ->assertSee('20260630111')
             ->assertSee('テスト商品')
-            ->assertSee('購入者と同じ住所へお届けします。')
             ->assertSee('購入者と同じ');
     }
 
@@ -185,7 +185,7 @@ class AdminOrderTest extends TestCase
         $this->actingAs($this->admin)
             ->get(route('admin.orders.show', $order))
             ->assertOk()
-            ->assertDontSee('購入者と同じ住所へお届けします。')
+            ->assertDontSee('購入者と同じ')
             ->assertSee('配送先花子')
             ->assertSee('大阪府大阪市北区1-1');
     }
@@ -228,7 +228,75 @@ class AdminOrderTest extends TestCase
         Mail::assertSent(OrderShippedMail::class, function ($mail) {
             return $mail->hasTo('ship-notify@example.com')
                 && $mail->order->order_number === '20260630555'
-                && $mail->order->tracking_number === 'TRACK-001';
+                && $mail->order->tracking_number === 'TRACK-001'
+                && $mail->customSubject === null
+                && $mail->customBody === null;
+        });
+    }
+
+    #[Test]
+    public function shipping_order_uses_database_email_template_by_default(): void
+    {
+        Mail::fake();
+
+        $this->seed(\Database\Seeders\EmailTemplateSeeder::class);
+        EmailTemplate::query()->where('slug', 'order-shipped')->update([
+            'body' => 'DBテンプレート発送本文',
+        ]);
+
+        $order = $this->createOrder([
+            'order_number' => '20260630999',
+            'buyer_email' => 'db-template@example.com',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.ship', $order), [
+                'tracking_number' => 'TRACK-DB',
+            ])
+            ->assertRedirect(route('admin.orders.show', $order));
+
+        Mail::assertSent(OrderShippedMail::class, function (OrderShippedMail $mail) {
+            return $mail->hasTo('db-template@example.com')
+                && $mail->customSubject === null
+                && $mail->customBody === null
+                && $mail->partial === false
+                && str_contains($mail->render(), 'DBテンプレート発送本文');
+        });
+    }
+
+    #[Test]
+    public function partial_shipping_uses_database_email_template_by_default(): void
+    {
+        Mail::fake();
+
+        $this->seed(\Database\Seeders\EmailTemplateSeeder::class);
+        EmailTemplate::query()->where('slug', 'order-partially-shipped')->update([
+            'body' => 'DBテンプレート一部発送本文',
+        ]);
+
+        $order = $this->createOrder([
+            'order_number' => '20260630998',
+            'buyer_email' => 'partial-db@example.com',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.ship', $order), [
+                'shipping_type' => 'partial',
+                'send_shipping_mail' => '1',
+                'tracking_number' => 'TRACK-PARTIAL-DB',
+            ])
+            ->assertRedirect(route('admin.orders.show', $order));
+
+        Mail::assertSent(OrderShippedMail::class, function (OrderShippedMail $mail) {
+            return $mail->hasTo('partial-db@example.com')
+                && $mail->partial === true
+                && $mail->customSubject === null
+                && $mail->customBody === null
+                && str_contains($mail->render(), 'DBテンプレート一部発送本文');
         });
     }
 
@@ -571,6 +639,96 @@ class AdminOrderTest extends TestCase
     }
 
     #[Test]
+    public function admin_can_switch_cod_to_bank_transfer(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630910',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+            'payment_fee' => 330,
+            'total' => 1430,
+        ]);
+
+        $this->assertSame(9, $this->variant->fresh()->stock);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+                'payment_method' => PaymentMethod::BankTransfer->value,
+            ]))
+            ->assertRedirect(route('admin.orders.show', $order));
+
+        $order->refresh();
+        $this->assertSame(PaymentMethod::BankTransfer, $order->payment_method);
+        $this->assertSame(0, $order->payment_fee);
+        $this->assertSame(1100, $order->total);
+        $this->assertSame(10, $this->variant->fresh()->stock);
+    }
+
+    #[Test]
+    public function admin_can_switch_bank_transfer_to_cod(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630911',
+            'payment_method' => PaymentMethod::BankTransfer,
+            'payment_status' => PaymentStatus::Pending,
+            'payment_fee' => 0,
+            'total' => 1100,
+        ]);
+
+        $this->assertSame(10, $this->variant->fresh()->stock);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+                'payment_method' => PaymentMethod::Cod->value,
+            ]))
+            ->assertRedirect(route('admin.orders.show', $order));
+
+        $order->refresh();
+        $this->assertSame(PaymentMethod::Cod, $order->payment_method);
+        $this->assertSame(330, $order->payment_fee);
+        $this->assertSame(1430, $order->total);
+        $this->assertSame(9, $this->variant->fresh()->stock);
+    }
+
+    #[Test]
+    public function cannot_change_payment_method_after_shipping(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630912',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+            'shipping_status' => OrderStatus::Shipped,
+            'shipped_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+                'payment_method' => PaymentMethod::BankTransfer->value,
+            ]))
+            ->assertSessionHasErrors('payment_method');
+
+        $this->assertSame(PaymentMethod::Cod, $order->fresh()->payment_method);
+    }
+
+    #[Test]
+    public function cannot_change_stripe_payment_method(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630913',
+            'payment_method' => PaymentMethod::Stripe,
+            'payment_status' => PaymentStatus::Paid,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+                'payment_method' => PaymentMethod::Cod->value,
+            ]))
+            ->assertSessionHasErrors('payment_method');
+
+        $this->assertSame(PaymentMethod::Stripe, $order->fresh()->payment_method);
+    }
+
+    #[Test]
     public function admin_cannot_remove_all_order_items(): void
     {
         $order = $this->createOrder(['order_number' => '20260630905']);
@@ -744,12 +902,12 @@ class AdminOrderTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
-                'mark_as_partially_shipped' => '1',
+            ->post(route('admin.orders.ship', $order), [
+                'shipping_type' => 'partial',
                 'send_shipping_mail' => '1',
                 'shipping_mail_subject' => '一部だけ発送しました',
                 'shipping_mail_body' => "商品Aのみ発送しました。\n追跡番号: TRACK-PARTIAL\n",
-            ]))
+            ])
             ->assertRedirect(route('admin.orders.show', $order));
 
         $order->refresh();
@@ -776,9 +934,10 @@ class AdminOrderTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
-                'mark_as_partially_shipped' => '1',
-            ]))
+            ->post(route('admin.orders.ship', $order), [
+                'shipping_type' => 'partial',
+                'send_shipping_mail' => '0',
+            ])
             ->assertRedirect(route('admin.orders.show', $order));
 
         $this->assertSame(OrderStatus::PartiallyShipped, $order->fresh()->shipping_status);
@@ -822,14 +981,14 @@ class AdminOrderTest extends TestCase
         $this->assertFalse($order->canCancel());
 
         $this->actingAs($this->admin)
-            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+            ->post(route('admin.orders.cancel', $order), [
                 'cancel_reason' => 'キャンセルしたい',
-            ]))
-            ->assertSessionHasErrors('cancel_reason');
+            ])
+            ->assertSessionHasErrors('order');
     }
 
     #[Test]
-    public function shipping_mail_subject_and_body_are_required_when_sending(): void
+    public function shipping_mail_subject_and_body_are_required_when_customized(): void
     {
         $order = $this->createOrder([
             'order_number' => '20260630854',
@@ -838,10 +997,11 @@ class AdminOrderTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
-                'mark_as_partially_shipped' => '1',
+            ->post(route('admin.orders.ship', $order), [
+                'shipping_type' => 'partial',
                 'send_shipping_mail' => '1',
-            ]))
+                'shipping_mail_customized' => '1',
+            ])
             ->assertSessionHasErrors(['shipping_mail_subject', 'shipping_mail_body']);
     }
 
@@ -858,9 +1018,9 @@ class AdminOrderTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+            ->post(route('admin.orders.revert-shipping', $order), [
                 'revert_shipping_status' => OrderStatus::Unshipped->value,
-            ]))
+            ])
             ->assertRedirect(route('admin.orders.show', $order));
 
         $order->refresh();
@@ -882,9 +1042,9 @@ class AdminOrderTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+            ->post(route('admin.orders.revert-shipping', $order), [
                 'revert_shipping_status' => OrderStatus::PartiallyShipped->value,
-            ]))
+            ])
             ->assertRedirect(route('admin.orders.show', $order));
 
         $order->refresh();
@@ -893,20 +1053,19 @@ class AdminOrderTest extends TestCase
     }
 
     #[Test]
-    public function cannot_revert_shipping_status_with_forward_shipping_action(): void
+    public function cannot_revert_shipping_status_when_not_allowed(): void
     {
         $order = $this->createOrder([
             'order_number' => '20260630862',
             'payment_method' => PaymentMethod::Cod,
             'payment_status' => PaymentStatus::Pending,
-            'shipping_status' => OrderStatus::PartiallyShipped,
+            'shipping_status' => OrderStatus::Unshipped,
         ]);
 
         $this->actingAs($this->admin)
-            ->put(route('admin.orders.update', $order), $this->orderUpdatePayload($order, [
+            ->post(route('admin.orders.revert-shipping', $order), [
                 'revert_shipping_status' => OrderStatus::Unshipped->value,
-                'mark_as_shipped' => '1',
-            ]))
+            ])
             ->assertSessionHasErrors('revert_shipping_status');
     }
 

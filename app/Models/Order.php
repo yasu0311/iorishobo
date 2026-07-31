@@ -258,6 +258,32 @@ class Order extends Model
     }
 
     /**
+     * 管理画面で代金引換⇔銀行振込を切り替えられるか。
+     */
+    public function canChangePaymentMethod(): bool
+    {
+        return $this->isActive()
+            && $this->payment_status === PaymentStatus::Pending
+            && $this->shipping_status === OrderStatus::Unshipped
+            && in_array($this->payment_method, [PaymentMethod::Cod, PaymentMethod::BankTransfer], true);
+    }
+
+    /**
+     * @return array<int, PaymentMethod>
+     */
+    public function swappablePaymentMethods(): array
+    {
+        if (! $this->canChangePaymentMethod()) {
+            return [];
+        }
+
+        return [
+            PaymentMethod::Cod,
+            PaymentMethod::BankTransfer,
+        ];
+    }
+
+    /**
      * 配送先が購入者と同一か（チェックアウト時に配送先未入力でコピーされた場合を含む）。
      */
     public function shippingMatchesBuyer(): bool

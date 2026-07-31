@@ -6,6 +6,9 @@
 @endphp
 {{ $order->buyer_name }}@if ($buyerNameKana)（{{ $buyerNameKana }}）@endif 様
 
+@if (filled($body ?? null))
+{{ $body }}
+@else
 商品のご注文ありがとうございます。
 注文確認メールを差し上げます。
 
@@ -19,15 +22,8 @@
 
 ● [銀行振込(先払い)] を選択された方
 下記の振込先へお振込みください。
-
-＜{{ config('shop.name') }}振込先＞
-{{ config('shop.bank_account.bank_name') }} {{ config('shop.bank_account.branch_name') }}
-{{ config('shop.bank_account.account_type') }} {{ config('shop.bank_account.account_number') }}
-口座名義: {{ config('shop.bank_account.account_holder') }}
-
 商品代金＋送料の振込みをお願いいたします。
 7日以内にお振込みください。
-※振込名義人には注文番号「{{ $order->order_number }}」を含めてお振込みください。
 入金確認後に商品の発送をいたします。
 
 ※在庫状況によっては、発送まで１週間程度かかる可能性もございますので、あらかじめご了承ください。
@@ -35,6 +31,16 @@
 
 ■本メールは送信専用のメールアドレスで送信しております。
 このメールの内容についてのお問い合わせは下記のメールアドレスへお願いいたします。
+@endif
+
+@if ($order->payment_method->value === 'bank_transfer')
+＜{{ config('shop.name') }}振込先＞
+{{ config('shop.bank_account.bank_name') }} {{ config('shop.bank_account.branch_name') }}
+{{ config('shop.bank_account.account_type') }} {{ config('shop.bank_account.account_number') }}
+口座名義: {{ config('shop.bank_account.account_holder') }}
+
+※振込名義人には注文番号「{{ $order->order_number }}」を含めてお振込みください。
+@endif
 @if ($shopEmail)
 {{ $shopEmail }}
 @endif

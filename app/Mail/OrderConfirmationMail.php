@@ -28,22 +28,21 @@ class OrderConfirmationMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $subject = $this->template
-            ? $this->template->renderSubject(['order' => $this->order])
-            : '【'.config('shop.name').'】ご注文ありがとうございます（注文番号: '.$this->order->order_number.'）';
+        $label = $this->template?->subject ?: 'ご注文ありがとうございます';
 
-        return new Envelope(subject: $subject);
+        return new Envelope(
+            subject: '【'.config('shop.name').'】'.$label.'（注文番号: '.$this->order->order_number.'）',
+        );
     }
 
     public function content(): Content
     {
-        if ($this->template) {
-            return new Content(
-                text: 'mail.custom-text',
-                with: ['body' => $this->template->renderBody(['order' => $this->order])],
-            );
-        }
-
-        return new Content(text: 'mail.order-confirmation');
+        return new Content(
+            text: 'mail.order-confirmation',
+            with: [
+                'order' => $this->order,
+                'body' => $this->template?->body,
+            ],
+        );
     }
 }

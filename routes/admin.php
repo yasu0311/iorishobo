@@ -24,6 +24,7 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::put('/orders/{order}', [OrderController::class, 'update'])->name('orders.update');
         Route::post('/orders/{order}/mark-paid', [OrderController::class, 'markPaid'])->name('orders.mark-paid');
         Route::post('/orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
+        Route::post('/orders/{order}/revert-shipping', [OrderController::class, 'revertShipping'])->name('orders.revert-shipping');
         Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
         Route::post('/orders/{order}/refunds', [OrderController::class, 'storeRefund'])->name('orders.refunds.store');
         Route::post('/orders/{order}/watchlist', [WatchlistController::class, 'storeFromOrder'])->name('orders.watchlist.store');

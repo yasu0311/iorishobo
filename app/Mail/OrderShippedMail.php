@@ -20,8 +20,11 @@ class OrderShippedMail extends Mailable
         public Order $order,
         public ?string $customSubject = null,
         public ?string $customBody = null,
+        public bool $partial = false,
     ) {
-        $this->template = EmailTemplate::findBySlug('order-shipped');
+        $this->template = EmailTemplate::findBySlug(
+            $partial ? 'order-partially-shipped' : 'order-shipped'
+        );
     }
 
     public function envelope(): Envelope
@@ -30,11 +33,14 @@ class OrderShippedMail extends Mailable
             return new Envelope(subject: $this->customSubject);
         }
 
-        $subject = $this->template
-            ? $this->template->renderSubject(['order' => $this->order])
-            : '商品の発送について　'.config('shop.name');
+        $fallback = $this->partial
+            ? 'ご注文の一部を発送しました'
+            : '商品の発送について';
+        $label = $this->template?->subject ?: $fallback;
 
-        return new Envelope(subject: $subject);
+        return new Envelope(
+            subject: $label.'　'.config('shop.name'),
+        );
     }
 
     public function content(): Content
@@ -46,13 +52,13 @@ class OrderShippedMail extends Mailable
             );
         }
 
-        if ($this->template) {
-            return new Content(
-                text: 'mail.custom-text',
-                with: ['body' => $this->template->renderBody(['order' => $this->order])],
-            );
-        }
-
-        return new Content(text: 'mail.order-shipped');
+        return new Content(
+            text: 'mail.order-shipped',
+            with: [
+                'order' => $this->order,
+                'body' => $this->template?->body,
+                'partial' => $this->partial,
+            ],
+        );
     }
 }

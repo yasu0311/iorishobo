@@ -101,7 +101,13 @@ class CheckoutTest extends TestCase
         $this->assertSame('テスト太郎', $order->shipping_name);
         $this->assertSame('1000001', $order->shipping_postal_code);
 
-        Mail::assertSent(OrderConfirmationMail::class, fn ($mail) => $mail->hasTo('buyer@example.com'));
+        Mail::assertSent(OrderConfirmationMail::class, function (OrderConfirmationMail $mail) {
+            $html = $mail->render();
+
+            return $mail->hasTo('buyer@example.com')
+                && ! str_contains($html, '口座名義:')
+                && ! str_contains($html, '振込名義人');
+        });
         Mail::assertSentCount(1);
     }
 
@@ -122,7 +128,8 @@ class CheckoutTest extends TestCase
             $html = $mail->render();
 
             return $mail->hasTo('buyer@example.com')
-                && str_contains($html, '振込先')
+                && str_contains($html, '口座名義:')
+                && str_contains($html, '振込名義人')
                 && str_contains($html, '7日以内にお振込みください');
         });
         Mail::assertSentCount(1);

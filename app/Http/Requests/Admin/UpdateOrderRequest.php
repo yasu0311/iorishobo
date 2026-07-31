@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\PaymentMethod;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,9 +18,6 @@ class UpdateOrderRequest extends FormRequest
      */
     public function rules(): array
     {
-        $shippingMailRequired = Rule::requiredIf(fn (): bool => $this->boolean('send_shipping_mail')
-            && ($this->boolean('mark_as_shipped') || $this->boolean('mark_as_partially_shipped')));
-
         return [
             'buyer_name' => 'required|string|max:100',
             'buyer_email' => 'required|email|max:255',
@@ -39,6 +37,13 @@ class UpdateOrderRequest extends FormRequest
             'customer_note' => 'nullable|string|max:1000',
             'shipping_note' => 'nullable|string|max:1000',
             'tracking_number' => 'nullable|string|max:100',
+            'payment_method' => [
+                'nullable',
+                Rule::in([
+                    PaymentMethod::Cod->value,
+                    PaymentMethod::BankTransfer->value,
+                ]),
+            ],
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|integer',
             'items.*.product_variant_id' => 'nullable|integer|exists:product_variants,id',
@@ -46,20 +51,6 @@ class UpdateOrderRequest extends FormRequest
             'items.*.unit_price' => 'nullable|integer|min:0',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.remove' => 'boolean',
-            'mark_as_paid' => 'boolean',
-            'mark_as_shipped' => 'boolean',
-            'mark_as_partially_shipped' => 'boolean',
-            'revert_shipping_status' => 'nullable|string|in:unshipped,partially_shipped',
-            'send_shipping_mail' => 'boolean',
-            'shipping_mail_subject' => ['nullable', 'string', 'max:200', $shippingMailRequired],
-            'shipping_mail_body' => ['nullable', 'string', 'max:10000', $shippingMailRequired],
-            'cancel_reason' => 'nullable|string|max:1000',
-            'refund_stripe' => 'boolean',
-            'refund_amount' => 'nullable|integer|min:1',
-            'refund_reason' => 'nullable|string|max:1000|required_with:refund_amount',
-            'refund_manual_only' => 'boolean',
-            'refund_restore_inventory' => 'boolean',
-            'watchlist_reason' => 'nullable|string|max:2000',
         ];
     }
 }
