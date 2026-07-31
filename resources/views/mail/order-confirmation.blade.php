@@ -6,34 +6,24 @@
 @endphp
 {{ $order->buyer_name }}@if ($buyerNameKana)（{{ $buyerNameKana }}）@endif 様
 
-@if (filled($body ?? null))
 {{ $body }}
-@else
-商品のご注文ありがとうございます。
-注文確認メールを差し上げます。
 
-● [クレジットカード] を選択された方
+@if ($order->payment_method->value === 'stripe')
+＜クレジットカード決済について＞
 商品を発送しますのでしばらくお待ち下さい。
 なお、セキュリティの関係でクレジットカード決済ができないこともございます。その場合は当店から改めてご連絡差し上げ、代金引換や銀行振込への変更のお願いをすることがございますのでご了承ください。
-
-● [代金引換] を選択された方
+@elseif ($order->payment_method->value === 'cod')
+＜代金引換について＞
 商品を発送しますのでしばらくお待ち下さい。
 商品が届きましたら配達員に代金をお支払いください。
-
-● [銀行振込(先払い)] を選択された方
+@elseif ($order->payment_method->value === 'bank_transfer')
+＜銀行振込（先払い）について＞
 下記の振込先へお振込みください。
+
 商品代金＋送料の振込みをお願いいたします。
 7日以内にお振込みください。
 入金確認後に商品の発送をいたします。
 
-※在庫状況によっては、発送まで１週間程度かかる可能性もございますので、あらかじめご了承ください。
-
-
-■本メールは送信専用のメールアドレスで送信しております。
-このメールの内容についてのお問い合わせは下記のメールアドレスへお願いいたします。
-@endif
-
-@if ($order->payment_method->value === 'bank_transfer')
 ＜{{ config('shop.name') }}振込先＞
 {{ config('shop.bank_account.bank_name') }} {{ config('shop.bank_account.branch_name') }}
 {{ config('shop.bank_account.account_type') }} {{ config('shop.bank_account.account_number') }}

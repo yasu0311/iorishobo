@@ -35,6 +35,8 @@ class AdminOrderTest extends TestCase
     {
         parent::setUp();
 
+        $this->seed(\Database\Seeders\EmailTemplateSeeder::class);
+
         $this->admin = User::factory()->create(['is_admin' => true]);
 
         $category = Category::query()->create([
@@ -232,6 +234,51 @@ class AdminOrderTest extends TestCase
                 && $mail->customSubject === null
                 && $mail->customBody === null;
         });
+    }
+
+    #[Test]
+    public function shipping_order_succeeds_with_warning_when_mail_template_missing(): void
+    {
+        Mail::fake();
+        \App\Models\EmailTemplate::query()->where('slug', 'order-shipped')->delete();
+
+        $order = $this->createOrder([
+            'order_number' => '20260630556',
+            'buyer_email' => 'ship-fail@example.com',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.ship', $order), [
+                'tracking_number' => 'TRACK-FAIL',
+            ])
+            ->assertRedirect(route('admin.orders.show', $order))
+            ->assertSessionHas('status')
+            ->assertSessionHas('warning');
+
+        $this->assertSame(OrderStatus::Shipped, $order->fresh()->shipping_status);
+        Mail::assertNothingSent();
+    }
+
+    #[Test]
+    public function order_detail_loads_when_shipping_mail_template_missing(): void
+    {
+        \App\Models\EmailTemplate::query()->whereIn('slug', [
+            'order-shipped',
+            'order-partially-shipped',
+        ])->delete();
+
+        $order = $this->createOrder([
+            'order_number' => '20260630557',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.orders.show', $order))
+            ->assertOk()
+            ->assertSee('発送メールテンプレートを読み込めませんでした');
     }
 
     #[Test]

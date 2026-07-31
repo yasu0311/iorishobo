@@ -106,6 +106,12 @@
                         @endif
 
                         @if (! empty($shippingMailTemplates))
+                            @if (! empty($shippingMailTemplateError))
+                                <div class="flash flash--warning" style="margin-bottom: 0.75rem;">
+                                    発送メールテンプレートを読み込めませんでした。件名・本文を直接入力するか、管理画面のメールテンプレートを登録してください。<br>
+                                    {{ $shippingMailTemplateError }}
+                                </div>
+                            @endif
                             <div
                                 id="shipping-mail-fields"
                                 class="order-action-mail"

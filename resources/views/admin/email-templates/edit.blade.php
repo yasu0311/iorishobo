@@ -27,8 +27,6 @@
                     送信時の件名: 【ショップ名】<strong>入力内容</strong>（注文番号: …）
                 @elseif (str_starts_with($template->slug, 'order-'))
                     送信時の件名: <strong>入力内容</strong>　ショップ名
-                @elseif ($template->slug === 'contact-admin')
-                    送信時の件名: 【ショップ名】<strong>入力内容</strong>: お問い合わせ種類
                 @else
                     送信時の件名: 【ショップ名】<strong>入力内容</strong>
                 @endif
@@ -40,7 +38,7 @@
             <textarea id="body" name="body" rows="20" style="font-family: monospace; white-space: pre; overflow-x: auto; min-height: 16rem;" required>{{ old('body', $template->body) }}</textarea>
             @error('body') <p class="input-error">{{ $message }}</p> @enderror
             <p style="color: #6b7280; font-size: 0.875rem; margin-top: 0.35rem;">
-                Blade変数（<code>@{{ $order }}</code> 等）は使えません。注文番号・明細・お問い合わせ内容などは本文の前後に自動で付きます。
+                編集可能な案内文はここだけです。Blade変数（<code>@{{ $order }}</code> 等）は使えません。注文番号・明細・お問い合わせ内容などは本文の前後に自動で付きます。
             </p>
         </div>
 

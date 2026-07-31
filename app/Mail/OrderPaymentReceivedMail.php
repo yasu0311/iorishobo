@@ -14,20 +14,18 @@ class OrderPaymentReceivedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    private ?EmailTemplate $template;
+    private EmailTemplate $template;
 
     public function __construct(
         public Order $order,
     ) {
-        $this->template = EmailTemplate::findBySlug('order-payment-received');
+        $this->template = EmailTemplate::requireBySlug('order-payment-received');
     }
 
     public function envelope(): Envelope
     {
-        $label = $this->template?->subject ?: 'ご入金の確認';
-
         return new Envelope(
-            subject: $label.'　'.config('shop.name'),
+            subject: $this->template->subject.'　'.config('shop.name'),
         );
     }
 
@@ -37,7 +35,7 @@ class OrderPaymentReceivedMail extends Mailable
             text: 'mail.order-payment-received',
             with: [
                 'order' => $this->order,
-                'body' => $this->template?->body,
+                'body' => $this->template->body,
             ],
         );
     }

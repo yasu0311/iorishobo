@@ -24,18 +24,31 @@ class OrderBulkActionService
 
         $succeeded = [];
         $skipped = [];
+        $mailFailed = [];
 
         foreach ($orders as $order) {
             try {
-                match ($action) {
+                $failedMail = match ($action) {
                     OrderBulkAction::ShipWithMail => $this->orderManagementService->ship($order, sendMail: true),
                     OrderBulkAction::ShipOnly => $this->orderManagementService->ship($order, sendMail: false),
                     OrderBulkAction::MarkPaidWithMail => $this->orderManagementService->markAsPaid($order, sendMail: true),
                     OrderBulkAction::MarkPaidOnly => $this->orderManagementService->markAsPaid($order),
-                    OrderBulkAction::PrintReceipt => $this->assertCanPrintReceipt($order),
+                    OrderBulkAction::PrintReceipt => false,
                 };
 
-                $succeeded[] = $order->fresh();
+                if ($action === OrderBulkAction::PrintReceipt) {
+                    $this->assertCanPrintReceipt($order);
+                }
+
+                $fresh = $order->fresh();
+                $succeeded[] = $fresh;
+
+                if ($failedMail) {
+                    $mailFailed[] = [
+                        'order' => $fresh,
+                        'reason' => 'メール送信に失敗しました。',
+                    ];
+                }
             } catch (ValidationException $exception) {
                 $skipped[] = [
                     'order' => $order,
@@ -44,7 +57,7 @@ class OrderBulkActionService
             }
         }
 
-        return new BulkActionResult($succeeded, $skipped);
+        return new BulkActionResult($succeeded, $skipped, $mailFailed);
     }
 
     /**

@@ -22,7 +22,14 @@ class OrderShippedMail extends Mailable
         public ?string $customBody = null,
         public bool $partial = false,
     ) {
-        $this->template = EmailTemplate::findBySlug(
+        // 件名・本文を両方カスタム指定した場合は DB テンプレート不要
+        if ($this->customSubject !== null && $this->customBody !== null) {
+            $this->template = null;
+
+            return;
+        }
+
+        $this->template = EmailTemplate::requireBySlug(
             $partial ? 'order-partially-shipped' : 'order-shipped'
         );
     }
@@ -33,13 +40,8 @@ class OrderShippedMail extends Mailable
             return new Envelope(subject: $this->customSubject);
         }
 
-        $fallback = $this->partial
-            ? 'ご注文の一部を発送しました'
-            : '商品の発送について';
-        $label = $this->template?->subject ?: $fallback;
-
         return new Envelope(
-            subject: $label.'　'.config('shop.name'),
+            subject: $this->template->subject.'　'.config('shop.name'),
         );
     }
 
@@ -56,8 +58,7 @@ class OrderShippedMail extends Mailable
             text: 'mail.order-shipped',
             with: [
                 'order' => $this->order,
-                'body' => $this->template?->body,
-                'partial' => $this->partial,
+                'body' => $this->template->body,
             ],
         );
     }

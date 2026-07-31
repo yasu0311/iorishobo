@@ -24,6 +24,10 @@
         <p class="flash">{{ session('status') }}</p>
     @endif
 
+    @if (session('warning'))
+        <div class="flash flash--warning">{{ session('warning') }}</div>
+    @endif
+
     @if ($errors->any())
         <div class="flash flash--error">
             @foreach ($errors->all() as $error)

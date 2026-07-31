@@ -14,7 +14,7 @@ class OrderConfirmationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    private ?EmailTemplate $template;
+    private EmailTemplate $template;
 
     public function __construct(
         public Order $order,
@@ -23,15 +23,13 @@ class OrderConfirmationMail extends Mailable
             'items.productVariant.product',
             'customer',
         ]);
-        $this->template = EmailTemplate::findBySlug('order-confirmation');
+        $this->template = EmailTemplate::requireBySlug('order-confirmation');
     }
 
     public function envelope(): Envelope
     {
-        $label = $this->template?->subject ?: 'ご注文ありがとうございます';
-
         return new Envelope(
-            subject: '【'.config('shop.name').'】'.$label.'（注文番号: '.$this->order->order_number.'）',
+            subject: '【'.config('shop.name').'】'.$this->template->subject.'（注文番号: '.$this->order->order_number.'）',
         );
     }
 
@@ -41,7 +39,7 @@ class OrderConfirmationMail extends Mailable
             text: 'mail.order-confirmation',
             with: [
                 'order' => $this->order,
-                'body' => $this->template?->body,
+                'body' => $this->template->body,
             ],
         );
     }

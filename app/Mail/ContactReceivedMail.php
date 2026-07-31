@@ -13,21 +13,19 @@ class ContactReceivedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    private ?EmailTemplate $template;
+    private EmailTemplate $template;
 
     /** @param  array{name: string, email: string, inquiry_type: string, message: string}  $contact */
     public function __construct(
         public array $contact,
     ) {
-        $this->template = EmailTemplate::findBySlug('contact-received');
+        $this->template = EmailTemplate::requireBySlug('contact-received');
     }
 
     public function envelope(): Envelope
     {
-        $label = $this->template?->subject ?: 'お問い合わせを受け付けました';
-
         return new Envelope(
-            subject: '【'.config('shop.name').'】'.$label,
+            subject: '【'.config('shop.name').'】'.$this->template->subject,
         );
     }
 
@@ -37,7 +35,7 @@ class ContactReceivedMail extends Mailable
             text: 'mail.contact-received',
             with: [
                 'contact' => $this->contact,
-                'body' => $this->template?->body,
+                'body' => $this->template->body,
             ],
         );
     }

@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ContactRequest;
 use App\Mail\ContactAdminMail;
 use App\Mail\ContactReceivedMail;
+use App\Support\OutboundMail;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class ContactController extends Controller
 {
@@ -56,8 +59,29 @@ class ContactController extends Controller
                 ->withErrors(['message' => 'お問い合わせを送信できません。しばらくしてから再度お試しください。']);
         }
 
-        Mail::to($recipient)->send(new ContactAdminMail($data));
-        Mail::to($data['email'])->send(new ContactReceivedMail($data));
+        // 管理者宛てが届かないと受付にならないので、失敗時は全体を失敗扱いにする
+        try {
+            Mail::to($recipient)->send(new ContactAdminMail($data));
+        } catch (Throwable $exception) {
+            Log::error('mail.send_failed', [
+                'context' => 'contact.admin',
+                'error' => $exception->getMessage(),
+                'exception' => $exception::class,
+            ]);
+
+            $request->session()->put('contact_came_from_back', true);
+
+            return redirect()->route('contacts.create')
+                ->withErrors(['message' => 'お問い合わせを送信できません。しばらくしてから再度お試しください。']);
+        }
+
+        // 顧客自動返信は失敗しても受付完了とする
+        OutboundMail::send(
+            $data['email'],
+            fn () => new ContactReceivedMail($data),
+            'contact.received',
+            ['email' => $data['email']],
+        );
 
         $request->session()->forget('contact_input');
         $request->session()->put('contact_sent', true);

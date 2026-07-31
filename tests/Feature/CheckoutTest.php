@@ -37,6 +37,7 @@ class CheckoutTest extends TestCase
         parent::setUp();
 
         Mail::fake();
+        $this->seed(\Database\Seeders\EmailTemplateSeeder::class);
 
         $category = Category::query()->create([
             'name' => 'テスト',
@@ -105,8 +106,11 @@ class CheckoutTest extends TestCase
             $html = $mail->render();
 
             return $mail->hasTo('buyer@example.com')
+                && str_contains($html, '＜代金引換について＞')
+                && str_contains($html, '配達員に代金をお支払いください')
                 && ! str_contains($html, '口座名義:')
-                && ! str_contains($html, '振込名義人');
+                && ! str_contains($html, '振込名義人')
+                && ! str_contains($html, 'クレジットカード決済について');
         });
         Mail::assertSentCount(1);
     }
@@ -128,11 +132,33 @@ class CheckoutTest extends TestCase
             $html = $mail->render();
 
             return $mail->hasTo('buyer@example.com')
+                && str_contains($html, '＜銀行振込（先払い）について＞')
                 && str_contains($html, '口座名義:')
                 && str_contains($html, '振込名義人')
-                && str_contains($html, '7日以内にお振込みください');
+                && str_contains($html, '7日以内にお振込みください')
+                && ! str_contains($html, 'クレジットカード決済について')
+                && ! str_contains($html, '代金引換について');
         });
         Mail::assertSentCount(1);
+    }
+
+    #[Test]
+    public function checkout_completes_even_if_confirmation_template_is_missing(): void
+    {
+        \App\Models\EmailTemplate::query()->where('slug', 'order-confirmation')->delete();
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->submitCheckout($user, $this->checkoutPayload('cod'))
+            ->assertRedirect(route('checkout.complete'));
+
+        $this->assertDatabaseCount('orders', 1);
+        Mail::assertNothingSent();
     }
 
     #[Test]
@@ -239,7 +265,14 @@ class CheckoutTest extends TestCase
         $this->assertSame(PaymentStatus::Paid, $order->payment_status);
         $this->assertSame(7, $this->variant->fresh()->stock);
         $this->assertDatabaseCount('cart_items', 0);
-        Mail::assertSent(OrderConfirmationMail::class);
+        Mail::assertSent(OrderConfirmationMail::class, function (OrderConfirmationMail $mail) {
+            $html = $mail->render();
+
+            return str_contains($html, '＜クレジットカード決済について＞')
+                && str_contains($html, 'セキュリティの関係でクレジットカード決済ができないこともございます')
+                && ! str_contains($html, '口座名義:')
+                && ! str_contains($html, '代金引換について');
+        });
     }
 
     #[Test]

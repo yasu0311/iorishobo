@@ -2,8 +2,10 @@
 
 namespace App\Services\Order;
 
+use App\Exceptions\MissingEmailTemplateException;
 use App\Models\EmailTemplate;
 use App\Models\Order;
+use Illuminate\Support\Facades\Log;
 
 class OrderShippingMailComposer
 {
@@ -18,21 +20,43 @@ class OrderShippingMailComposer
         ];
     }
 
+    /**
+     * 注文詳細の編集用。テンプレート欠落時も画面を落とさず空欄＋エラーメッセージを返す。
+     *
+     * @return array{subject: string, body: string, error: ?string}
+     */
+    public function templateForEditor(Order $order, bool $partial): array
+    {
+        try {
+            $template = $this->template($order, $partial);
+
+            return [
+                'subject' => $template['subject'],
+                'body' => $template['body'],
+                'error' => null,
+            ];
+        } catch (MissingEmailTemplateException $exception) {
+            Log::warning('mail.template_unavailable_for_editor', [
+                'order_id' => $order->id,
+                'partial' => $partial,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return [
+                'subject' => '',
+                'body' => '',
+                'error' => $exception->getMessage(),
+            ];
+        }
+    }
+
     public function subject(Order $order, bool $partial): string
     {
-        $template = EmailTemplate::findBySlug(
+        $template = EmailTemplate::requireBySlug(
             $partial ? 'order-partially-shipped' : 'order-shipped'
         );
 
-        if (filled($template?->subject)) {
-            return $template->subject.'　'.config('shop.name');
-        }
-
-        $label = $partial
-            ? 'ご注文の一部を発送しました'
-            : '商品の発送について';
-
-        return $label.'　'.config('shop.name');
+        return $template->subject.'　'.config('shop.name');
     }
 
     public function body(Order $order, bool $partial): string
@@ -40,21 +64,12 @@ class OrderShippingMailComposer
         $order->loadMissing('items');
 
         $unit = config('shop.quantity_unit');
-        $template = EmailTemplate::findBySlug(
+        $template = EmailTemplate::requireBySlug(
             $partial ? 'order-partially-shipped' : 'order-shipped'
         );
 
         $lines = [];
-
-        if (filled($template?->body)) {
-            $lines[] = trim($template->body);
-        } elseif ($partial) {
-            $lines[] = 'ご注文の一部を発送いたしました。';
-            $lines[] = '残りの商品は準備ができ次第、あらためて発送いたします。';
-        } else {
-            $lines[] = 'ご注文の商品を発送いたしました。';
-        }
-
+        $lines[] = trim($template->body);
         $lines[] = '';
         $lines[] = '注文番号: '.$order->order_number;
 

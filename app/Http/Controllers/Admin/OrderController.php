@@ -121,10 +121,20 @@ class OrderController extends Controller
         $order->load(['items.productVariant.product', 'customer', 'refunds.recordedBy']);
 
         $shippingMailTemplates = null;
+        $shippingMailTemplateError = null;
         if ($order->canShip() || $order->canMarkAsPartiallyShipped()) {
+            $partial = $this->shippingMailComposer->templateForEditor($order, true);
+            $full = $this->shippingMailComposer->templateForEditor($order, false);
+            $shippingMailTemplateError = $partial['error'] ?? $full['error'];
             $shippingMailTemplates = [
-                'partial' => $this->shippingMailComposer->template($order, true),
-                'full' => $this->shippingMailComposer->template($order, false),
+                'partial' => [
+                    'subject' => $partial['subject'],
+                    'body' => $partial['body'],
+                ],
+                'full' => [
+                    'subject' => $full['subject'],
+                    'body' => $full['body'],
+                ],
             ];
         }
 
@@ -133,6 +143,7 @@ class OrderController extends Controller
             'watchlistMatches' => $this->watchlistService->matchingForOrder($order),
             'editing' => session()->has('errors'),
             'shippingMailTemplates' => $shippingMailTemplates,
+            'shippingMailTemplateError' => $shippingMailTemplateError,
             'productVariants' => ProductVariant::query()
                 ->with('product.category')
                 ->where('is_active', true)
@@ -199,7 +210,8 @@ class OrderController extends Controller
             ]);
         }
 
-        $flashKey = $result->skippedCount() > 0 && $result->succeededCount() === 0
+        $flashKey = ($result->skippedCount() > 0 && $result->succeededCount() === 0)
+            || $result->mailFailedCount() > 0
             ? 'bulk_warning'
             : 'status';
 
@@ -243,7 +255,7 @@ class OrderController extends Controller
         $mailBody = $validated['shipping_mail_body'] ?? null;
 
         if ($shippingType === 'partial') {
-            $this->orderManagementService->markAsPartiallyShipped(
+            $mailFailed = $this->orderManagementService->markAsPartiallyShipped(
                 $order,
                 $trackingNumber,
                 sendMail: $sendMail,
@@ -251,12 +263,10 @@ class OrderController extends Controller
                 mailBody: $mailBody,
             );
 
-            return redirect()
-                ->route('admin.orders.show', $order)
-                ->with('status', '一部発送に更新しました。');
+            return $this->redirectAfterShipping($order, '一部発送に更新しました。', $sendMail, $mailFailed);
         }
 
-        $this->orderManagementService->ship(
+        $mailFailed = $this->orderManagementService->ship(
             $order,
             $trackingNumber,
             sendMail: $sendMail,
@@ -264,9 +274,7 @@ class OrderController extends Controller
             mailBody: $mailBody,
         );
 
-        return redirect()
-            ->route('admin.orders.show', $order)
-            ->with('status', '発送処理を完了しました。');
+        return $this->redirectAfterShipping($order, '発送処理を完了しました。', $sendMail, $mailFailed);
     }
 
     public function revertShipping(Request $request, Order $order): RedirectResponse
@@ -335,9 +343,36 @@ class OrderController extends Controller
         return $request->only(['q', 'payment_status', 'shipping_status', 'payment_method']);
     }
 
+    private function redirectAfterShipping(
+        Order $order,
+        string $status,
+        bool $sendMail,
+        bool $mailFailed,
+    ): RedirectResponse {
+        $redirect = redirect()
+            ->route('admin.orders.show', $order)
+            ->with('status', $status);
+
+        if ($sendMail && $mailFailed) {
+            $redirect->with(
+                'warning',
+                'メールの送信に失敗しました。状態は更新済みです。ログを確認し、必要なら手動でご連絡ください。'
+            );
+        }
+
+        return $redirect;
+    }
+
     private function bulkStatusMessage(BulkActionResult $result, string $actionLabel): string
     {
         $message = "{$actionLabel}: {$result->succeededCount()}件を処理しました。";
+
+        if ($result->mailFailedCount() > 0) {
+            $details = collect($result->mailFailed)
+                ->map(fn (array $failed): string => $failed['order']->order_number)
+                ->join(', ');
+            $message .= " うち{$result->mailFailedCount()}件はメール送信に失敗しました。（{$details}）";
+        }
 
         if ($result->skippedCount() === 0) {
             return $message;

@@ -16,10 +16,10 @@ use App\Services\Cart\CartSummary;
 use App\Services\Inventory\InventoryService;
 use App\Services\Order\OrderNumberGenerator;
 use App\Services\Payment\StripeService;
+use App\Support\OutboundMail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class CheckoutService
@@ -186,7 +186,12 @@ class CheckoutService
             ];
         }
 
-        Mail::to($order->buyer_email)->send(new OrderConfirmationMail($order));
+        OutboundMail::send(
+            $order->buyer_email,
+            fn () => new OrderConfirmationMail($order),
+            'order.confirmation',
+            ['order_id' => $order->id, 'order_number' => $order->order_number],
+        );
 
         return [
             'order' => $order,
@@ -341,7 +346,12 @@ class CheckoutService
         $order = $order->fresh(['items']);
         $this->clearCartsForPaidOrder($order);
 
-        Mail::to($order->buyer_email)->send(new OrderConfirmationMail($order));
+        OutboundMail::send(
+            $order->buyer_email,
+            fn () => new OrderConfirmationMail($order),
+            'order.confirmation',
+            ['order_id' => $order->id, 'order_number' => $order->order_number],
+        );
     }
 
     /**

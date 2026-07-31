@@ -13,9 +13,11 @@ use App\Models\ShippingMethod;
 use App\Models\User;
 use App\Services\Checkout\OrderAmountCalculator;
 use App\Services\Inventory\InventoryService;
+use App\Support\OutboundMail;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class OrderManagementService
 {
@@ -26,7 +28,10 @@ class OrderManagementService
         private readonly OrderShippingMailComposer $shippingMailComposer,
     ) {}
 
-    public function markAsPaid(Order $order, bool $sendMail = false): void
+    /**
+     * @return bool true if mail was requested and failed
+     */
+    public function markAsPaid(Order $order, bool $sendMail = false): bool
     {
         if (! $order->canMarkAsPaid()) {
             throw ValidationException::withMessages([
@@ -44,19 +49,30 @@ class OrderManagementService
             }
         });
 
-        if ($sendMail) {
-            $order = $order->fresh(['items']);
-            Mail::to($order->buyer_email)->send(new OrderPaymentReceivedMail($order));
+        if (! $sendMail) {
+            return false;
         }
+
+        $order = $order->fresh(['items']);
+
+        return ! OutboundMail::send(
+            $order->buyer_email,
+            fn () => new OrderPaymentReceivedMail($order),
+            'order.payment_received',
+            ['order_id' => $order->id, 'order_number' => $order->order_number],
+        );
     }
 
+    /**
+     * @return bool true if mail was requested and failed
+     */
     public function ship(
         Order $order,
         ?string $trackingNumber = null,
         bool $sendMail = true,
         ?string $mailSubject = null,
         ?string $mailBody = null,
-    ): void {
+    ): bool {
         if (! $order->canShip()) {
             $message = match (true) {
                 $order->payment_method === \App\Enums\PaymentMethod::BankTransfer
@@ -81,18 +97,23 @@ class OrderManagementService
             'tracking_number' => filled($tracking) ? $tracking : null,
         ]);
 
-        if ($sendMail) {
-            $this->sendShippingMail($order->fresh(['items']), partial: false, subject: $mailSubject, body: $mailBody);
+        if (! $sendMail) {
+            return false;
         }
+
+        return $this->sendShippingMail($order->fresh(['items']), partial: false, subject: $mailSubject, body: $mailBody);
     }
 
+    /**
+     * @return bool true if mail was requested and failed
+     */
     public function markAsPartiallyShipped(
         Order $order,
         ?string $trackingNumber = null,
         bool $sendMail = true,
         ?string $mailSubject = null,
         ?string $mailBody = null,
-    ): void {
+    ): bool {
         if (! $order->canMarkAsPartiallyShipped()) {
             $message = match (true) {
                 $order->payment_method === \App\Enums\PaymentMethod::BankTransfer
@@ -116,9 +137,11 @@ class OrderManagementService
             'tracking_number' => filled($tracking) ? $tracking : null,
         ]);
 
-        if ($sendMail) {
-            $this->sendShippingMail($order->fresh(['items']), partial: true, subject: $mailSubject, body: $mailBody);
+        if (! $sendMail) {
+            return false;
         }
+
+        return $this->sendShippingMail($order->fresh(['items']), partial: true, subject: $mailSubject, body: $mailBody);
     }
 
     public function revertShippingStatus(Order $order, OrderStatus $target): void
@@ -141,34 +164,72 @@ class OrderManagementService
         ]);
     }
 
+    /**
+     * @return bool true if mail send failed
+     */
     private function sendShippingMail(
         Order $order,
         bool $partial,
         ?string $subject = null,
         ?string $body = null,
-    ): void {
-        if (! filled($subject) && ! filled($body)) {
-            Mail::to($order->buyer_email)->send(new OrderShippedMail(
-                $order,
-                partial: $partial,
-            ));
+    ): bool {
+        $context = [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'partial' => $partial,
+        ];
 
-            return;
+        try {
+            if (filled($subject) && filled($body)) {
+                return ! OutboundMail::send(
+                    $order->buyer_email,
+                    fn () => new OrderShippedMail(
+                        $order,
+                        $subject,
+                        $this->finalizeMailBody($body, $order->tracking_number),
+                        partial: $partial,
+                    ),
+                    'order.shipped',
+                    $context,
+                );
+            }
+
+            if (! filled($subject) && ! filled($body)) {
+                return ! OutboundMail::send(
+                    $order->buyer_email,
+                    fn () => new OrderShippedMail($order, partial: $partial),
+                    'order.shipped',
+                    $context,
+                );
+            }
+
+            $template = $this->shippingMailComposer->template($order, $partial);
+            $resolvedSubject = filled($subject) ? $subject : $template['subject'];
+            $resolvedBody = $this->finalizeMailBody(
+                filled($body) ? $body : $template['body'],
+                $order->tracking_number,
+            );
+
+            return ! OutboundMail::send(
+                $order->buyer_email,
+                fn () => new OrderShippedMail(
+                    $order,
+                    $resolvedSubject,
+                    $resolvedBody,
+                    partial: $partial,
+                ),
+                'order.shipped',
+                $context,
+            );
+        } catch (Throwable $exception) {
+            Log::error('mail.send_failed', array_merge($context, [
+                'context' => 'order.shipped',
+                'error' => $exception->getMessage(),
+                'exception' => $exception::class,
+            ]));
+
+            return true;
         }
-
-        $template = $this->shippingMailComposer->template($order, $partial);
-        $resolvedSubject = filled($subject) ? $subject : $template['subject'];
-        $resolvedBody = $this->finalizeMailBody(
-            filled($body) ? $body : $template['body'],
-            $order->tracking_number,
-        );
-
-        Mail::to($order->buyer_email)->send(new OrderShippedMail(
-            $order,
-            $resolvedSubject,
-            $resolvedBody,
-            partial: $partial,
-        ));
     }
 
     private function finalizeMailBody(string $body, ?string $trackingNumber): string
