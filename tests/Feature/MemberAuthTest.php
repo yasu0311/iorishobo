@@ -150,6 +150,7 @@ class MemberAuthTest extends TestCase
             'verification.verify',
             now()->addMinutes(60),
             ['id' => $user->id, 'hash' => sha1($user->email)],
+            absolute: false,
         );
 
         $this->get($url)->assertRedirect(route('home'));

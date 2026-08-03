@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -21,6 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name',
         'email',
+        'pending_email',
         'password',
         'is_admin',
         'email_verified_at',
@@ -83,5 +86,19 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->isAdmin()
             ? route('admin.dashboard')
             : route('home');
+    }
+
+    public function getEmailForVerification(): string
+    {
+        return $this->pending_email ?? $this->email;
+    }
+
+    public function routeNotificationForMail(Notification $notification): string
+    {
+        if ($notification instanceof VerifyEmail && filled($this->pending_email)) {
+            return $this->pending_email;
+        }
+
+        return $this->email;
     }
 }

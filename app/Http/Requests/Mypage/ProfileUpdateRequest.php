@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Mypage;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class ProfileUpdateRequest extends FormRequest
 {
@@ -23,7 +23,22 @@ class ProfileUpdateRequest extends FormRequest
                 'required',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->ignore($this->user()?->id),
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $email = strtolower(trim((string) $value));
+                    $userId = $this->user()?->id;
+
+                    $taken = User::query()
+                        ->where('id', '!=', $userId)
+                        ->where(function ($query) use ($email) {
+                            $query->where('email', $email)
+                                ->orWhere('pending_email', $email);
+                        })
+                        ->exists();
+
+                    if ($taken) {
+                        $fail('このメールアドレスは既に使用されています。');
+                    }
+                },
             ],
             'name_kana' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:20',

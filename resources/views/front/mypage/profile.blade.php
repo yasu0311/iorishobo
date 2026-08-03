@@ -7,6 +7,23 @@
 
     <h1>プロフィール編集</h1>
 
+    @if ($user->pending_email)
+        <div class="panel" style="margin-bottom: 1.5rem;">
+            <p style="margin: 0 0 0.75rem;">
+                <strong>{{ $user->pending_email }}</strong> への変更を確認待ちです。
+                確認が完了するまで、ログイン用メールは <strong>{{ $user->email }}</strong> のままです。
+            </p>
+            <form method="post" action="{{ route('mypage.profile.pending-email.resend') }}" style="display: inline;">
+                @csrf
+                <button type="submit" class="btn btn--secondary">確認メールを再送</button>
+            </form>
+            <form method="post" action="{{ route('mypage.profile.pending-email.cancel') }}" style="display: inline; margin-left: 0.5rem;">
+                @csrf
+                <button type="submit" class="btn btn--secondary">変更を取り消す</button>
+            </form>
+        </div>
+    @endif
+
     <form method="post" action="{{ route('mypage.profile.update') }}" class="panel">
         @csrf
         @method('PUT')
@@ -21,8 +38,11 @@
         </div>
         <div class="form-field">
             <label>メールアドレス</label>
-            <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
+            <input type="email" name="email" value="{{ old('email', $user->pending_email ?? $user->email) }}" required>
             <x-input-error :messages="$errors->get('email')" />
+            <p class="form-hint" style="margin-top: 0.35rem; font-size: 0.875rem; color: var(--color-muted, #666);">
+                変更すると新しいアドレスに確認メールが届きます。認証完了までログイン用アドレスは変わりません。
+            </p>
         </div>
         <div class="form-field">
             <label>電話番号</label>

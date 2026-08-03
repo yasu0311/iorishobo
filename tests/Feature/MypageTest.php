@@ -12,6 +12,7 @@ use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -20,7 +21,7 @@ class MypageTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function profile_update_syncs_email_to_customer_and_requires_reverification(): void
+    public function profile_email_change_sets_pending_email_without_locking_account(): void
     {
         Notification::fake();
 
@@ -39,18 +40,73 @@ class MypageTest extends TestCase
             'name' => '更新太郎',
             'email' => 'new@example.com',
             'phone' => '0311112222',
-        ])->assertRedirect(route('verification.notice'));
+        ])->assertRedirect(route('mypage.profile.edit'));
 
         $user->refresh();
-        $this->assertSame('new@example.com', $user->email);
-        $this->assertSame('new@example.com', $user->customer->email);
+        $this->assertSame('old@example.com', $user->email);
+        $this->assertSame('new@example.com', $user->pending_email);
+        $this->assertSame('old@example.com', $user->customer->email);
         $this->assertSame('更新太郎', $user->customer->name);
-        $this->assertNull($user->email_verified_at);
+        $this->assertNotNull($user->email_verified_at);
         Notification::assertSentTo($user, VerifyEmail::class);
 
         $this->actingAs($user)
             ->get(route('mypage.profile.edit'))
-            ->assertRedirect(route('verification.notice'));
+            ->assertOk();
+
+        $this->post(route('logout'));
+        $this->post(route('login'), [
+            'email' => 'old@example.com',
+            'password' => 'password',
+        ])->assertRedirect(route('home'));
+        $this->assertAuthenticatedAs($user);
+    }
+
+    #[Test]
+    public function verifying_pending_email_updates_login_and_customer_email(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'old@example.com',
+            'pending_email' => 'new@example.com',
+        ]);
+
+        Customer::query()->create([
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'email' => 'old@example.com',
+            'registered_at' => now(),
+        ]);
+
+        $url = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1('new@example.com')],
+            absolute: false,
+        );
+
+        $this->get($url)->assertRedirect(route('home'));
+
+        $user->refresh();
+        $this->assertSame('new@example.com', $user->email);
+        $this->assertNull($user->pending_email);
+        $this->assertSame('new@example.com', $user->customer->email);
+        $this->assertNotNull($user->email_verified_at);
+        $this->assertAuthenticatedAs($user);
+    }
+
+    #[Test]
+    public function user_can_cancel_pending_email_change(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'old@example.com',
+            'pending_email' => 'new@example.com',
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('mypage.profile.pending-email.cancel'))
+            ->assertRedirect(route('mypage.profile.edit'));
+
+        $this->assertNull($user->fresh()->pending_email);
     }
 
     #[Test]
@@ -77,6 +133,7 @@ class MypageTest extends TestCase
 
         $user->refresh();
         $this->assertSame('same@example.com', $user->email);
+        $this->assertNull($user->pending_email);
         $this->assertNotNull($user->email_verified_at);
         Notification::assertNothingSent();
     }

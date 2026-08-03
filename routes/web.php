@@ -84,7 +84,7 @@ Route::middleware('guest')->group(function () {
 
 Route::get('/email/verify', [VerifyEmailController::class, 'notice'])->name('verification.notice');
 Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify'])
-    ->middleware(['signed', 'throttle:6,1'])
+    ->middleware(['signed:relative', 'throttle:6,1'])
     ->name('verification.verify');
 Route::post('/email/verification-notification', [VerifyEmailController::class, 'send'])
     ->middleware('throttle:6,1')
@@ -96,6 +96,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mypage', [MypageController::class, 'index'])->name('mypage.index');
     Route::get('/mypage/profile', [ProfileController::class, 'edit'])->name('mypage.profile.edit');
     Route::put('/mypage/profile', [ProfileController::class, 'update'])->name('mypage.profile.update');
+    Route::post('/mypage/profile/pending-email/cancel', [ProfileController::class, 'cancelPendingEmail'])->name('mypage.profile.pending-email.cancel');
+    Route::post('/mypage/profile/pending-email/resend', [ProfileController::class, 'resendPendingEmail'])->name('mypage.profile.pending-email.resend')->middleware('throttle:6,1');
     Route::put('/mypage/password', [PasswordController::class, 'update'])->name('mypage.password.update');
     Route::get('/mypage/orders', [MypageOrderController::class, 'index'])->name('mypage.orders.index');
     Route::get('/mypage/orders/{order}', [MypageOrderController::class, 'show'])->name('mypage.orders.show');

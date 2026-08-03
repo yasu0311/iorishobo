@@ -33,14 +33,50 @@ class ProfileController extends Controller
 
         $result = $this->profileService->update($user, $request->validated());
 
-        if ($result['email_changed']) {
+        if ($result['email_change_requested']) {
             return redirect()
-                ->route('verification.notice')
-                ->with('status', 'メールアドレスを変更しました。確認メールを送信したので、認証を完了してください。');
+                ->route('mypage.profile.edit')
+                ->with('status', '確認メールを新しいアドレスに送信しました。認証が完了するまで、ログイン用メールは現在のアドレスのままです。');
         }
 
         return redirect()
             ->route('mypage.profile.edit')
             ->with('status', 'プロフィールを更新しました。');
+    }
+
+    public function cancelPendingEmail(): RedirectResponse
+    {
+        $user = Auth::user();
+
+        if ($user === null) {
+            abort(403);
+        }
+
+        $this->profileService->cancelPendingEmail($user);
+
+        return redirect()
+            ->route('mypage.profile.edit')
+            ->with('status', 'メールアドレスの変更申請を取り消しました。');
+    }
+
+    public function resendPendingEmail(): RedirectResponse
+    {
+        $user = Auth::user();
+
+        if ($user === null) {
+            abort(403);
+        }
+
+        if (! filled($user->pending_email)) {
+            return redirect()
+                ->route('mypage.profile.edit')
+                ->with('status', '変更申請中のメールアドレスはありません。');
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return redirect()
+            ->route('mypage.profile.edit')
+            ->with('status', '確認メールを再送しました。');
     }
 }
