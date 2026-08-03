@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -157,5 +158,32 @@ class MemberAuthTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
         $this->assertNotNull($user->fresh()->email_verified_at);
+    }
+
+    #[Test]
+    public function verification_email_is_in_japanese(): void
+    {
+        $user = User::factory()->unverified()->create();
+        $mail = (new VerifyEmail)->toMail($user);
+
+        $this->assertSame('メールアドレスの確認', $mail->subject);
+        $this->assertContains(
+            'メールアドレスを確認するには、以下のボタンをクリックしてください。',
+            $mail->introLines,
+        );
+    }
+
+    #[Test]
+    public function password_reset_email_is_in_japanese(): void
+    {
+        $user = User::factory()->create();
+        $mail = (new ResetPassword('test-token'))->toMail($user);
+
+        $this->assertSame('パスワード再設定のお知らせ', $mail->subject);
+        $this->assertContains(
+            'パスワード再設定のリクエストを受け付けました。',
+            $mail->introLines,
+        );
+        $this->assertSame('パスワードを再設定する', $mail->actionText);
     }
 }
