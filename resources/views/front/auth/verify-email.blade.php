@@ -12,7 +12,7 @@
     <form method="post" action="{{ route('verification.send') }}">
         @csrf
         <label>メールアドレス
-            <input type="email" name="email" value="{{ old('email') }}" required>
+            <input type="email" name="email" value="{{ old('email', auth()->user()?->email) }}" required>
         </label>
         <x-input-error :messages="$errors->get('email')" />
         <button type="submit" class="btn">再送する</button>

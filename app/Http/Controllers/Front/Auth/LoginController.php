@@ -26,11 +26,7 @@ class LoginController extends Controller
     {
         $guestSessionId = $request->session()->get('cart_session_id', $request->session()->getId());
 
-        if (! Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-            throw ValidationException::withMessages([
-                'email' => 'メールアドレスまたはパスワードが正しくありません。',
-            ]);
-        }
+        $request->authenticate();
 
         $user = Auth::user();
 

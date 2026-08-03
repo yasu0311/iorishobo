@@ -31,7 +31,13 @@ class ProfileController extends Controller
             abort(403);
         }
 
-        $this->profileService->update($user, $request->validated());
+        $result = $this->profileService->update($user, $request->validated());
+
+        if ($result['email_changed']) {
+            return redirect()
+                ->route('verification.notice')
+                ->with('status', 'メールアドレスを変更しました。確認メールを送信したので、認証を完了してください。');
+        }
 
         return redirect()
             ->route('mypage.profile.edit')

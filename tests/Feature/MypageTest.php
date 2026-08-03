@@ -8,7 +8,10 @@ use App\Enums\PaymentStatus;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -17,8 +20,10 @@ class MypageTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function profile_update_syncs_email_to_customer(): void
+    public function profile_update_syncs_email_to_customer_and_requires_reverification(): void
     {
+        Notification::fake();
+
         $user = User::factory()->create([
             'email' => 'old@example.com',
         ]);
@@ -34,12 +39,80 @@ class MypageTest extends TestCase
             'name' => '更新太郎',
             'email' => 'new@example.com',
             'phone' => '0311112222',
-        ])->assertRedirect(route('mypage.profile.edit'));
+        ])->assertRedirect(route('verification.notice'));
 
         $user->refresh();
         $this->assertSame('new@example.com', $user->email);
         $this->assertSame('new@example.com', $user->customer->email);
         $this->assertSame('更新太郎', $user->customer->name);
+        $this->assertNull($user->email_verified_at);
+        Notification::assertSentTo($user, VerifyEmail::class);
+
+        $this->actingAs($user)
+            ->get(route('mypage.profile.edit'))
+            ->assertRedirect(route('verification.notice'));
+    }
+
+    #[Test]
+    public function profile_update_without_email_change_keeps_verification(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create([
+            'email' => 'same@example.com',
+        ]);
+
+        Customer::query()->create([
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'email' => 'same@example.com',
+            'registered_at' => now(),
+        ]);
+
+        $this->actingAs($user)->put(route('mypage.profile.update'), [
+            'name' => '更新太郎',
+            'email' => 'Same@example.com',
+            'phone' => '0311112222',
+        ])->assertRedirect(route('mypage.profile.edit'));
+
+        $user->refresh();
+        $this->assertSame('same@example.com', $user->email);
+        $this->assertNotNull($user->email_verified_at);
+        Notification::assertNothingSent();
+    }
+
+    #[Test]
+    public function user_can_change_password_from_mypage(): void
+    {
+        $user = User::factory()->create([
+            'password' => 'password',
+        ]);
+
+        $this->actingAs($user)->put(route('mypage.password.update'), [
+            'current_password' => 'password',
+            'password' => 'new-password-123',
+            'password_confirmation' => 'new-password-123',
+        ])
+            ->assertRedirect(route('mypage.profile.edit'))
+            ->assertSessionHas('status');
+
+        $this->assertTrue(Hash::check('new-password-123', $user->fresh()->password));
+    }
+
+    #[Test]
+    public function password_change_requires_correct_current_password(): void
+    {
+        $user = User::factory()->create([
+            'password' => 'password',
+        ]);
+
+        $this->actingAs($user)->put(route('mypage.password.update'), [
+            'current_password' => 'wrong-password',
+            'password' => 'new-password-123',
+            'password_confirmation' => 'new-password-123',
+        ])->assertSessionHasErrors('current_password');
+
+        $this->assertTrue(Hash::check('password', $user->fresh()->password));
     }
 
     #[Test]

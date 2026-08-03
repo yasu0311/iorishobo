@@ -24,16 +24,24 @@ class ProfileService
      *     address_line1?: ?string,
      *     address_line2?: ?string,
      * }  $data
+     * @return array{user: User, email_changed: bool}
      */
-    public function update(User $user, array $data): User
+    public function update(User $user, array $data): array
     {
         $email = $this->memberEmailSync->normalize($data['email']);
+        $emailChanged = $this->memberEmailSync->normalize((string) $user->email) !== $email;
 
-        return DB::transaction(function () use ($user, $data, $email) {
-            $user->update([
+        $updated = DB::transaction(function () use ($user, $data, $email, $emailChanged) {
+            $userAttributes = [
                 'name' => $data['name'],
                 'email' => $email,
-            ]);
+            ];
+
+            if ($emailChanged) {
+                $userAttributes['email_verified_at'] = null;
+            }
+
+            $user->update($userAttributes);
 
             $customer = $this->memberEmailSync->ensureLinkedCustomer($user, [
                 'name' => $data['name'],
@@ -53,5 +61,14 @@ class ProfileService
 
             return $user->fresh(['customer']);
         });
+
+        if ($emailChanged) {
+            $updated->sendEmailVerificationNotification();
+        }
+
+        return [
+            'user' => $updated,
+            'email_changed' => $emailChanged,
+        ];
     }
 }

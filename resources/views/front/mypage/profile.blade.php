@@ -50,4 +50,25 @@
         </div>
         <button type="submit" class="btn btn--primary">保存</button>
     </form>
+
+    <h2 style="margin-top: 2.5rem;">パスワード変更</h2>
+    <form method="post" action="{{ route('mypage.password.update') }}" class="panel">
+        @csrf
+        @method('PUT')
+        <div class="form-field">
+            <label>現在のパスワード</label>
+            <input type="password" name="current_password" required autocomplete="current-password">
+            <x-input-error :messages="$errors->get('current_password')" />
+        </div>
+        <div class="form-field">
+            <label>新しいパスワード</label>
+            <input type="password" name="password" required autocomplete="new-password">
+            <x-input-error :messages="$errors->get('password')" />
+        </div>
+        <div class="form-field">
+            <label>新しいパスワード（確認）</label>
+            <input type="password" name="password_confirmation" required autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn--primary">パスワードを変更</button>
+    </form>
 @endsection

@@ -12,6 +12,7 @@ use App\Http\Controllers\Front\ContactController;
 use App\Http\Controllers\Front\LegacyRedirectController;
 use App\Http\Controllers\Front\Mypage\MypageController;
 use App\Http\Controllers\Front\Mypage\OrderController as MypageOrderController;
+use App\Http\Controllers\Front\Mypage\PasswordController;
 use App\Http\Controllers\Front\Mypage\ProfileController;
 use App\Http\Controllers\Front\Mypage\ReceiptController;
 use App\Http\Controllers\Front\ProductController;
@@ -72,13 +73,13 @@ Route::post('/webhook/stripe', StripeWebhookController::class)->name('webhook.st
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
-    Route::post('/register', [RegisterController::class, 'store']);
+    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:5,1');
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
     Route::get('/forgot-password', [ForgotPasswordController::class, 'create'])->name('password.request');
-    Route::post('/forgot-password', [ForgotPasswordController::class, 'store'])->name('password.email');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'store'])->name('password.email')->middleware('throttle:5,1');
     Route::get('/reset-password/{token}', [ResetPasswordController::class, 'create'])->name('password.reset');
-    Route::post('/reset-password', [ResetPasswordController::class, 'store'])->name('password.store');
+    Route::post('/reset-password', [ResetPasswordController::class, 'store'])->name('password.store')->middleware('throttle:5,1');
 });
 
 Route::get('/email/verify', [VerifyEmailController::class, 'notice'])->name('verification.notice');
@@ -95,6 +96,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mypage', [MypageController::class, 'index'])->name('mypage.index');
     Route::get('/mypage/profile', [ProfileController::class, 'edit'])->name('mypage.profile.edit');
     Route::put('/mypage/profile', [ProfileController::class, 'update'])->name('mypage.profile.update');
+    Route::put('/mypage/password', [PasswordController::class, 'update'])->name('mypage.password.update');
     Route::get('/mypage/orders', [MypageOrderController::class, 'index'])->name('mypage.orders.index');
     Route::get('/mypage/orders/{order}', [MypageOrderController::class, 'show'])->name('mypage.orders.show');
     Route::get('/mypage/orders/{order}/receipt', [ReceiptController::class, 'show'])->name('mypage.orders.receipt');

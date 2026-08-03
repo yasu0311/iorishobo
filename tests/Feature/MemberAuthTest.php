@@ -113,6 +113,35 @@ class MemberAuthTest extends TestCase
     }
 
     #[Test]
+    public function login_is_rate_limited_after_too_many_failed_attempts(): void
+    {
+        User::factory()->create([
+            'email' => 'member@example.com',
+            'password' => 'password',
+        ]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post(route('login'), [
+                'email' => 'member@example.com',
+                'password' => 'wrong-password',
+            ])->assertSessionHasErrors('email');
+        }
+
+        $response = $this->post(route('login'), [
+            'email' => 'member@example.com',
+            'password' => 'wrong-password',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertStringContainsString(
+            'ログイン試行回数が上限に達しました',
+            session('errors')->first('email'),
+        );
+
+        $this->assertGuest();
+    }
+
+    #[Test]
     public function email_verification_logs_user_in(): void
     {
         $user = User::factory()->unverified()->create();
