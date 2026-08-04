@@ -37,6 +37,7 @@ class CheckoutTest extends TestCase
         parent::setUp();
 
         Mail::fake();
+        config(['shop.email' => 'shop@example.com']);
         $this->seed(\Database\Seeders\EmailTemplateSeeder::class);
         $this->seed(\Database\Seeders\ConsumptionTaxSeeder::class);
 
@@ -107,6 +108,8 @@ class CheckoutTest extends TestCase
             $html = $mail->render();
 
             return $mail->hasTo('buyer@example.com')
+                && $mail->hasReplyTo('buyer@example.com')
+                && $mail->hasBcc('shop@example.com')
                 && str_contains($html, '＜代金引換について＞')
                 && str_contains($html, '配達員に代金をお支払いください')
                 && ! str_contains($html, '口座名義:')
@@ -133,6 +136,8 @@ class CheckoutTest extends TestCase
             $html = $mail->render();
 
             return $mail->hasTo('buyer@example.com')
+                && $mail->hasReplyTo('buyer@example.com')
+                && $mail->hasBcc('shop@example.com')
                 && str_contains($html, '＜銀行振込（先払い）について＞')
                 && str_contains($html, '口座名義:')
                 && str_contains($html, '振込名義人')
@@ -269,7 +274,9 @@ class CheckoutTest extends TestCase
         Mail::assertSent(OrderConfirmationMail::class, function (OrderConfirmationMail $mail) {
             $html = $mail->render();
 
-            return str_contains($html, '＜クレジットカード決済について＞')
+            return $mail->hasReplyTo('buyer@example.com')
+                && $mail->hasBcc('shop@example.com')
+                && str_contains($html, '＜クレジットカード決済について＞')
                 && str_contains($html, 'セキュリティの関係でクレジットカード決済ができないこともございます')
                 && ! str_contains($html, '口座名義:')
                 && ! str_contains($html, '代金引換について');
