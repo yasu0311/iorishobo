@@ -43,7 +43,7 @@
 【　お　　名　　前　】{{ $order->buyer_name }}@if ($buyerNameKana)（{{ $buyerNameKana }}）@endif 様
 【　メールアドレス　】{{ $order->buyer_email }}
 【　郵　便　番　号　】{{ $order->buyer_postal_code }}
-【　ご　　住　　所　】{{ $order->buyer_prefecture }}{{ $order->buyer_address_line1 }}@if ($order->buyer_address_line2) {{ $order->buyer_address_line2 }}@endif
+【　ご　　住　　所　】{{ $order->buyer_prefecture }}{{ $order->buyer_address_line1 }}{{ $order->buyer_address_line2 ? ' '.$order->buyer_address_line2 : '' }}
 【　電　話　番　号　】{{ $order->buyer_phone ?? '' }}
 【Ｆ　Ａ　Ｘ　番　号】
 【　携　帯　番　号　】{{ $order->buyer_mobile ?? '' }}
@@ -55,7 +55,7 @@
 ================================
 【　お　　名　　前　】{{ $order->shipping_name }}@if ($order->shipping_name_kana)（{{ $order->shipping_name_kana }}）@endif 様
 【　郵　便　番　号　】{{ $order->shipping_postal_code }}
-【　ご　　住　　所　】{{ $order->shipping_prefecture }}{{ $order->shipping_address_line1 }}@if ($order->shipping_address_line2) {{ $order->shipping_address_line2 }}@endif
+【　ご　　住　　所　】{{ $order->shipping_prefecture }}{{ $order->shipping_address_line1 }}{{ $order->shipping_address_line2 ? ' '.$order->shipping_address_line2 : '' }}
 【　電　話　番　号　】{{ $order->shipping_phone }}
 【　配　送　会　社　】{{ $order->shipping_method_name }}
 --------------------------------

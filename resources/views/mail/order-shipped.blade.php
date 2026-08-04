@@ -12,7 +12,7 @@
 
 【配送先】
 {{ $order->shipping_name }}
-〒{{ $order->shipping_postal_code }} {{ $order->shipping_prefecture }}{{ $order->shipping_address_line1 }}@if ($order->shipping_address_line2) {{ $order->shipping_address_line2 }}@endif
+〒{{ $order->shipping_postal_code }} {{ $order->shipping_prefecture }}{{ $order->shipping_address_line1 }}{{ $order->shipping_address_line2 ? ' '.$order->shipping_address_line2 : '' }}
 
 ================================
 {{ config('shop.name') }}　{{ config('app.url') }}
