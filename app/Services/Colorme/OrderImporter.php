@@ -7,6 +7,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Customer;
+use App\Models\ConsumptionTax;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -64,11 +65,12 @@ class OrderImporter
                 DB::transaction(function () use ($salesId, $rows, $paymentMethod, $logger): void {
                     $head = $rows[0];
                     $colormeSalesId = (int) $this->parseYen($salesId);
+                    $orderedAt = $this->parseDateTime($head['受注日'] ?? '');
                     $subtotal = $this->parseYen($head['商品の合計金額(税込)'] ?? '0');
                     $taxAmount = $this->parseYen($head['消費税(商品合計に対する)'] ?? '');
 
                     if ($taxAmount === 0 && $subtotal > 0) {
-                        $taxAmount = (int) floor($subtotal * 10 / 110);
+                        $taxAmount = ConsumptionTax::current($orderedAt)->extractFromInclusive($subtotal);
                     }
 
                     $order = Order::query()->updateOrCreate(
@@ -77,7 +79,7 @@ class OrderImporter
                             'customer_id' => $this->resolveCustomerId($head),
                             'user_id' => null,
                             'order_number' => (string) $colormeSalesId,
-                            'ordered_at' => $this->parseDateTime($head['受注日'] ?? ''),
+                            'ordered_at' => $orderedAt,
                             'device' => DeviceType::tryFromColorme($head['PC・携帯区分'] ?? null),
                             'subtotal' => $subtotal,
                             'tax_amount' => $taxAmount,

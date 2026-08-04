@@ -517,6 +517,7 @@ class OrderManagementService
      *     discount: int,
      *     goods_total: int,
      *     tax_amount: int,
+     *     tax_percent_label: string,
      *     shipping_fee: int,
      *     payment_fee: int,
      *     total: int,
@@ -537,6 +538,7 @@ class OrderManagementService
             $order->coupon,
             $shippingMethod,
             $order->payment_method,
+            $order->ordered_at,
         );
     }
 

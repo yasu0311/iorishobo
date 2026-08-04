@@ -38,6 +38,7 @@ class CheckoutTest extends TestCase
 
         Mail::fake();
         $this->seed(\Database\Seeders\EmailTemplateSeeder::class);
+        $this->seed(\Database\Seeders\ConsumptionTaxSeeder::class);
 
         $category = Category::query()->create([
             'name' => 'テスト',

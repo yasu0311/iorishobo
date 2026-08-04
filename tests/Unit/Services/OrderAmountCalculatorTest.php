@@ -3,21 +3,26 @@
 namespace Tests\Unit\Services;
 
 use App\Enums\PaymentMethod;
+use App\Models\ConsumptionTax;
 use App\Models\Coupon;
 use App\Models\ShippingMethod;
 use App\Services\Checkout\OrderAmountCalculator;
 use App\Services\Shipping\ShippingFeeCalculator;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class OrderAmountCalculatorTest extends TestCase
 {
+    use RefreshDatabase;
+
     private OrderAmountCalculator $calculator;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->seed(\Database\Seeders\ConsumptionTaxSeeder::class);
         $this->calculator = new OrderAmountCalculator(new ShippingFeeCalculator);
     }
 
@@ -30,6 +35,7 @@ class OrderAmountCalculatorTest extends TestCase
 
         $this->assertSame(1100, $amounts['subtotal']);
         $this->assertSame(100, $amounts['tax_amount']);
+        $this->assertSame('10%', $amounts['tax_percent_label']);
         $this->assertSame(1100, $amounts['total']);
     }
 
@@ -61,5 +67,40 @@ class OrderAmountCalculatorTest extends TestCase
 
         $this->assertSame(330, $amounts['payment_fee']);
         $this->assertSame(1830, $amounts['total']);
+    }
+
+    #[Test]
+    public function it_uses_historical_tax_rate_when_as_of_is_provided(): void
+    {
+        $shipping = new ShippingMethod(['base_fee' => 0, 'free_shipping_threshold' => null]);
+
+        $amounts = $this->calculator->calculate(
+            1080,
+            null,
+            $shipping,
+            PaymentMethod::BankTransfer,
+            '2018-06-01',
+        );
+
+        $this->assertSame(80, $amounts['tax_amount']);
+        $this->assertSame('8%', $amounts['tax_percent_label']);
+    }
+
+    #[Test]
+    public function it_accepts_an_explicit_consumption_tax(): void
+    {
+        $shipping = new ShippingMethod(['base_fee' => 0, 'free_shipping_threshold' => null]);
+        $tax = new ConsumptionTax(['tax_rate' => 0.12]);
+
+        $amounts = $this->calculator->calculate(
+            1120,
+            null,
+            $shipping,
+            PaymentMethod::BankTransfer,
+            consumptionTax: $tax,
+        );
+
+        $this->assertSame(120, $amounts['tax_amount']);
+        $this->assertSame('12%', $amounts['tax_percent_label']);
     }
 }

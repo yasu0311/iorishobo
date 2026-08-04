@@ -36,6 +36,7 @@ class AdminOrderTest extends TestCase
         parent::setUp();
 
         $this->seed(\Database\Seeders\EmailTemplateSeeder::class);
+        $this->seed(\Database\Seeders\ConsumptionTaxSeeder::class);
 
         $this->admin = User::factory()->create(['is_admin' => true]);
 

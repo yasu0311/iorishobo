@@ -120,6 +120,22 @@ class Order extends Model
         return $this->hasMany(WatchlistEntry::class, 'source_order_id');
     }
 
+    /**
+     * 注文日時点の消費税率（表示用）。マスタ未整備時は null。
+     */
+    public function consumptionTax(): ?ConsumptionTax
+    {
+        return ConsumptionTax::forDate($this->ordered_at);
+    }
+
+    /**
+     * 領収書等の「うち消費税（10%）」用ラベル。
+     */
+    public function taxRatePercentLabel(): string
+    {
+        return $this->consumptionTax()?->percentLabel() ?? '—';
+    }
+
     public function isMigrated(): bool
     {
         return $this->colorme_sales_id !== null;

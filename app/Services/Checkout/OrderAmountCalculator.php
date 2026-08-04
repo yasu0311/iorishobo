@@ -3,9 +3,11 @@
 namespace App\Services\Checkout;
 
 use App\Enums\PaymentMethod;
+use App\Models\ConsumptionTax;
 use App\Models\Coupon;
 use App\Models\ShippingMethod;
 use App\Services\Shipping\ShippingFeeCalculator;
+use Carbon\CarbonInterface;
 
 class OrderAmountCalculator
 {
@@ -19,6 +21,7 @@ class OrderAmountCalculator
      *     discount: int,
      *     goods_total: int,
      *     tax_amount: int,
+     *     tax_percent_label: string,
      *     shipping_fee: int,
      *     payment_fee: int,
      *     total: int,
@@ -30,6 +33,8 @@ class OrderAmountCalculator
         ?Coupon $coupon,
         ShippingMethod $shippingMethod,
         PaymentMethod $paymentMethod,
+        CarbonInterface|string|null $asOf = null,
+        ?ConsumptionTax $consumptionTax = null,
     ): array {
         $discount = 0;
         $applicableCoupon = null;
@@ -40,7 +45,8 @@ class OrderAmountCalculator
         }
 
         $goodsTotal = $subtotal - $discount;
-        $taxAmount = (int) floor($goodsTotal * 10 / 110);
+        $tax = $consumptionTax ?? ConsumptionTax::current($asOf);
+        $taxAmount = $tax->extractFromInclusive($goodsTotal);
         $shippingFee = $this->shippingFeeCalculator->calculate($shippingMethod, $goodsTotal);
         $paymentFee = $this->calculatePaymentFee($paymentMethod, $goodsTotal);
         $total = $subtotal + $shippingFee + $paymentFee - $discount;
@@ -50,6 +56,7 @@ class OrderAmountCalculator
             'discount' => $discount,
             'goods_total' => $goodsTotal,
             'tax_amount' => $taxAmount,
+            'tax_percent_label' => $tax->percentLabel(),
             'shipping_fee' => $shippingFee,
             'payment_fee' => $paymentFee,
             'total' => $total,

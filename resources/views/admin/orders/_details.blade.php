@@ -28,7 +28,7 @@
             @if ($order->payment_fee > 0)
                 <dt>決済手数料</dt><dd>{{ number_format($order->payment_fee) }}円</dd>
             @endif
-            <dt>消費税（内税）</dt><dd>{{ number_format($order->tax_amount) }}円</dd>
+            <dt>消費税（内税 {{ $order->taxRatePercentLabel() }}）</dt><dd>{{ number_format($order->tax_amount) }}円</dd>
             <dt><strong>合計</strong></dt><dd><strong>{{ number_format($order->total) }}円</strong></dd>
             @if ($order->refund_amount > 0)
                 <dt>返金済み</dt><dd>{{ number_format($order->refund_amount) }}円</dd>

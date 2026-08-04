@@ -190,7 +190,7 @@
                 </p>
             @endif
             <p class="checkout-summary__row">
-                <span>うち消費税（10%）</span>
+                <span>うち消費税（{{ $amounts['tax_percent_label'] }}）</span>
                 <span>{{ number_format($amounts['tax_amount']) }}円</span>
             </p>
             <p class="checkout-summary__row checkout-summary__total">

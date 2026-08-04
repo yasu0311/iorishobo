@@ -14,7 +14,7 @@
         <p>宛名: {{ $order->buyer_name }} 様</p>
 
         <p class="receipt-document__amount">税込合計: {{ number_format($order->total) }}円</p>
-        <p>うち消費税（10%）: {{ number_format($order->tax_amount) }}円</p>
+        <p>うち消費税（{{ $order->taxRatePercentLabel() }}）: {{ number_format($order->tax_amount) }}円</p>
 
         @if (config('shop.invoice_registration_number'))
             <p class="text-muted">適格請求書発行事業者登録番号: {{ config('shop.invoice_registration_number') }}</p>
