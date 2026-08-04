@@ -9,6 +9,9 @@
         <p class="text-muted">カートに商品はありません。</p>
         <p><a href="{{ route('products.index') }}" class="btn btn--primary">買い物を続ける</a></p>
     @else
+        @if ($summary->hasUnavailableItems)
+            <x-alert type="error">ご購入いただけない商品があります。カートから削除してください。チェックアウトはできません。</x-alert>
+        @endif
         @if ($summary->hasStockIssues)
             <x-alert type="error">在庫不足の商品があります。{{ config('shop.quantity_unit') }}数を調整するか削除してください。チェックアウトはできません。</x-alert>
         @endif
@@ -30,11 +33,17 @@
                             @foreach ($summary->lines as $line)
                                 <tr>
                                     <td>
-                                        <a href="{{ route('products.show', $line->product->slug) }}">{{ $line->product->name }}</a>
+                                        @if ($line->unavailable)
+                                            {{ $line->product->name }}
+                                        @else
+                                            <a href="{{ route('products.show', $line->product->slug) }}">{{ $line->product->name }}</a>
+                                        @endif
                                         @if ($line->variant->name !== $line->product->name)
                                             <br><span class="text-muted">{{ $line->variant->name }}</span>
                                         @endif
-                                        @if ($line->stockExceeded)
+                                        @if ($line->unavailable)
+                                            <br><span class="text-danger">現在ご購入いただけません</span>
+                                        @elseif ($line->stockExceeded)
                                             <br><span class="text-danger">在庫不足（残り <x-quantity :value="$line->variant->stock" />）</span>
                                         @endif
                                     </td>

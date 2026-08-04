@@ -61,7 +61,9 @@ class CheckoutService
 
         if (! $summary->canCheckout) {
             throw ValidationException::withMessages([
-                'cart' => '在庫不足の商品があるためチェックアウトできません。',
+                'cart' => $summary->hasUnavailableItems
+                    ? 'ご購入いただけない商品があるためチェックアウトできません。'
+                    : '在庫不足の商品があるためチェックアウトできません。',
             ]);
         }
 
@@ -101,7 +103,7 @@ class CheckoutService
             $device,
             $input,
         ) {
-            $this->assertStockAvailable($summary);
+            $this->assertItemsPurchasable($summary);
 
             $order = Order::query()->create([
                 'colorme_sales_id' => null,
@@ -443,12 +445,25 @@ class CheckoutService
         ];
     }
 
-    private function assertStockAvailable(CartSummary $summary): void
+    private function assertItemsPurchasable(CartSummary $summary): void
     {
         foreach ($summary->lines as $line) {
             $line->variant->loadMissing('product');
+            $product = $line->variant->product;
 
-            if ($line->variant->product->stock_managed && $line->item->quantity > $line->variant->stock) {
+            if ($product === null || ! $product->is_published) {
+                throw ValidationException::withMessages([
+                    'cart' => "「{$line->product->name}」は現在ご購入いただけません。",
+                ]);
+            }
+
+            if (! $line->variant->is_active) {
+                throw ValidationException::withMessages([
+                    'cart' => "「{$line->product->name}」のこのオプションは現在ご購入いただけません。",
+                ]);
+            }
+
+            if ($product->stock_managed && $line->item->quantity > $line->variant->stock) {
                 throw ValidationException::withMessages([
                     'cart' => "「{$line->product->name}」の在庫が不足しています。",
                 ]);

@@ -36,7 +36,9 @@ class CheckoutController extends Controller
 
         if (! $summary->canCheckout) {
             return redirect()->route('cart.index')->withErrors([
-                'cart' => '在庫不足の商品があるためチェックアウトできません。',
+                'cart' => $summary->hasUnavailableItems
+                    ? 'ご購入いただけない商品があるためチェックアウトできません。'
+                    : '在庫不足の商品があるためチェックアウトできません。',
             ]);
         }
 
@@ -97,7 +99,9 @@ class CheckoutController extends Controller
 
         if (! $summary->canCheckout) {
             return redirect()->route('cart.index')->withErrors([
-                'cart' => '在庫不足の商品があるためチェックアウトできません。',
+                'cart' => $summary->hasUnavailableItems
+                    ? 'ご購入いただけない商品があるためチェックアウトできません。'
+                    : '在庫不足の商品があるためチェックアウトできません。',
             ]);
         }
 

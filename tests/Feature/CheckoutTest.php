@@ -498,6 +498,53 @@ class CheckoutTest extends TestCase
     }
 
     #[Test]
+    public function checkout_is_blocked_when_product_becomes_unpublished(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->variant->product->update(['is_published' => false]);
+
+        $this->actingAs($user)->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('現在ご購入いただけません')
+            ->assertDontSee('レジに進む');
+
+        $this->actingAs($user)->get(route('checkout.index'))
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHasErrors('cart');
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    #[Test]
+    public function place_order_rejects_unpublished_product_even_if_already_in_cart(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.confirm'), $this->checkoutPayload('cod'))
+            ->assertOk();
+
+        $this->variant->product->update(['is_published' => false]);
+
+        $this->actingAs($user)->post(route('checkout.store'))
+            ->assertRedirect()
+            ->assertSessionHasErrors('cart');
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('cart_items', 1);
+    }
+
+    #[Test]
     public function checkout_index_defaults_to_first_shipping_and_stripe_payment(): void
     {
         $user = User::factory()->create();

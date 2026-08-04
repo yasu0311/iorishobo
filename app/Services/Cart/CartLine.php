@@ -15,5 +15,6 @@ class CartLine
         public int $unitPrice,
         public int $lineSubtotal,
         public bool $stockExceeded,
+        public bool $unavailable = false,
     ) {}
 }

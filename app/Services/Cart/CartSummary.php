@@ -18,6 +18,7 @@ class CartSummary
         public int $discount,
         public ?Coupon $coupon,
         public bool $hasStockIssues,
+        public bool $hasUnavailableItems,
         public bool $canCheckout,
     ) {}
 

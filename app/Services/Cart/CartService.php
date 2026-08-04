@@ -96,6 +96,7 @@ class CartService
             $unitPrice = $variant->price;
             $lineSubtotal = $unitPrice * $item->quantity;
             $stockExceeded = $this->quantityExceedsStock($variant, $item->quantity);
+            $unavailable = $this->isVariantUnavailable($variant);
 
             return new CartLine(
                 item: $item,
@@ -104,6 +105,7 @@ class CartService
                 unitPrice: $unitPrice,
                 lineSubtotal: $lineSubtotal,
                 stockExceeded: $stockExceeded,
+                unavailable: $unavailable,
             );
         });
 
@@ -111,6 +113,7 @@ class CartService
         $coupon = $this->resolveApplicableCoupon($cart, $subtotal);
         $discount = $coupon !== null ? min($coupon->discount_amount, $subtotal) : 0;
         $hasStockIssues = $lines->contains(fn (CartLine $line) => $line->stockExceeded);
+        $hasUnavailableItems = $lines->contains(fn (CartLine $line) => $line->unavailable);
         $isEmpty = $lines->isEmpty();
 
         return new CartSummary(
@@ -120,7 +123,8 @@ class CartService
             discount: $discount,
             coupon: $coupon,
             hasStockIssues: $hasStockIssues,
-            canCheckout: ! $isEmpty && ! $hasStockIssues,
+            hasUnavailableItems: $hasUnavailableItems,
+            canCheckout: ! $isEmpty && ! $hasStockIssues && ! $hasUnavailableItems,
         );
     }
 
@@ -440,6 +444,13 @@ class CartService
         $variant->loadMissing('product');
 
         return $variant->product->stock_managed && $quantity > $variant->stock;
+    }
+
+    private function isVariantUnavailable(ProductVariant $variant): bool
+    {
+        $product = $variant->product;
+
+        return $product === null || ! $product->is_published || ! $variant->is_active;
     }
 
     private function assertItemBelongsToCurrentCart(CartItem $item): void
