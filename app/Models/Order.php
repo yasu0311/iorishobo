@@ -129,7 +129,7 @@ class Order extends Model
     }
 
     /**
-     * 領収書等の「うち消費税（10%）」用ラベル。
+     * 領収書等の「うち消費税（○%）」用ラベル（注文日時点の税率）。
      */
     public function taxRatePercentLabel(): string
     {

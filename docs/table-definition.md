@@ -460,7 +460,7 @@ sales_all.csv 相当。**購入者（buyer_*）と配送先（shipping_*）を�
 
 ```
 total = subtotal + shipping_fee + payment_fee - discount - point_discount - external_point_discount
-tax_amount = floor((subtotal - discount) × 10 / 110)   … クーポン適用後の商品合計から消費税を算出
+tax_amount = floor((subtotal - discount) × rate / (1 + rate))   … rate は consumption_taxes（注文日時点）
 ```
 
 クーポン未使用時は `discount = 0`、`coupon_id` / `coupon_code` / `discount_name` は NULL。移行注文は CSV の値をそのまま保存（税額は再計算しない）。
