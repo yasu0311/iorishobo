@@ -163,25 +163,55 @@ class MemberAuthTest extends TestCase
     #[Test]
     public function verification_email_is_in_japanese(): void
     {
-        $user = User::factory()->unverified()->create();
+        $user = User::factory()->unverified()->create(['name' => '山田太郎']);
         $mail = (new VerifyEmail)->toMail($user);
 
-        $this->assertSame('メールアドレスの確認', $mail->subject);
+        $this->assertSame('メールアドレスのご確認', $mail->subject);
+        $this->assertSame('山田太郎 様', $mail->greeting);
         $this->assertContains(
-            'メールアドレスを確認するには、以下のボタンをクリックしてください。',
+            'このたびはご登録いただきありがとうございます。',
             $mail->introLines,
         );
+        $this->assertSame('メールアドレスを確認する', $mail->actionText);
+    }
+
+    #[Test]
+    public function email_change_verification_email_uses_change_copy(): void
+    {
+        $user = User::factory()->create([
+            'name' => '山田太郎',
+            'email' => 'old@example.com',
+            'pending_email' => 'new@example.com',
+        ]);
+        $mail = (new VerifyEmail)->toMail($user);
+
+        $this->assertSame('メールアドレス変更のご確認', $mail->subject);
+        $this->assertSame('山田太郎 様', $mail->greeting);
+        $this->assertContains(
+            'メールアドレス変更の手続きを受け付けました。',
+            $mail->introLines,
+        );
+        $this->assertContains(
+            '下記のボタンより、新しいメールアドレスの確認をお願いいたします。',
+            $mail->introLines,
+        );
+        $this->assertNotContains(
+            'このたびはご登録いただきありがとうございます。',
+            $mail->introLines,
+        );
+        $this->assertSame('メールアドレスを確認する', $mail->actionText);
     }
 
     #[Test]
     public function password_reset_email_is_in_japanese(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['name' => '山田太郎']);
         $mail = (new ResetPassword('test-token'))->toMail($user);
 
-        $this->assertSame('パスワード再設定のお知らせ', $mail->subject);
+        $this->assertSame('パスワード再設定のご案内', $mail->subject);
+        $this->assertSame('山田太郎 様', $mail->greeting);
         $this->assertContains(
-            'パスワード再設定のリクエストを受け付けました。',
+            'パスワード再設定の手続きを受け付けました。',
             $mail->introLines,
         );
         $this->assertSame('パスワードを再設定する', $mail->actionText);
