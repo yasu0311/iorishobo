@@ -10,9 +10,9 @@
     @yield('styles')
 </head>
 <body>
-    <x-site-logo :href="route('home')" class="auth-logo" />
-
     <main class="auth-container">
+        <x-site-logo :href="route('home')" class="auth-logo" />
+
         @if (session('status'))
             <x-alert type="success">{{ session('status') }}</x-alert>
         @endif
