@@ -45,7 +45,6 @@
 【　郵　便　番　号　】{{ $order->buyer_postal_code }}
 【　ご　　住　　所　】{{ $order->buyer_prefecture }}{{ $order->buyer_address_line1 }}{{ $order->buyer_address_line2 ? ' '.$order->buyer_address_line2 : '' }}
 【　電　話　番　号　】{{ $order->buyer_phone ?? '' }}
-【Ｆ　Ａ　Ｘ　番　号】
 【　携　帯　番　号　】{{ $order->buyer_mobile ?? '' }}
 【　注　　文　　日　】{{ $order->ordered_at->format('Y/m/d') }}
 【　決　済　方　法　】{{ $order->payment_method->label() }}
@@ -71,10 +70,8 @@
     }
 @endphp
 【　商　品　Ｉ　Ｄ　】{{ $productId }}
-【　商　品　番　号　】
 【　商　　品　　名　】{{ $displayName }}
 【　価　格　(税込)　】{{ number_format($item->unit_price) }}円
-【　　税　　　率　　】10%
 【　　数　　　量　　】{{ $item->quantity }}{{ config('shop.quantity_unit') }}
 【　　小　　　計　　】{{ number_format($item->subtotal) }}円
 --------------------------------
@@ -94,8 +91,6 @@
 @if ($order->discount > 0)
 【　割　引　】-{{ number_format($order->discount) }}円
 @endif
-【　10％対象　合計　】{{ number_format($order->subtotal - $order->discount) }}円
-【　 8％対象　合計　】0円
 【　送　料　合　計　】{{ number_format($order->shipping_fee) }}円（税込）
 【決　済　手　数　料】{{ number_format($order->payment_fee) }}円（税込）
 【　総　　合　　計　】{{ number_format($order->total) }}円
