@@ -45,22 +45,23 @@ class CheckoutStoreRequest extends FormRequest
         $prefectures = Prefectures::all();
 
         return [
-            'buyer_name' => 'required|string|max:100',
-            'buyer_name_kana' => 'nullable|string|max:100',
+            // 伝票より少し余裕を持たせた上限（ヤマト: 名16/住所32/建物16、ゆうパック: より広い）
+            'buyer_name' => 'required|string|max:25',
+            'buyer_name_kana' => 'nullable|string|max:25',
             'buyer_email' => 'required|email|max:255',
             'buyer_phone' => self::phoneRules('required_without:buyer_mobile'),
             'buyer_mobile' => self::phoneRules('required_without:buyer_phone'),
             'buyer_postal_code' => 'required|string|digits:7',
             'buyer_prefecture' => ['required', 'string', Rule::in($prefectures)],
-            'buyer_address_line1' => 'required|string|max:255',
-            'buyer_address_line2' => 'nullable|string|max:255',
-            'shipping_name' => 'nullable|string|max:100|required_with:'.self::SHIPPING_TRIGGER_FIELDS,
-            'shipping_name_kana' => 'nullable|string|max:100',
+            'buyer_address_line1' => 'required|string|max:50',
+            'buyer_address_line2' => 'nullable|string|max:30',
+            'shipping_name' => 'nullable|string|max:25|required_with:'.self::SHIPPING_TRIGGER_FIELDS,
+            'shipping_name_kana' => 'nullable|string|max:25',
             'shipping_phone' => self::phoneRules('required_with:shipping_name'),
             'shipping_postal_code' => 'nullable|string|digits:7|required_with:shipping_name',
             'shipping_prefecture' => ['nullable', 'string', 'required_with:shipping_name', Rule::in($prefectures)],
-            'shipping_address_line1' => 'nullable|string|max:255|required_with:shipping_name',
-            'shipping_address_line2' => 'nullable|string|max:255',
+            'shipping_address_line1' => 'nullable|string|max:50|required_with:shipping_name',
+            'shipping_address_line2' => 'nullable|string|max:30',
             'shipping_method_id' => [
                 'required',
                 'integer',

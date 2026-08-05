@@ -29,12 +29,12 @@
         @method('PUT')
         <div class="form-field">
             <label>氏名</label>
-            <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
+            <input type="text" name="name" value="{{ old('name', $user->name) }}" required maxlength="25">
             <x-input-error :messages="$errors->get('name')" />
         </div>
         <div class="form-field">
             <label>フリガナ</label>
-            <input type="text" name="name_kana" value="{{ old('name_kana', $user->customer?->name_kana) }}">
+            <input type="text" name="name_kana" value="{{ old('name_kana', $user->customer?->name_kana) }}" maxlength="25">
         </div>
         <div class="form-field">
             <label>メールアドレス</label>
@@ -62,11 +62,11 @@
         </div>
         <div class="form-field">
             <label>住所</label>
-            <input type="text" name="address_line1" value="{{ old('address_line1', $user->customer?->address_line1) }}">
+            <input type="text" name="address_line1" value="{{ old('address_line1', $user->customer?->address_line1) }}" maxlength="50">
         </div>
         <div class="form-field">
             <label>建物名・部屋番号</label>
-            <input type="text" name="address_line2" value="{{ old('address_line2', $user->customer?->address_line2) }}">
+            <input type="text" name="address_line2" value="{{ old('address_line2', $user->customer?->address_line2) }}" maxlength="30">
         </div>
         <button type="submit" class="btn btn--primary">保存</button>
     </form>

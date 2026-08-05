@@ -8,7 +8,7 @@
     <form method="post" action="{{ route('register') }}">
         @csrf
         <label>氏名
-            <input type="text" name="name" value="{{ old('name') }}" required>
+            <input type="text" name="name" value="{{ old('name') }}" required maxlength="25">
         </label>
         <x-input-error :messages="$errors->get('name')" />
         <label>メールアドレス

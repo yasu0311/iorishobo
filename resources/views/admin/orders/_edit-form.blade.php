@@ -172,7 +172,7 @@
                 <div class="form-grid">
                     <div class="form-field">
                         <label for="buyer_name">氏名</label>
-                        <input type="text" id="buyer_name" name="buyer_name" value="{{ $value('buyer_name') }}" required maxlength="100">
+                        <input type="text" id="buyer_name" name="buyer_name" value="{{ $value('buyer_name') }}" required maxlength="25">
                     </div>
                     <div class="form-field">
                         <label for="buyer_email">メール</label>
@@ -196,11 +196,11 @@
                     </div>
                     <div class="form-field">
                         <label for="buyer_address_line1">住所1</label>
-                        <input type="text" id="buyer_address_line1" name="buyer_address_line1" value="{{ $value('buyer_address_line1') }}" required maxlength="255">
+                        <input type="text" id="buyer_address_line1" name="buyer_address_line1" value="{{ $value('buyer_address_line1') }}" required maxlength="50">
                     </div>
                     <div class="form-field">
                         <label for="buyer_address_line2">住所2</label>
-                        <input type="text" id="buyer_address_line2" name="buyer_address_line2" value="{{ $value('buyer_address_line2') }}" maxlength="255">
+                        <input type="text" id="buyer_address_line2" name="buyer_address_line2" value="{{ $value('buyer_address_line2') }}" maxlength="30">
                     </div>
                 </div>
             </section>
@@ -213,11 +213,11 @@
                 <div class="form-grid">
                     <div class="form-field">
                         <label for="shipping_name">氏名</label>
-                        <input type="text" id="shipping_name" name="shipping_name" value="{{ $value('shipping_name') }}" required maxlength="100">
+                        <input type="text" id="shipping_name" name="shipping_name" value="{{ $value('shipping_name') }}" required maxlength="25">
                     </div>
                     <div class="form-field">
                         <label for="shipping_name_kana">フリガナ</label>
-                        <input type="text" id="shipping_name_kana" name="shipping_name_kana" value="{{ $value('shipping_name_kana') }}" maxlength="100">
+                        <input type="text" id="shipping_name_kana" name="shipping_name_kana" value="{{ $value('shipping_name_kana') }}" maxlength="25">
                     </div>
                     <div class="form-field">
                         <label for="shipping_phone">電話</label>
@@ -233,11 +233,11 @@
                     </div>
                     <div class="form-field">
                         <label for="shipping_address_line1">住所1</label>
-                        <input type="text" id="shipping_address_line1" name="shipping_address_line1" value="{{ $value('shipping_address_line1') }}" required maxlength="255">
+                        <input type="text" id="shipping_address_line1" name="shipping_address_line1" value="{{ $value('shipping_address_line1') }}" required maxlength="50">
                     </div>
                     <div class="form-field">
                         <label for="shipping_address_line2">住所2</label>
-                        <input type="text" id="shipping_address_line2" name="shipping_address_line2" value="{{ $value('shipping_address_line2') }}" maxlength="255">
+                        <input type="text" id="shipping_address_line2" name="shipping_address_line2" value="{{ $value('shipping_address_line2') }}" maxlength="30">
                     </div>
                     @if ($order->shipping_method_name)
                         <p class="text-muted">配送方法: {{ $order->shipping_method_name }}（変更不可）</p>

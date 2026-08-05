@@ -924,7 +924,7 @@ class CheckoutTest extends TestCase
         ]);
 
         $payload = $this->checkoutPayload('cod');
-        $payload['buyer_name'] = str_repeat('あ', 101);
+        $payload['buyer_name'] = str_repeat('あ', 26);
 
         $this->actingAs($user)->post(route('checkout.confirm'), $payload)
             ->assertSessionHasErrors(['buyer_name'])

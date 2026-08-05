@@ -27,10 +27,10 @@
                 <section class="form-section panel">
                     <h2>購入者情報</h2>
                     <x-form-field name="buyer_name" label="氏名（必須）">
-                        <input type="text" name="buyer_name" value="{{ old('buyer_name', $input['buyer_name'] ?? $customer?->name) }}" required @error('buyer_name') aria-invalid="true" @enderror>
+                        <input type="text" name="buyer_name" value="{{ old('buyer_name', $input['buyer_name'] ?? $customer?->name) }}" required maxlength="25" @error('buyer_name') aria-invalid="true" @enderror>
                     </x-form-field>
                     <x-form-field name="buyer_name_kana" label="フリガナ（任意）">
-                        <input type="text" name="buyer_name_kana" value="{{ old('buyer_name_kana', $input['buyer_name_kana'] ?? $customer?->name_kana) }}" @error('buyer_name_kana') aria-invalid="true" @enderror>
+                        <input type="text" name="buyer_name_kana" value="{{ old('buyer_name_kana', $input['buyer_name_kana'] ?? $customer?->name_kana) }}" maxlength="25" @error('buyer_name_kana') aria-invalid="true" @enderror>
                     </x-form-field>
                     <x-form-field name="buyer_email" label="メール（必須）">
                         <input type="email" name="buyer_email" value="{{ old('buyer_email', $input['buyer_email'] ?? $customer?->email ?? Auth::user()?->email) }}" required @error('buyer_email') aria-invalid="true" @enderror>
@@ -52,10 +52,10 @@
                         ])
                     </x-form-field>
                     <x-form-field name="buyer_address_line1" label="住所（必須）">
-                        <input type="text" name="buyer_address_line1" value="{{ old('buyer_address_line1', $input['buyer_address_line1'] ?? $customer?->address_line1) }}" required placeholder="市区町村・番地" @error('buyer_address_line1') aria-invalid="true" @enderror>
+                        <input type="text" name="buyer_address_line1" value="{{ old('buyer_address_line1', $input['buyer_address_line1'] ?? $customer?->address_line1) }}" required maxlength="50" placeholder="市区町村・番地" @error('buyer_address_line1') aria-invalid="true" @enderror>
                     </x-form-field>
                     <x-form-field name="buyer_address_line2" label="建物名・部屋番号（任意）">
-                        <input type="text" name="buyer_address_line2" value="{{ old('buyer_address_line2', $input['buyer_address_line2'] ?? $customer?->address_line2) }}" @error('buyer_address_line2') aria-invalid="true" @enderror>
+                        <input type="text" name="buyer_address_line2" value="{{ old('buyer_address_line2', $input['buyer_address_line2'] ?? $customer?->address_line2) }}" maxlength="30" @error('buyer_address_line2') aria-invalid="true" @enderror>
                     </x-form-field>
                 </section>
 
@@ -63,10 +63,10 @@
                     <h2>配送先（任意）</h2>
                     <p class="text-muted">未入力の場合は購入者住所へお届けします。</p>
                     <x-form-field name="shipping_name" label="配送先氏名">
-                        <input type="text" name="shipping_name" value="{{ old('shipping_name', $input['shipping_name'] ?? '') }}" @error('shipping_name') aria-invalid="true" @enderror>
+                        <input type="text" name="shipping_name" value="{{ old('shipping_name', $input['shipping_name'] ?? '') }}" maxlength="25" @error('shipping_name') aria-invalid="true" @enderror>
                     </x-form-field>
                     <x-form-field name="shipping_name_kana" label="配送先フリガナ">
-                        <input type="text" name="shipping_name_kana" value="{{ old('shipping_name_kana', $input['shipping_name_kana'] ?? '') }}" @error('shipping_name_kana') aria-invalid="true" @enderror>
+                        <input type="text" name="shipping_name_kana" value="{{ old('shipping_name_kana', $input['shipping_name_kana'] ?? '') }}" maxlength="25" @error('shipping_name_kana') aria-invalid="true" @enderror>
                     </x-form-field>
                     <x-form-field name="shipping_phone" label="配送先電話">
                         <input type="tel" name="shipping_phone" value="{{ old('shipping_phone', $input['shipping_phone'] ?? '') }}" inputmode="tel" placeholder="例: 03-1234-5678" data-checkout-phone @error('shipping_phone') aria-invalid="true" @enderror>
@@ -81,10 +81,10 @@
                         ])
                     </x-form-field>
                     <x-form-field name="shipping_address_line1" label="住所">
-                        <input type="text" name="shipping_address_line1" value="{{ old('shipping_address_line1', $input['shipping_address_line1'] ?? '') }}" @error('shipping_address_line1') aria-invalid="true" @enderror>
+                        <input type="text" name="shipping_address_line1" value="{{ old('shipping_address_line1', $input['shipping_address_line1'] ?? '') }}" maxlength="50" @error('shipping_address_line1') aria-invalid="true" @enderror>
                     </x-form-field>
                     <x-form-field name="shipping_address_line2" label="建物名">
-                        <input type="text" name="shipping_address_line2" value="{{ old('shipping_address_line2', $input['shipping_address_line2'] ?? '') }}" @error('shipping_address_line2') aria-invalid="true" @enderror>
+                        <input type="text" name="shipping_address_line2" value="{{ old('shipping_address_line2', $input['shipping_address_line2'] ?? '') }}" maxlength="30" @error('shipping_address_line2') aria-invalid="true" @enderror>
                     </x-form-field>
                 </section>
 

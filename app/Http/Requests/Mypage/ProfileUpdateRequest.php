@@ -18,7 +18,7 @@ class ProfileUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:100',
+            'name' => 'required|string|max:25',
             'email' => [
                 'required',
                 'email',
@@ -40,13 +40,13 @@ class ProfileUpdateRequest extends FormRequest
                     }
                 },
             ],
-            'name_kana' => 'nullable|string|max:100',
+            'name_kana' => 'nullable|string|max:25',
             'phone' => 'nullable|string|max:20',
             'mobile' => 'nullable|string|max:20',
             'postal_code' => 'nullable|string|size:7',
             'prefecture' => 'nullable|string|max:20',
-            'address_line1' => 'nullable|string|max:255',
-            'address_line2' => 'nullable|string|max:255',
+            'address_line1' => 'nullable|string|max:50',
+            'address_line2' => 'nullable|string|max:30',
         ];
     }
 }
