@@ -227,6 +227,29 @@ h2 { font-size: 1.375rem; }
   border-color: var(--color-accent);
 }
 
+.form-field--invalid > label {
+  color: var(--color-danger);
+}
+
+.form-field--invalid > input[type="text"],
+.form-field--invalid > input[type="email"],
+.form-field--invalid > input[type="password"],
+.form-field--invalid > input[type="number"],
+.form-field--invalid > input[type="tel"],
+.form-field--invalid > select,
+.form-field--invalid > textarea {
+  border-color: var(--color-danger);
+  background: #fef2f2;
+  box-shadow: 0 0 0 1px var(--color-danger);
+}
+
+.form-field--invalid > input:focus,
+.form-field--invalid > select:focus,
+.form-field--invalid > textarea:focus {
+  outline: 2px solid rgba(220, 38, 38, 0.25);
+  border-color: var(--color-danger);
+}
+
 table.data-table {
   width: 100%;
   border-collapse: collapse;

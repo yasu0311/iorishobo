@@ -100,7 +100,7 @@ class CheckoutStoreRequest extends FormRequest
             $length = strlen($digits);
 
             if ($length < 10 || $length > 11) {
-                $fail('半角数字とハイフンのみ、数字は10〜11桁で入力してください。');
+                $fail(':attributeは半角数字とハイフンのみ、数字は10〜11桁で入力してください。');
             }
         };
     }

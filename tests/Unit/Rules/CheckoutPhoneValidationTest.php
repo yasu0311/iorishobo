@@ -117,6 +117,10 @@ class CheckoutPhoneValidationTest extends TestCase
 
             $this->assertTrue($validator->fails(), "Expected rejection for: {$phone}");
             $this->assertTrue($validator->errors()->has('buyer_phone'));
+            $this->assertSame(
+                '購入者電話番号は半角数字とハイフンのみ、数字は10〜11桁で入力してください。',
+                $validator->errors()->first('buyer_phone'),
+            );
         }
     }
 
@@ -136,5 +140,28 @@ class CheckoutPhoneValidationTest extends TestCase
 
         $this->assertTrue($validator->fails());
         $this->assertTrue($validator->errors()->has('buyer_phone'));
+        $this->assertSame(
+            '購入者電話番号は半角数字とハイフンのみ、数字は10〜11桁で入力してください。',
+            $validator->errors()->first('buyer_phone'),
+        );
+    }
+
+    #[Test]
+    public function it_includes_field_name_in_shipping_phone_digit_error(): void
+    {
+        $validator = Validator::make(
+            CheckoutStoreRequest::normalizeInput([
+                'shipping_phone' => '090',
+            ]),
+            [
+                'shipping_phone' => CheckoutStoreRequest::ruleSet()['shipping_phone'],
+            ],
+        );
+
+        $this->assertTrue($validator->fails());
+        $this->assertSame(
+            '配送先電話番号は半角数字とハイフンのみ、数字は10〜11桁で入力してください。',
+            $validator->errors()->first('shipping_phone'),
+        );
     }
 }
