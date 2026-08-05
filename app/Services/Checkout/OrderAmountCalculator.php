@@ -35,6 +35,7 @@ class OrderAmountCalculator
         PaymentMethod $paymentMethod,
         CarbonInterface|string|null $asOf = null,
         ?ConsumptionTax $consumptionTax = null,
+        bool $pricesAreExclusive = true,
     ): array {
         $discount = 0;
         $applicableCoupon = null;
@@ -46,10 +47,20 @@ class OrderAmountCalculator
 
         $goodsTotal = $subtotal - $discount;
         $tax = $consumptionTax ?? ConsumptionTax::current($asOf);
-        $taxAmount = $tax->extractFromInclusive($goodsTotal);
-        $shippingFee = $this->shippingFeeCalculator->calculate($shippingMethod, $goodsTotal);
-        $paymentFee = $this->calculatePaymentFee($paymentMethod, $goodsTotal);
-        $total = $subtotal + $shippingFee + $paymentFee - $discount;
+
+        if ($pricesAreExclusive) {
+            $taxAmount = $tax->taxFromExclusive($goodsTotal);
+            $goodsInclusive = $goodsTotal + $taxAmount;
+            $shippingFee = $this->shippingFeeCalculator->calculate($shippingMethod, $goodsInclusive);
+            $paymentFee = $this->calculatePaymentFee($paymentMethod, $goodsInclusive);
+            $total = $goodsTotal + $taxAmount + $shippingFee + $paymentFee;
+        } else {
+            // カラーミー移行注文など、商品合計が税込スナップショットの場合
+            $taxAmount = $tax->extractFromInclusive($goodsTotal);
+            $shippingFee = $this->shippingFeeCalculator->calculate($shippingMethod, $goodsTotal);
+            $paymentFee = $this->calculatePaymentFee($paymentMethod, $goodsTotal);
+            $total = $subtotal + $shippingFee + $paymentFee - $discount;
+        }
 
         return [
             'subtotal' => $subtotal,
@@ -64,7 +75,7 @@ class OrderAmountCalculator
         ];
     }
 
-    private function calculatePaymentFee(PaymentMethod $paymentMethod, int $goodsTotal): int
+    private function calculatePaymentFee(PaymentMethod $paymentMethod, int $goodsInclusiveYen): int
     {
         if ($paymentMethod !== PaymentMethod::Cod) {
             return 0;
@@ -72,7 +83,7 @@ class OrderAmountCalculator
 
         $threshold = config('shop.cod_free_threshold');
 
-        if ($threshold !== null && $goodsTotal >= $threshold) {
+        if ($threshold !== null && $goodsInclusiveYen >= $threshold) {
             return 0;
         }
 

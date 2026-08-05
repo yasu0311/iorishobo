@@ -25,6 +25,8 @@ class ConsumptionTaxTest extends TestCase
         $tax = ConsumptionTax::current('2026-08-04');
 
         $this->assertSame('0.1000', (string) $tax->tax_rate);
+        $this->assertSame(100, $tax->taxFromExclusive(1000));
+        $this->assertSame(1100, $tax->inclusiveFromExclusive(1000));
         $this->assertSame(100, $tax->extractFromInclusive(1100));
         $this->assertSame('10%', $tax->percentLabel());
     }
@@ -35,6 +37,8 @@ class ConsumptionTaxTest extends TestCase
         $tax = ConsumptionTax::current('2018-01-15');
 
         $this->assertSame('0.0800', (string) $tax->tax_rate);
+        $this->assertSame(80, $tax->taxFromExclusive(1000));
+        $this->assertSame(1080, $tax->inclusiveFromExclusive(1000));
         $this->assertSame(80, $tax->extractFromInclusive(1080));
         $this->assertSame('8%', $tax->percentLabel());
     }

@@ -30,7 +30,7 @@
             <input type="number" name="base_fee" value="{{ old('base_fee', $shippingMethod->base_fee ?? 0) }}" min="0" required>
         </label>
         <label>
-            送料無料ライン（円）
+            送料無料ライン（税込・円）
             <input type="number" name="free_shipping_threshold" value="{{ old('free_shipping_threshold', $shippingMethod->free_shipping_threshold ?? '') }}" min="0" placeholder="なし">
         </label>
         <label>

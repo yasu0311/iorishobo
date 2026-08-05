@@ -188,7 +188,7 @@ class CartTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('cart.index'));
         $response->assertSee('100円引き');
-        $response->assertSee('900円');
+        $response->assertSee('990円（税込）');
     }
 
     #[Test]

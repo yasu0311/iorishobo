@@ -1,6 +1,6 @@
 @php
     $buyerNameKana = $order->customer?->name_kana;
-    $shippingDestinationTotal = $order->subtotal - $order->discount + $order->shipping_fee;
+    $shippingDestinationTotal = $order->goodsTotalInclusive() + $order->shipping_fee;
     $shopUrl = config('app.url');
     $shopEmail = config('shop.email');
 @endphp
@@ -71,9 +71,9 @@
 @endphp
 【　商　品　Ｉ　Ｄ　】{{ $productId }}
 【　商　　品　　名　】{{ $displayName }}
-【　価　格　(税込)　】{{ number_format($item->unit_price) }}円
+【　価　格　(税込)　】{{ number_format($order->displayItemUnitPrice($item)) }}円
 【　　数　　　量　　】{{ $item->quantity }}{{ config('shop.quantity_unit') }}
-【　　小　　　計　　】{{ number_format($item->subtotal) }}円
+【　　小　　　計　　】{{ number_format($order->displayItemSubtotal($item)) }}円
 --------------------------------
 @endforeach
 ［配　送　先　合　計］
@@ -87,12 +87,13 @@
 
 ▼総合計
 ================================
-【　合計　】{{ number_format($order->subtotal) }}円（税込）
+【　合計　】{{ number_format($order->goodsTotalInclusive()) }}円（税込）
 @if ($order->discount > 0)
-【　割　引　】-{{ number_format($order->discount) }}円
+【　割　引　】-{{ number_format($order->discount) }}円（税抜・反映済み）
 @endif
 【　送　料　合　計　】{{ number_format($order->shipping_fee) }}円（税込）
 【決　済　手　数　料】{{ number_format($order->payment_fee) }}円（税込）
+【うち消費税（{{ $order->taxRatePercentLabel() }}）】{{ number_format($order->tax_amount) }}円
 【　総　　合　　計　】{{ number_format($order->total) }}円
 ================================
 ================================

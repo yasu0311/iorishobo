@@ -44,7 +44,7 @@ class AdminShippingExportTest extends TestCase
             'category_id' => $category->id,
             'name' => 'テスト商品',
             'slug' => '100',
-            'base_price' => 1100,
+            'base_price' => 1000,
             'stock_managed' => true,
             'is_published' => true,
             'sort_order' => 1,
@@ -53,7 +53,7 @@ class AdminShippingExportTest extends TestCase
         $this->variant = ProductVariant::query()->create([
             'product_id' => $product->id,
             'name' => $product->name,
-            'price' => 1100,
+            'price' => 1000,
             'stock' => 10,
             'is_active' => true,
             'sort_order' => 1,
@@ -180,7 +180,7 @@ class AdminShippingExportTest extends TestCase
     {
         $order = Order::query()->create(array_merge([
             'ordered_at' => now(),
-            'subtotal' => 1100 * $quantity,
+            'subtotal' => 1000 * $quantity,
             'tax_amount' => 100 * $quantity,
             'shipping_fee' => 0,
             'payment_fee' => 0,
@@ -204,9 +204,9 @@ class AdminShippingExportTest extends TestCase
         $order->items()->create([
             'product_variant_id' => $this->variant->id,
             'product_name' => 'テスト商品',
-            'unit_price' => 1100,
+            'unit_price' => 1000,
             'quantity' => $quantity,
-            'subtotal' => 1100 * $quantity,
+            'subtotal' => 1000 * $quantity,
         ]);
 
         if ($order->payment_method === PaymentMethod::Cod

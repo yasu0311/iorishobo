@@ -32,7 +32,7 @@
                             <input type="text" name="name" value="{{ old('name', $variant->name) }}" required>
                         </div>
                         <div class="form-field">
-                            <label>価格</label>
+                            <label>価格（税抜）</label>
                             <input type="number" name="price" value="{{ old('price', $variant->price) }}" min="0" required>
                         </div>
                         <div class="form-field">
@@ -74,7 +74,7 @@
                     <input type="text" name="name" required>
                 </div>
                 <div class="form-field">
-                    <label>価格</label>
+                    <label>価格（税抜）</label>
                     <input type="number" name="price" min="0" required>
                 </div>
                 <div class="form-field">

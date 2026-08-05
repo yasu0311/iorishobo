@@ -165,12 +165,12 @@
             <h2>ご注文内容</h2>
             <p class="checkout-summary__row">
                 <span>商品合計</span>
-                <span>{{ number_format($amounts['subtotal']) }}円（税込）</span>
+                <span>{{ number_format($amounts['subtotal'] - $amounts['discount'] + $amounts['tax_amount']) }}円（税込）</span>
             </p>
             @if ($amounts['discount'] > 0)
-                <p class="checkout-summary__row">
-                    <span>クーポン割引</span>
-                    <span>-{{ number_format($amounts['discount']) }}円</span>
+                <p class="checkout-summary__row text-muted">
+                    <span>クーポン割引（税抜）</span>
+                    <span>-{{ number_format($amounts['discount']) }}円（反映済み）</span>
                 </p>
             @endif
             <p class="checkout-summary__row">

@@ -13,7 +13,7 @@
     @endif
 
     <p class="notice" style="color: #6b7280; margin-bottom: 1rem;">
-        送料は全国一律です。送料無料ラインはクーポン適用後の商品合計（subtotal − discount）で判定されます。
+        送料は全国一律です。送料無料ラインはクーポン適用後の商品合計（税込）で判定されます。
     </p>
 
     <table class="admin-table">

@@ -63,7 +63,7 @@
                                     @disabled(! $variant->isPurchasable())
                                 >
                                 {{ $variant->name }}
-                                — {{ number_format($variant->price) }}円（税込）
+                                — {{ number_format($variant->priceInclusive()) }}円（税込）
                                 @if ($product->stock_managed)
                                     @if ($variant->isInStock())
                                         — 在庫 <x-quantity :value="$variant->stock" />
@@ -88,7 +88,7 @@
                         @foreach ($product->activeVariants as $variant)
                             <li>
                                 {{ $variant->name }}
-                                — {{ number_format($variant->price) }}円（税込）
+                                — {{ number_format($variant->priceInclusive()) }}円（税込）
                                 — 売り切れ
                             </li>
                         @endforeach

@@ -7,6 +7,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CheckoutStoreRequest;
+use App\Models\ConsumptionTax;
 use App\Models\Order;
 use App\Models\ShippingMethod;
 use App\Services\Cart\CartService;
@@ -47,7 +48,8 @@ class CheckoutController extends Controller
 
         $this->cartService->rememberForCheckout($summary->cart);
 
-        $goodsTotal = $summary->totalAfterDiscount();
+        $goodsExclusive = $summary->totalAfterDiscount();
+        $goodsTotal = ConsumptionTax::current()->inclusiveFromExclusive($goodsExclusive);
 
         $shippingOptions = ShippingMethod::query()
             ->where('is_active', true)

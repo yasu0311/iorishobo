@@ -28,7 +28,7 @@
                 <th>slug</th>
                 <th>商品名</th>
                 <th>カテゴリ</th>
-                <th>価格</th>
+                <th>価格（税抜）</th>
                 <th>掲載</th>
                 <th>在庫管理</th>
                 <th></th>

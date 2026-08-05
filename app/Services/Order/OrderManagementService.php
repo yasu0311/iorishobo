@@ -539,6 +539,7 @@ class OrderManagementService
             $shippingMethod,
             $order->payment_method,
             $order->ordered_at,
+            pricesAreExclusive: ! $order->isMigrated(),
         );
     }
 

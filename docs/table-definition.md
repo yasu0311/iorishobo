@@ -36,7 +36,10 @@
 
 ### 1.2 金額
 
-すべて **INT UNSIGNED・円・税込**（内税方式）。
+- 商品マスタ（`products.base_price` / `product_variants.price`）および新規注文の明細・商品合計: **INT UNSIGNED・円・税抜**
+- 店頭・メール・領収書の表示: **税込**（外税切り捨てで換算）
+- `orders.total` / 送料・決済手数料: **税込**（または税込として扱う固定額）
+- カラーミー移行注文の `subtotal` / `unit_price`: sales CSV どおり **税込スナップショット**
 
 ### 1.3 消費税
 
@@ -44,23 +47,26 @@
 
 | 項目 | 方針 |
 |------|------|
-| 表示形式 | **内税**（ページに表示する価格に消費税を含む） |
+| 表示形式 | **税込表示**（税抜価格に外税を加算） |
+| 課税方式（新規） | **外税** |
 | 税率 | `consumption_taxes` の有効期間行を参照（現状は標準税率のみ。軽減税率商品なし） |
 | 端数処理 | **切り捨て**（円未満を切り捨て） |
 | 商品マスタ | 税率・軽減税率フラグのカラムは**設けない** |
 | 税率別内訳 | **持たない**（混在しないため） |
 | 税率変更 | **DB の行を更新・追加するだけ**（コード変更不要） |
 
-**新規注文の `orders.tax_amount` 算出**（カラーミー「消費税(商品合計に対する)」と同義）:
+**新規注文の `orders.tax_amount` 算出**:
 
 ```
 rate = consumption_taxes の注文日時点の tax_rate（例: 0.10）
-tax_amount = floor(goods_total × rate / (1 + rate))
-           = floor((subtotal - discount) × rate / (1 + rate))
+tax_amount = floor(goods_total × rate)
+           = floor((subtotal - discount) × rate)
+total = goods_total + tax_amount + shipping_fee + payment_fee
 ```
 
-- 対象は **商品合計（subtotal）のみ**。送料・決済手数料の税額は本列に含めない（移行データと同じ考え方）。
-- 移行注文は CSV の値をそのまま入れる（再計算しない）。CSV 税額が空のときのみ上記式でフォールバック。
+- 対象は **商品合計（subtotal）のみ**。送料・決済手数料の税額は本列に含めない。
+- 送料無料・代引無料ラインは **税込商品合計**（`goods_total + tax_amount`）で判定する。
+- 移行注文は CSV の値をそのまま入れる（再計算しない）。CSV 税額が空のときのみ内税抽出 `floor(amount × rate / (1 + rate))` でフォールバック。
 
 **領収書・インボイス**: 注文日時点の税率で「うち消費税（10%）」等を表示。適格請求書の登録番号は [仕様書 §3.18](./specification.md#318-ショップ固定情報config) の `config/shop.php` から掲載する（DB なし）。
 
@@ -176,7 +182,7 @@ tax_amount = floor(goods_total × rate / (1 + rate))
 | 5 | slug | スラッグ | VARCHAR(255) | NO | UK | 数字 ID ベース。移行=商品 ID、新規=`products.id`（§3.21） |
 | 6 | short_description | 簡易説明 | TEXT | YES | | |
 | 7 | description | 商品説明 | LONGTEXT | YES | | HTML 可 |
-| 8 | base_price | 基本価格 | INT UNSIGNED | NO | | 税込。オプションあり商品は表示用 |
+| 8 | base_price | 基本価格 | INT UNSIGNED | NO | | 税抜。オプションあり商品は表示用 |
 | 9 | stock_managed | 在庫管理 | BOOLEAN | NO | | true = 在庫管理する。§5 在庫・§7 参照 |
 | 10 | is_published | 掲載 | BOOLEAN | NO | | true = 掲載する。会員限定は使わない（§5 掲載設定） |
 | 11 | sort_order | 表示順 | INT UNSIGNED | NO | | |
@@ -230,7 +236,7 @@ tax_amount = floor(goods_total × rate / (1 + rate))
 | 3 | colorme_option_id | カラーミーオプション ID | BIGINT UNSIGNED | YES | UK | |
 | 4 | name | 表示名 | VARCHAR(255) | NO | | |
 | 5 | attributes | オプション属性 | JSON | YES | | 軸名をキーにした JSON（例: `{"学年":"１年生"}`） |
-| 6 | price | 販売価格 | INT UNSIGNED | NO | | 税込 |
+| 6 | price | 販売価格 | INT UNSIGNED | NO | | 税抜 |
 | 7 | stock | 在庫数 | INT UNSIGNED | NO | | デフォルト 0。親が `stock_managed = false` のときは参照しない |
 | 8 | is_active | 有効 | BOOLEAN | NO | | |
 | 9 | sort_order | 表示順 | INT UNSIGNED | NO | | |
@@ -356,7 +362,7 @@ tax_amount = floor(goods_total × rate / (1 + rate))
 | 2 | code | クーポンコード | VARCHAR(50) | NO | UK | チェックアウトで入力するコード |
 | 3 | name | 表示名 | VARCHAR(255) | NO | | 注文の `discount_name` にコピー |
 | 4 | discount_amount | 割引額 | INT UNSIGNED | NO | | 円・定額のみ（率割引は使わない） |
-| 5 | min_order_amount | 最低注文金額 | INT UNSIGNED | YES | | 商品合計（税込）の下限。NULL=制限なし |
+| 5 | min_order_amount | 最低注文金額 | INT UNSIGNED | YES | | 商品合計（税抜）の下限。NULL=制限なし |
 | 6 | starts_at | 開始日時 | TIMESTAMP | YES | | NULL=開始制限なし |
 | 7 | ends_at | 終了日時 | TIMESTAMP | YES | | NULL=終了制限なし |
 | 8 | max_uses | 利用上限回数 | INT UNSIGNED | YES | | **全ユーザー合計**。NULL=無制限。1 人 1 回制限は設けない |
@@ -428,7 +434,7 @@ sales_all.csv 相当。**購入者（buyer_*）と配送先（shipping_*）を�
 | 5 | order_number | 注文番号 | VARCHAR(50) | NO | UK | §13.5 参照。お客様表示・問い合わせ用 |
 | 6 | ordered_at | 受注日時 | TIMESTAMP | NO | | |
 | 7 | device | デバイス | VARCHAR(50) | YES | | 新規: User-Agent から PC / モバイル等を判定。移行: sales CSV 列 2 |
-| 8 | subtotal | 商品合計 | INT UNSIGNED | NO | | 税込 |
+| 8 | subtotal | 商品合計 | INT UNSIGNED | NO | | 新規=税抜。移行=税込スナップショット |
 | 9 | tax_amount | 消費税 | INT UNSIGNED | NO | | 商品合計に対する税額。§1.3 参照 |
 | 10 | shipping_fee | 送料 | INT UNSIGNED | NO | | |
 | 11 | payment_fee | 決済手数料 | INT UNSIGNED | NO | | 代引き時のみ（§3.12）。Stripe・振込は 0。移行は CSV のまま |
@@ -456,14 +462,15 @@ sales_all.csv 相当。**購入者（buyer_*）と配送先（shipping_*）を�
 | 33 | created_at | 作成日時 | TIMESTAMP | YES | | |
 | 34 | updated_at | 更新日時 | TIMESTAMP | YES | | |
 
-**金額の関係**（新規注文）:
+**金額の関係**（新規注文・外税）:
 
 ```
-total = subtotal + shipping_fee + payment_fee - discount - point_discount - external_point_discount
-tax_amount = floor((subtotal - discount) × rate / (1 + rate))   … rate は consumption_taxes（注文日時点）
+goods_total = subtotal - discount - point_discount - external_point_discount   … 税抜
+tax_amount  = floor(goods_total × rate)   … rate は consumption_taxes（注文日時点）
+total       = goods_total + tax_amount + shipping_fee + payment_fee
 ```
 
-クーポン未使用時は `discount = 0`、`coupon_id` / `coupon_code` / `discount_name` は NULL。移行注文は CSV の値をそのまま保存（税額は再計算しない）。
+クーポン未使用時は `discount = 0`、`coupon_id` / `coupon_code` / `discount_name` は NULL。移行注文は CSV の税込値をそのまま保存（税額は再計算しない。空のときのみ内税抽出フォールバック）。
 
 受注後は `subtotal` / `total` / 明細は **書き換えない**。減額は `refunds`、増額は別途請求 or 新規注文（[仕様書 §3.17](./specification.md#317-キャンセル返金注文後の金額変更)）。
 
@@ -699,9 +706,9 @@ tax_amount = floor((subtotal - discount) × rate / (1 + rate))   … rate は co
 | 4 | product_variant_id | バリアント ID | BIGINT UNSIGNED | YES | FK | |
 | 5 | product_name | 商品名 | VARCHAR(255) | NO | | スナップショット |
 | 6 | variant_label | 選択内容 | VARCHAR(255) | YES | | 例: 学年：３年生 |
-| 7 | unit_price | 単価 | INT UNSIGNED | NO | | 税込 |
+| 7 | unit_price | 単価 | INT UNSIGNED | NO | | 新規=税抜。移行=税込スナップショット |
 | 8 | quantity | 数量 | INT UNSIGNED | NO | | |
-| 9 | subtotal | 小計 | INT UNSIGNED | NO | | 税込 |
+| 9 | subtotal | 小計 | INT UNSIGNED | NO | | 新規=税抜。移行=税込スナップショット |
 | 10 | created_at | 作成日時 | TIMESTAMP | YES | | |
 | 11 | updated_at | 更新日時 | TIMESTAMP | YES | | |
 

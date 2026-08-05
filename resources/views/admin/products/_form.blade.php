@@ -41,7 +41,7 @@
             </div>
 
             <div class="form-field">
-                <label for="product-base-price">基本価格（税込） <span class="form-hint">必須</span></label>
+                <label for="product-base-price">基本価格（税抜） <span class="form-hint">必須</span></label>
                 <input type="number" id="product-base-price" name="base_price" value="{{ old('base_price', $product?->base_price ?? 0) }}" min="0" required>
             </div>
 

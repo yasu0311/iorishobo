@@ -17,9 +17,9 @@
                             <br><span class="text-muted">{{ $line->variant->name }}</span>
                         @endif
                     </td>
-                    <td>{{ number_format($line->unitPrice) }}円</td>
+                    <td>{{ number_format($line->variant->priceInclusive()) }}円（税込）</td>
                     <td><x-quantity :value="$line->item->quantity" /></td>
-                    <td>{{ number_format($line->lineSubtotal) }}円</td>
+                    <td>{{ number_format(\App\Models\ConsumptionTax::current()->inclusiveFromExclusive($line->lineSubtotal)) }}円（税込）</td>
                 </tr>
             @endforeach
         </tbody>

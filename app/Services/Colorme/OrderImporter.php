@@ -225,10 +225,15 @@ class OrderImporter
             return $variants->first();
         }
 
-        $byPrice = $variants->where('price', $unitPrice);
+        $byInclusivePrice = $variants->filter(
+            function (ProductVariant $variant) use ($unitPrice): bool {
+                return ConsumptionTax::current()->inclusiveFromExclusive((int) $variant->price) === $unitPrice
+                    || (int) $variant->price === $unitPrice;
+            },
+        );
 
-        if ($byPrice->count() === 1) {
-            return $byPrice->first();
+        if ($byInclusivePrice->count() === 1) {
+            return $byInclusivePrice->first();
         }
 
         return $variants->first();

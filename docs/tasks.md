@@ -152,7 +152,7 @@
 - [○] `CheckoutService` — 注文作成・明細スナップショット
 - [○] ゲスト購入時の `customers` find or create（メール正規化）
 - [○] ログイン購入時の `orders.user_id` / `orders.customer_id` セット
-- [○] 税額計算（内税、`consumption_taxes` 参照、`floor(goods_total × rate / (1 + rate))`）
+- [○] 税額計算（外税、`consumption_taxes` 参照、`floor(goods_total × rate)`、店頭は税込表示）
 - [○] 代金引換（`cod`）— 手数料表示・チェックアウト送信時に在庫減算
 - [○] 銀行振込（`bank_transfer`）— 振込案内・入金は手動確認
 - [○] Stripe 連携

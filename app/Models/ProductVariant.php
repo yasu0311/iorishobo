@@ -58,4 +58,12 @@ class ProductVariant extends Model
     {
         return $this->is_active && $this->isInStock();
     }
+
+    /**
+     * 店頭表示用の税込価格。
+     */
+    public function priceInclusive(?ConsumptionTax $tax = null): int
+    {
+        return ($tax ?? ConsumptionTax::current())->inclusiveFromExclusive((int) $this->price);
+    }
 }

@@ -55,8 +55,33 @@ class ConsumptionTax extends Model
     }
 
     /**
+     * 税抜金額から外税の消費税額を算出（切り捨て）。
+     *
+     * tax_rate 0.10 → floor(amount × 10 / 100)
+     */
+    public function taxFromExclusive(int $exclusiveYen): int
+    {
+        $rateBasis = (int) round((float) $this->tax_rate * 10000);
+
+        if ($rateBasis <= 0 || $exclusiveYen <= 0) {
+            return 0;
+        }
+
+        return (int) floor($exclusiveYen * $rateBasis / 10000);
+    }
+
+    /**
+     * 税抜金額から税込金額を算出（外税・切り捨て）。
+     */
+    public function inclusiveFromExclusive(int $exclusiveYen): int
+    {
+        return $exclusiveYen + $this->taxFromExclusive($exclusiveYen);
+    }
+
+    /**
      * 税込金額から内税の消費税額を算出（切り捨て）。
      *
+     * カラーミー移行注文（税込スナップショット）のフォールバック用。
      * tax_rate 0.10 → floor(amount × 10 / 110)
      */
     public function extractFromInclusive(int $inclusiveYen): int

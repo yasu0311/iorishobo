@@ -112,12 +112,12 @@
                                     @endif
                                 </td>
                                 <td><x-quantity :value="$item->quantity" /></td>
-                                <td>{{ number_format($item->subtotal) }}円</td>
+                                <td>{{ number_format($order->displayItemSubtotal($item)) }}円</td>
                             </tr>
                         @endforeach
                         <tr class="delivery-receipt__items-summary">
                             <td colspan="2">商品合計（税込）</td>
-                            <td>{{ number_format($order->subtotal) }}円</td>
+                            <td>{{ number_format($order->goodsTotalInclusive()) }}円</td>
                         </tr>
                         <tr class="delivery-receipt__items-summary">
                             <td colspan="2">送料（税込）</td>

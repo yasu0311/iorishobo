@@ -66,7 +66,7 @@ class ProductImporter
                             'slug' => (string) $colormeId,
                             'short_description' => $row['簡易説明'] ?? null,
                             'description' => $row['商品説明'] ?? null,
-                            'base_price' => $this->parseYen($row['販売価格'] ?? '0'),
+                            'base_price' => $this->parseYen($row['販売価格'] ?? '0'), // 税抜（カラーミー外税）
                             'stock_managed' => $this->parseStockManaged($row['在庫管理'] ?? ''),
                             'is_published' => $this->parseIsPublished($row['掲載設定'] ?? ''),
                             'sort_order' => (int) $this->parseYen($row['表示順'] ?? '0'),

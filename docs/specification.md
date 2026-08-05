@@ -27,8 +27,8 @@
 | 配送 | クリックポスト系 / ゆうパック（**全国一律送料**） |
 | データ移行 | 商品・顧客・注文を CSV から移行 |
 | 旧 URL | カラーミー商品 ID（`?pid=`）→ `/products/{slug}` へ 301。`slug` は ID ベース（§3.21） |
-| 金額 | 整数・円単位・税込（内税・小数不使用） |
-| 消費税 | **内税**・全商品同一・税率は `consumption_taxes` で期間管理・軽減税率なし |
+| 金額 | 整数・円単位。商品マスタ・新規注文の明細は**税抜**。店頭・領収書は**税込表示** |
+| 消費税 | **外税**・全商品同一・税率は `consumption_taxes` で期間管理・軽減税率なし。移行注文のみ税込スナップショット |
 | 文字コード・照合順序 | `utf8mb4` / `utf8mb4_unicode_ci` |
 | タイムゾーン | **Asia/Tokyo**（アプリ。移行 CSV の日時も JST として取り込む） |
 
@@ -178,7 +178,7 @@ Laravel の DB 列は **購入フォーム（address1/address2）に合わせる
 | 送料計算 | **全国一律**（都道府県別・重量別の料金表は持たない） |
 | 配送方法 | クリックポスト / ゆうパック等、方法ごとに `shipping_methods` 1 レコード |
 | 基本送料 | `shipping_methods.base_fee` |
-| 送料無料 | `shipping_methods.free_shipping_threshold`（**クーポン適用後**の商品合計 `subtotal - discount` がこの金額以上で 0 円。NULL = なし） |
+| 送料無料 | `shipping_methods.free_shipping_threshold`（**クーポン適用後**の商品合計**税込** `subtotal - discount + tax` がこの金額以上で 0 円。NULL = なし） |
 | 個別送料 | **使わない**（カラーミーの商品別送料は移行対象外） |
 
 ### 3.3 商品画像
@@ -311,7 +311,7 @@ orders
 |------|------------|------|
 | 定価 | **使わない**（`list_price` 列は持たない） | product.csv「定価」列は **スキップ** |
 
-商品ページに表示する価格は **販売価格（税込）のみ**。オプションあり商品は `product_variants.price`、一覧・親商品の参考表示は `products.base_price`。
+商品ページに表示する価格は **販売価格（税込換算）のみ**。DB の `product_variants.price` / `products.base_price` は税抜。表示は `floor(税抜 × rate)` を加算した税込。
 
 ### 3.7.4 ISBN / JAN
 
@@ -449,15 +449,26 @@ orders
 
 | 項目 | 方針 | 根拠 |
 |------|------|------|
-| 表示形式 | **内税** | 現行カラーミーショップと同じ |
-| サイト上の価格 | **税込表示** | 同上 |
+| 商品マスタの価格 | **税抜** | カラーミー外税・CSV「販売価格」が税抜 |
+| 表示形式 | **税込表示** | 総額表示義務。税抜に税率を加算して表示 |
+| 課税方式（新規注文） | **外税** | `tax_amount = floor(goods_total × rate)`。`total` に税を加算 |
 | 税率 | `consumption_taxes` の有効行 | 変更時は DB のみ更新 |
 | 商品ごとの税率 | **持たない** | 全商品同一のため `products.tax_rate` 等は不要 |
 | 軽減税率 | **使わない** | 商品別の 8%/10% 混在なし |
 | 端数処理 | **切り捨て** | カラーミー慣行に合わせる |
-| `orders.tax_amount` | 商品合計（subtotal）に対する消費税 | CSV 列名どおり。送料の税は含めない |
-| 新規注文の税額 | `floor((subtotal - discount) × rate / (1 + rate))` | `rate` は注文日時点の `tax_rate` |
+| `orders.tax_amount` | 商品合計（割引後）に対する消費税 | 送料・決済手数料の税は含めない |
+| 送料無料・代引無料ライン | **税込**の商品合計で判定 | `goods_total + tax_amount` |
+| 移行注文 | sales CSV の税込列をそのまま保存 | 再計算しない。税額空時のみ内税抽出フォールバック |
 | 8% / 10% 内訳列 | **持たない** | 混在しないため |
+
+**新規注文の金額式**:
+
+```
+subtotal     = Σ(unit_price × qty)          // 税抜
+goods_total  = subtotal − discount          // 税抜
+tax_amount   = floor(goods_total × rate)
+total        = goods_total + tax_amount + shipping_fee + payment_fee
+```
 
 **領収書・インボイス（適格請求書）**: 注文ごとに「税込合計 ＋ うち消費税（注文日の税率%）」を表示する。適格請求書発行事業者の **登録番号** は `config/shop.php`（§3.18）から領収書・メール等に掲載する。
 
@@ -509,7 +520,7 @@ orders
 |------|------|
 | 対象 | `payment_method = cod` のときのみ `orders.payment_fee` に加算 |
 | 金額 | **固定額**（`config/shop.php` の `cod_fee`。§3.18） |
-| 無料ライン | 商品合計（税込）`subtotal - discount` が **`cod_free_threshold` 以上**なら手数料 **0 円**（送料無料ラインと同じ考え方） |
+| 無料ライン | 商品合計（税込）`subtotal - discount + tax_amount` が **`cod_free_threshold` 以上**なら手数料 **0 円**（送料無料ラインと同じ考え方） |
 | 閾値なし | `cod_free_threshold = NULL` のときは無料ラインなし（代引きのたびに `cod_fee`） |
 | Stripe・振込 | `payment_fee = 0` |
 | 注文確定時 | 算出した金額を `orders.payment_fee` に **スナップショット**保存 |
@@ -523,7 +534,7 @@ payment_fee = 0                                          … cod かつ cod_free
 payment_fee = cod_fee                                    … cod かつ上記以外
 ```
 
-`total` への加算は既存どおり `subtotal + shipping_fee + payment_fee - discount - …`（[テーブル定義書 §13](./table-definition.md#13-orders注文)）。
+`total`（新規注文）: `goods_total + tax_amount + shipping_fee + payment_fee`（`goods_total = subtotal - discount`。ポイント割引がある場合は従来どおり減算）（[テーブル定義書 §13](./table-definition.md#13-orders注文)）。
 
 **発送の前提**
 

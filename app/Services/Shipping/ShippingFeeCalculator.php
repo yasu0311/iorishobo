@@ -9,13 +9,13 @@ class ShippingFeeCalculator
     /**
      * 全国一律送料を計算する。
      *
-     * @param  int  $subtotalAfterDiscount  クーポン適用後の商品合計（subtotal - discount）
+     * @param  int  $goodsInclusiveYen  クーポン適用後の商品合計（税込）。送料無料ラインはこの税込額で判定する
      */
-    public function calculate(ShippingMethod $method, int $subtotalAfterDiscount): int
+    public function calculate(ShippingMethod $method, int $goodsInclusiveYen): int
     {
         $threshold = $method->free_shipping_threshold;
 
-        if ($threshold !== null && $subtotalAfterDiscount >= $threshold) {
+        if ($threshold !== null && $goodsInclusiveYen >= $threshold) {
             return 0;
         }
 

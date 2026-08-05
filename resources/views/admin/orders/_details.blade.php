@@ -20,7 +20,7 @@
     <section class="panel">
         <h2>金額</h2>
         <dl class="detail-list">
-            <dt>商品合計</dt><dd>{{ number_format($order->subtotal) }}円</dd>
+            <dt>商品合計{{ $order->usesExclusiveItemPrices() ? '（税抜）' : '（税込）' }}</dt><dd>{{ number_format($order->subtotal) }}円</dd>
             @if ($order->discount > 0)
                 <dt>割引</dt><dd>-{{ number_format($order->discount) }}円 @if($order->discount_name)（{{ $order->discount_name }}）@endif</dd>
             @endif
@@ -28,8 +28,8 @@
             @if ($order->payment_fee > 0)
                 <dt>決済手数料</dt><dd>{{ number_format($order->payment_fee) }}円</dd>
             @endif
-            <dt>消費税（内税 {{ $order->taxRatePercentLabel() }}）</dt><dd>{{ number_format($order->tax_amount) }}円</dd>
-            <dt><strong>合計</strong></dt><dd><strong>{{ number_format($order->total) }}円</strong></dd>
+            <dt>消費税（{{ $order->usesExclusiveItemPrices() ? '外税' : '内税' }} {{ $order->taxRatePercentLabel() }}）</dt><dd>{{ number_format($order->tax_amount) }}円</dd>
+            <dt><strong>合計（税込）</strong></dt><dd><strong>{{ number_format($order->total) }}円</strong></dd>
             @if ($order->refund_amount > 0)
                 <dt>返金済み</dt><dd>{{ number_format($order->refund_amount) }}円</dd>
             @endif
@@ -43,9 +43,9 @@
         <thead>
             <tr>
                 <th>商品</th>
-                <th>単価</th>
+                <th>単価{{ $order->usesExclusiveItemPrices() ? '（税抜）' : '（税込）' }}</th>
                 <th>数量（{{ config('shop.quantity_unit') }}）</th>
-                <th>小計</th>
+                <th>小計{{ $order->usesExclusiveItemPrices() ? '（税抜）' : '（税込）' }}</th>
             </tr>
         </thead>
         <tbody>

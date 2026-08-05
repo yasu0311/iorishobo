@@ -39,7 +39,7 @@
                             @if ($item->variant_label)（{{ $item->variant_label }}）@endif
                         </td>
                         <td><x-quantity :value="$item->quantity" /></td>
-                        <td>{{ number_format($item->subtotal) }}円</td>
+                        <td>{{ number_format($order->displayItemSubtotal($item)) }}円</td>
                     </tr>
                 @endforeach
             </tbody>

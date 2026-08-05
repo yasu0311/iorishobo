@@ -60,7 +60,7 @@ class ProductBrowsingTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('在庫管理商品');
-        $response->assertSee('1,500円');
+        $response->assertSee('1,650円');
         $response->assertSee('在庫 5冊');
         $response->assertSee('数量（冊）');
         $response->assertSee('売り切れ');
@@ -204,7 +204,7 @@ class ProductBrowsingTest extends TestCase
         $response = $this->get(route('products.index'));
 
         $response->assertOk();
-        $response->assertSee('1,500円〜2,000円');
+        $response->assertSee('1,650円〜2,200円');
     }
 
     #[Test]
@@ -217,8 +217,8 @@ class ProductBrowsingTest extends TestCase
         $response = $this->get(route('products.show', $product->slug));
 
         $response->assertOk();
-        $response->assertSee('1,500円〜2,000円');
-        $response->assertSee('2,000円（税込）');
+        $response->assertSee('1,650円〜2,200円');
+        $response->assertSee('2,200円（税込）');
     }
 
     #[Test]

@@ -177,7 +177,7 @@
             <h2>ご注文内容</h2>
             <p class="checkout-summary__row">
                 <span>商品合計</span>
-                <span>{{ number_format($summary->subtotal) }}円（税込）</span>
+                <span>{{ number_format($goodsTotal) }}円（税込）</span>
             </p>
             @if (config('shop.coupons_enabled') && $summary->discount > 0)
                 <p class="checkout-summary__row">

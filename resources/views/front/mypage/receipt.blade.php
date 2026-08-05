@@ -32,7 +32,7 @@
                             {{ $item->product_name }}
                             @if ($item->variant_label)（{{ $item->variant_label }}）@endif
                         </td>
-                        <td>{{ number_format($item->subtotal) }}円</td>
+                        <td>{{ number_format($order->displayItemSubtotal($item)) }}円</td>
                     </tr>
                 @endforeach
             </tbody>

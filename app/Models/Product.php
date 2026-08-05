@@ -97,7 +97,10 @@ class Product extends Model
         return $prices?->max();
     }
 
-    public function formattedPrice(): ?string
+    /**
+     * 店頭表示用の税込最安値。
+     */
+    public function lowestPriceInclusive(?ConsumptionTax $tax = null): ?int
     {
         $lowest = $this->lowestPrice();
 
@@ -105,7 +108,36 @@ class Product extends Model
             return null;
         }
 
+        return ($tax ?? ConsumptionTax::current())->inclusiveFromExclusive($lowest);
+    }
+
+    /**
+     * 店頭表示用の税込最高値。
+     */
+    public function highestPriceInclusive(?ConsumptionTax $tax = null): ?int
+    {
         $highest = $this->highestPrice();
+
+        if ($highest === null) {
+            return null;
+        }
+
+        return ($tax ?? ConsumptionTax::current())->inclusiveFromExclusive($highest);
+    }
+
+    /**
+     * 店頭表示用の税込価格文字列（例: "2,200円" / "1,650円〜2,200円"）。
+     */
+    public function formattedPrice(): ?string
+    {
+        $tax = ConsumptionTax::current();
+        $lowest = $this->lowestPriceInclusive($tax);
+
+        if ($lowest === null) {
+            return null;
+        }
+
+        $highest = $this->highestPriceInclusive($tax);
 
         if ($highest === null || $lowest === $highest) {
             return number_format($lowest).'円';

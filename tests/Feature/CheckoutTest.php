@@ -51,7 +51,7 @@ class CheckoutTest extends TestCase
             'category_id' => $category->id,
             'name' => 'テスト商品',
             'slug' => '100',
-            'base_price' => 1100,
+            'base_price' => 1000,
             'stock_managed' => true,
             'is_published' => true,
             'sort_order' => 1,
@@ -60,7 +60,7 @@ class CheckoutTest extends TestCase
         $this->variant = ProductVariant::query()->create([
             'product_id' => $product->id,
             'name' => $product->name,
-            'price' => 1100,
+            'price' => 1000,
             'stock' => 10,
             'is_active' => true,
             'sort_order' => 1,
@@ -96,7 +96,7 @@ class CheckoutTest extends TestCase
         $this->assertSame(PaymentStatus::Pending, $order->payment_status);
         $this->assertSame($user->id, $order->user_id);
         $this->assertNotNull($order->customer_id);
-        $this->assertSame(2200, $order->subtotal);
+        $this->assertSame(2000, $order->subtotal);
         $this->assertSame(200, $order->tax_amount);
         $this->assertDatabaseCount('order_items', 1);
         $this->assertSame(8, $this->variant->fresh()->stock);
@@ -1115,7 +1115,7 @@ class CheckoutTest extends TestCase
         return array_merge([
             'order_number' => '1234567890',
             'ordered_at' => now(),
-            'subtotal' => 1100,
+            'subtotal' => 1000,
             'tax_amount' => 100,
             'shipping_fee' => 0,
             'payment_fee' => 0,

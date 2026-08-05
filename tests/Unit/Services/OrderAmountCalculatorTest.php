@@ -27,13 +27,13 @@ class OrderAmountCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function it_calculates_tax_from_subtotal_with_floor(): void
+    public function it_calculates_tax_from_exclusive_subtotal_with_floor(): void
     {
         $shipping = new ShippingMethod(['base_fee' => 0, 'free_shipping_threshold' => null]);
 
-        $amounts = $this->calculator->calculate(1100, null, $shipping, PaymentMethod::BankTransfer);
+        $amounts = $this->calculator->calculate(1000, null, $shipping, PaymentMethod::BankTransfer);
 
-        $this->assertSame(1100, $amounts['subtotal']);
+        $this->assertSame(1000, $amounts['subtotal']);
         $this->assertSame(100, $amounts['tax_amount']);
         $this->assertSame('10%', $amounts['tax_percent_label']);
         $this->assertSame(1100, $amounts['total']);
@@ -53,8 +53,8 @@ class OrderAmountCalculatorTest extends TestCase
         $amounts = $this->calculator->calculate(1100, $coupon, $shipping, PaymentMethod::BankTransfer);
 
         $this->assertSame(100, $amounts['discount']);
-        $this->assertSame(90, $amounts['tax_amount']);
-        $this->assertSame(1000, $amounts['total']);
+        $this->assertSame(100, $amounts['tax_amount']);
+        $this->assertSame(1100, $amounts['total']);
     }
 
     #[Test]
@@ -66,7 +66,7 @@ class OrderAmountCalculatorTest extends TestCase
         $amounts = $this->calculator->calculate(1000, null, $shipping, PaymentMethod::Cod);
 
         $this->assertSame(330, $amounts['payment_fee']);
-        $this->assertSame(1830, $amounts['total']);
+        $this->assertSame(1930, $amounts['total']);
     }
 
     #[Test]
@@ -75,7 +75,7 @@ class OrderAmountCalculatorTest extends TestCase
         $shipping = new ShippingMethod(['base_fee' => 0, 'free_shipping_threshold' => null]);
 
         $amounts = $this->calculator->calculate(
-            1080,
+            1000,
             null,
             $shipping,
             PaymentMethod::BankTransfer,
@@ -84,6 +84,7 @@ class OrderAmountCalculatorTest extends TestCase
 
         $this->assertSame(80, $amounts['tax_amount']);
         $this->assertSame('8%', $amounts['tax_percent_label']);
+        $this->assertSame(1080, $amounts['total']);
     }
 
     #[Test]
@@ -93,7 +94,7 @@ class OrderAmountCalculatorTest extends TestCase
         $tax = new ConsumptionTax(['tax_rate' => 0.12]);
 
         $amounts = $this->calculator->calculate(
-            1120,
+            1000,
             null,
             $shipping,
             PaymentMethod::BankTransfer,
@@ -102,5 +103,35 @@ class OrderAmountCalculatorTest extends TestCase
 
         $this->assertSame(120, $amounts['tax_amount']);
         $this->assertSame('12%', $amounts['tax_percent_label']);
+        $this->assertSame(1120, $amounts['total']);
+    }
+
+    #[Test]
+    public function it_keeps_inclusive_mode_for_migrated_orders(): void
+    {
+        $shipping = new ShippingMethod(['base_fee' => 0, 'free_shipping_threshold' => null]);
+
+        $amounts = $this->calculator->calculate(
+            1100,
+            null,
+            $shipping,
+            PaymentMethod::BankTransfer,
+            pricesAreExclusive: false,
+        );
+
+        $this->assertSame(100, $amounts['tax_amount']);
+        $this->assertSame(1100, $amounts['total']);
+    }
+
+    #[Test]
+    public function free_shipping_threshold_uses_tax_inclusive_goods_total(): void
+    {
+        $shipping = new ShippingMethod(['base_fee' => 500, 'free_shipping_threshold' => 3300]);
+
+        // 税抜 3000 → 税込 3300 で無料ライン到達
+        $amounts = $this->calculator->calculate(3000, null, $shipping, PaymentMethod::BankTransfer);
+
+        $this->assertSame(0, $amounts['shipping_fee']);
+        $this->assertSame(3300, $amounts['total']);
     }
 }

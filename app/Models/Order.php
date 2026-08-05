@@ -142,6 +142,56 @@ class Order extends Model
     }
 
     /**
+     * 新規注文は明細単価・商品合計が税抜。カラーミー移行注文は税込スナップショット。
+     */
+    public function usesExclusiveItemPrices(): bool
+    {
+        return ! $this->isMigrated();
+    }
+
+    /**
+     * 店頭・メール・領収書向けの税込単価。
+     */
+    public function displayItemUnitPrice(OrderItem $item): int
+    {
+        if (! $this->usesExclusiveItemPrices()) {
+            return (int) $item->unit_price;
+        }
+
+        $tax = $this->consumptionTax() ?? ConsumptionTax::current();
+
+        return $tax->inclusiveFromExclusive((int) $item->unit_price);
+    }
+
+    /**
+     * 店頭・メール・領収書向けの税込小計。
+     */
+    public function displayItemSubtotal(OrderItem $item): int
+    {
+        if (! $this->usesExclusiveItemPrices()) {
+            return (int) $item->subtotal;
+        }
+
+        $tax = $this->consumptionTax() ?? ConsumptionTax::current();
+
+        return $tax->inclusiveFromExclusive((int) $item->subtotal);
+    }
+
+    /**
+     * クーポン適用後の商品合計（税込）。
+     */
+    public function goodsTotalInclusive(): int
+    {
+        $goodsExclusiveOrInclusive = (int) $this->subtotal - (int) $this->discount;
+
+        if (! $this->usesExclusiveItemPrices()) {
+            return $goodsExclusiveOrInclusive;
+        }
+
+        return $goodsExclusiveOrInclusive + (int) $this->tax_amount;
+    }
+
+    /**
      * Stripe Checkout へ進んだが決済未完了の注文。
      * カート確定時点で作られるため、一覧には出さない。
      */

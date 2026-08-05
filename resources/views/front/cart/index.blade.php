@@ -47,7 +47,7 @@
                                             <br><span class="text-danger">在庫不足（残り <x-quantity :value="$line->variant->stock" />）</span>
                                         @endif
                                     </td>
-                                    <td>{{ number_format($line->unitPrice) }}円</td>
+                                    <td>{{ number_format($line->variant->priceInclusive()) }}円（税込）</td>
                                     <td>
                                         <form method="post" action="{{ route('cart.items.update', $line->item) }}" class="inline-form">
                                             @csrf
@@ -56,7 +56,7 @@
                                             <button type="submit" class="btn btn--sm btn--secondary">更新</button>
                                         </form>
                                     </td>
-                                    <td>{{ number_format($line->lineSubtotal) }}円</td>
+                                    <td>{{ number_format(\App\Models\ConsumptionTax::current()->inclusiveFromExclusive($line->lineSubtotal)) }}円（税込）</td>
                                     <td>
                                         <form method="post" action="{{ route('cart.items.destroy', $line->item) }}" onsubmit="return confirm('カートから削除しますか？')">
                                             @csrf
@@ -73,13 +73,17 @@
 
             <aside class="cart-summary">
                 <h2 style="margin: 0 0 1rem; font-size: 1.125rem;">ご注文内容</h2>
-                <p class="cart-summary__row"><span>商品合計</span><span>{{ number_format($summary->subtotal) }}円</span></p>
+                @php
+                    $cartTax = \App\Models\ConsumptionTax::current();
+                    $cartGoodsInclusive = $cartTax->inclusiveFromExclusive($summary->totalAfterDiscount());
+                @endphp
+                <p class="cart-summary__row"><span>商品合計</span><span>{{ number_format($cartGoodsInclusive) }}円（税込）</span></p>
 
                 @if (config('shop.coupons_enabled'))
                     @if ($summary->coupon)
-                        <p class="cart-summary__row">
-                            <span>クーポン「{{ $summary->coupon->name }}」</span>
-                            <span>-{{ number_format($summary->discount) }}円</span>
+                        <p class="cart-summary__row text-muted">
+                            <span>クーポン「{{ $summary->coupon->name }}」（税抜）</span>
+                            <span>-{{ number_format($summary->discount) }}円（反映済み）</span>
                         </p>
                         <form method="post" action="{{ route('cart.coupon.remove') }}">
                             @csrf
@@ -96,8 +100,8 @@
                 @endif
 
                 <p class="cart-summary__row cart-summary__total">
-                    <span>@if (config('shop.coupons_enabled') && $summary->discount > 0)合計（割引後）@else合計@endif</span>
-                    <span>{{ number_format($summary->totalAfterDiscount()) }}円</span>
+                    <span>合計</span>
+                    <span>{{ number_format($cartGoodsInclusive) }}円（税込）</span>
                 </p>
 
                 <div class="cart-actions">
