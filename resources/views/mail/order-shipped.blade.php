@@ -1,19 +1,11 @@
+@php
+    $buyerNameKana = $order->customer?->name_kana;
+@endphp
+{{ $order->buyer_name }}@if ($buyerNameKana)（{{ $buyerNameKana }}）@endif 様
+
 {{ $body }}
 
-注文番号: {{ $order->order_number }}
-@if ($order->tracking_number)
-追跡番号: {{ $order->tracking_number }}
-@endif
-
-【ご注文内容】
-@foreach ($order->items as $item)
-- {{ $item->product_name }}@if ($item->variant_label)（{{ $item->variant_label }}）@endif × {{ $item->quantity }}{{ config('shop.quantity_unit') }}
-@endforeach
-
-【配送先】
-{{ $order->shipping_name }}
-〒{{ $order->shipping_postal_code }} {{ $order->shipping_prefecture }}{{ $order->shipping_address_line1 }}{{ $order->shipping_address_line2 ? ' '.$order->shipping_address_line2 : '' }}
-
-================================
-{{ config('shop.name') }}　{{ config('app.url') }}
-================================
+@include('mail.partials.order-details', [
+    'showTrackingNumber' => true,
+    'showShippedAt' => true,
+])

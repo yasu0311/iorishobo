@@ -61,45 +61,26 @@ class OrderShippingMailComposer
 
     public function body(Order $order, bool $partial): string
     {
-        $order->loadMissing('items');
+        $order->loadMissing([
+            'items.productVariant.product',
+            'customer',
+        ]);
 
-        $unit = config('shop.quantity_unit');
         $template = EmailTemplate::requireBySlug(
             $partial ? 'order-partially-shipped' : 'order-shipped'
         );
 
-        $lines = [];
-        $lines[] = trim($template->body);
-        $lines[] = '';
-        $lines[] = '注文番号: '.$order->order_number;
+        $buyerNameKana = $order->customer?->name_kana;
+        $greeting = $order->buyer_name
+            .($buyerNameKana ? '（'.$buyerNameKana.'）' : '')
+            .' 様';
 
-        if ($order->shipped_at !== null && ! $partial) {
-            $lines[] = '発送日時: '.$order->shipped_at->format('Y-m-d H:i');
-        }
+        $details = view('mail.partials.order-details', [
+            'order' => $order,
+            'trackingPlaceholder' => true,
+            'showShippedAt' => ! $partial && $order->shipped_at !== null,
+        ])->render();
 
-        $lines[] = '{{TRACKING_LINE}}';
-
-        $lines[] = '';
-        $lines[] = '【ご注文内容】';
-
-        foreach ($order->items as $item) {
-            $label = $item->product_name;
-            if (filled($item->variant_label)) {
-                $label .= '（'.$item->variant_label.'）';
-            }
-            $lines[] = '- '.$label.' × '.$item->quantity.$unit;
-        }
-
-        $lines[] = '';
-        $lines[] = '【配送先】';
-        $lines[] = $order->shipping_name;
-        $lines[] = '〒'.$order->shipping_postal_code.' '.$order->shipping_prefecture.$order->shipping_address_line1
-            .(filled($order->shipping_address_line2) ? ' '.$order->shipping_address_line2 : '');
-        $lines[] = '';
-        $lines[] = '================================';
-        $lines[] = config('shop.name').'　'.config('app.url');
-        $lines[] = '================================';
-
-        return implode("\n", $lines);
+        return $greeting."\n\n".trim($template->body)."\n\n".trim($details)."\n";
     }
 }

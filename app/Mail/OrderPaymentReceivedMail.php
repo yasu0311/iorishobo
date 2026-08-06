@@ -19,6 +19,10 @@ class OrderPaymentReceivedMail extends Mailable
     public function __construct(
         public Order $order,
     ) {
+        $this->order->loadMissing([
+            'items.productVariant.product',
+            'customer',
+        ]);
         $this->template = EmailTemplate::requireBySlug('order-payment-received');
     }
 

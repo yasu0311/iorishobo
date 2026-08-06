@@ -22,6 +22,11 @@ class OrderShippedMail extends Mailable
         public ?string $customBody = null,
         public bool $partial = false,
     ) {
+        $this->order->loadMissing([
+            'items.productVariant.product',
+            'customer',
+        ]);
+
         // 件名・本文を両方カスタム指定した場合は DB テンプレート不要
         if ($this->customSubject !== null && $this->customBody !== null) {
             $this->template = null;
