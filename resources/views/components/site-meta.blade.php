@@ -5,6 +5,21 @@
         : config('shop.meta_description');
     $ogType = trim($__env->yieldContent('og_type')) !== '' ? trim($__env->yieldContent('og_type')) : 'website';
     $robots = trim($__env->yieldContent('robots'));
+    if ($robots === '') {
+        $routeName = request()->route()?->getName() ?? '';
+        $noindexNames = config('shop.noindex_route_names', []);
+        $noindexPrefixes = config('shop.noindex_route_prefixes', []);
+        if ($routeName !== '' && in_array($routeName, $noindexNames, true)) {
+            $robots = 'noindex';
+        } else {
+            foreach ($noindexPrefixes as $prefix) {
+                if ($routeName !== '' && str_starts_with($routeName, $prefix)) {
+                    $robots = 'noindex';
+                    break;
+                }
+            }
+        }
+    }
 
     $ogImage = trim($__env->yieldContent('og_image'));
     if ($ogImage === '') {

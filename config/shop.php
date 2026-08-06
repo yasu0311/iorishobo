@@ -79,6 +79,21 @@ return [
     'og_image' => env('SHOP_OG_IMAGE', '/images/og-default.svg'),
 
     /*
+    | プライベート／トランザクション系ルートに noindex を自動付与する。
+    | ビューで @section('robots') があればそちらを優先する。
+    */
+    'noindex_route_prefixes' => [
+        'cart.',
+        'checkout.',
+        'mypage.',
+    ],
+
+    'noindex_route_names' => [
+        'contacts.confirm',
+        'contacts.complete',
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | 数量単位
     |--------------------------------------------------------------------------
