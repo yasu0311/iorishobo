@@ -238,6 +238,14 @@
             }
         }
 
+        const tracking = trackingNumberInput?.value.trim() ?? '';
+        if (!tracking) {
+            event.preventDefault();
+            window.alert('発送処理には追跡番号が必要です。');
+            trackingNumberInput?.focus();
+            return;
+        }
+
         const action = selectedShippingAction();
         const willSendMail = Boolean(sendShippingMail?.checked);
 

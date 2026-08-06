@@ -199,6 +199,7 @@ return [
         'shipping_method_id' => '配送方法',
         'payment_method' => '決済方法',
         'customer_note' => '備考',
+        'tracking_number' => '追跡番号',
     ],
 
 ];

@@ -8,5 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('carts:cleanup-guest')->daily();
+Schedule::command('carts:cleanup')->daily();
 Schedule::command('orders:cancel-expired-stripe-checkouts')->daily();

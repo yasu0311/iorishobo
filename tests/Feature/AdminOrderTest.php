@@ -369,6 +369,22 @@ class AdminOrderTest extends TestCase
     }
 
     #[Test]
+    public function shipping_requires_tracking_number(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630334',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.ship', $order))
+            ->assertSessionHasErrors('tracking_number');
+
+        $this->assertSame(OrderStatus::Unshipped, $order->fresh()->shipping_status);
+    }
+
+    #[Test]
     public function bank_transfer_order_cannot_ship_before_payment(): void
     {
         $order = $this->createOrder([
@@ -533,6 +549,7 @@ class AdminOrderTest extends TestCase
             'buyer_email' => 'bulk-ship@example.com',
             'payment_method' => PaymentMethod::Cod,
             'payment_status' => PaymentStatus::Pending,
+            'tracking_number' => 'TRACK-BULK-02',
         ]);
 
         $this->actingAs($this->admin)
@@ -546,6 +563,26 @@ class AdminOrderTest extends TestCase
         Mail::assertSent(OrderShippedMail::class, function ($mail) {
             return $mail->hasTo('bulk-ship@example.com');
         });
+    }
+
+    #[Test]
+    public function bulk_ship_skips_orders_without_tracking_number(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => '20260630806',
+            'payment_method' => PaymentMethod::Cod,
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.orders.bulk-action'), [
+                'order_ids' => [$order->id],
+                'bulk_action' => OrderBulkAction::ShipOnly->value,
+            ])
+            ->assertRedirect(route('admin.orders.index'))
+            ->assertSessionHas('bulk_warning');
+
+        $this->assertSame(OrderStatus::Unshipped, $order->fresh()->shipping_status);
     }
 
     #[Test]
@@ -953,8 +990,10 @@ class AdminOrderTest extends TestCase
             ->post(route('admin.orders.ship', $order), [
                 'shipping_type' => 'partial',
                 'send_shipping_mail' => '1',
+                'shipping_mail_customized' => '1',
                 'shipping_mail_subject' => '一部だけ発送しました',
                 'shipping_mail_body' => "商品Aのみ発送しました。\n追跡番号: TRACK-PARTIAL\n",
+                'tracking_number' => 'TRACK-PARTIAL',
             ])
             ->assertRedirect(route('admin.orders.show', $order));
 
@@ -979,12 +1018,14 @@ class AdminOrderTest extends TestCase
             'order_number' => '20260630853',
             'payment_method' => PaymentMethod::Cod,
             'payment_status' => PaymentStatus::Pending,
+            'tracking_number' => 'TRACK-PARTIAL-NO-MAIL',
         ]);
 
         $this->actingAs($this->admin)
             ->post(route('admin.orders.ship', $order), [
                 'shipping_type' => 'partial',
                 'send_shipping_mail' => '0',
+                'tracking_number' => 'TRACK-PARTIAL-NO-MAIL',
             ])
             ->assertRedirect(route('admin.orders.show', $order));
 
@@ -1007,7 +1048,9 @@ class AdminOrderTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->post(route('admin.orders.ship', $order))
+            ->post(route('admin.orders.ship', $order), [
+                'tracking_number' => 'TRACK-PARTIAL-2',
+            ])
             ->assertRedirect(route('admin.orders.show', $order));
 
         $order->refresh();

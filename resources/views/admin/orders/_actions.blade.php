@@ -50,14 +50,18 @@
                         @csrf
 
                         <div class="form-field">
-                            <label for="action_tracking_number">追跡番号</label>
+                            <label for="action_tracking_number">追跡番号 <span class="form-hint">必須</span></label>
                             <input
                                 type="text"
                                 id="action_tracking_number"
                                 name="tracking_number"
                                 value="{{ old('tracking_number', $order->tracking_number) }}"
                                 maxlength="100"
+                                required
                             >
+                            @error('tracking_number')
+                                <p class="input-error">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         @if ($order->canMarkAsPartiallyShipped() && $order->canShip())

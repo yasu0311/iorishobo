@@ -87,14 +87,12 @@ class OrderManagementService
             ]);
         }
 
-        $tracking = filled($trackingNumber)
-            ? $trackingNumber
-            : $order->tracking_number;
+        $tracking = $this->resolveRequiredTrackingNumber($order, $trackingNumber);
 
         $order->update([
             'shipping_status' => OrderStatus::Shipped,
             'shipped_at' => now(),
-            'tracking_number' => filled($tracking) ? $tracking : null,
+            'tracking_number' => $tracking,
         ]);
 
         if (! $sendMail) {
@@ -128,13 +126,11 @@ class OrderManagementService
             ]);
         }
 
-        $tracking = filled($trackingNumber)
-            ? $trackingNumber
-            : $order->tracking_number;
+        $tracking = $this->resolveRequiredTrackingNumber($order, $trackingNumber);
 
         $order->update([
             'shipping_status' => OrderStatus::PartiallyShipped,
-            'tracking_number' => filled($tracking) ? $tracking : null,
+            'tracking_number' => $tracking,
         ]);
 
         if (! $sendMail) {
@@ -162,6 +158,21 @@ class OrderManagementService
             'shipping_status' => $target,
             'shipped_at' => null,
         ]);
+    }
+
+    private function resolveRequiredTrackingNumber(Order $order, ?string $trackingNumber): string
+    {
+        $tracking = filled($trackingNumber)
+            ? $trackingNumber
+            : $order->tracking_number;
+
+        if (! filled($tracking)) {
+            throw ValidationException::withMessages([
+                'tracking_number' => '発送処理には追跡番号が必要です。',
+            ]);
+        }
+
+        return $tracking;
     }
 
     /**

@@ -297,24 +297,40 @@ class CartTest extends TestCase
     }
 
     #[Test]
-    public function cleanup_command_deletes_old_guest_carts(): void
+    public function cleanup_command_deletes_old_guest_and_user_carts(): void
     {
-        $oldCart = Cart::query()->create(['session_id' => 'old-session']);
-        $oldCart->updated_at = now()->subDays(91);
-        $oldCart->saveQuietly();
-        $oldCart->items()->create([
+        $oldGuestCart = Cart::query()->create(['session_id' => 'old-session']);
+        $oldGuestCart->updated_at = now()->subDays(91);
+        $oldGuestCart->saveQuietly();
+        $oldGuestCart->items()->create([
             'product_variant_id' => $this->variant->id,
             'quantity' => 1,
         ]);
 
-        $recentCart = Cart::query()->create(['session_id' => 'recent-session']);
-        $recentCart->updated_at = now()->subDays(10);
-        $recentCart->saveQuietly();
+        $recentGuestCart = Cart::query()->create(['session_id' => 'recent-session']);
+        $recentGuestCart->updated_at = now()->subDays(10);
+        $recentGuestCart->saveQuietly();
 
-        $this->artisan('carts:cleanup-guest')
+        $oldUser = User::factory()->create();
+        $oldUserCart = Cart::query()->create(['user_id' => $oldUser->id]);
+        $oldUserCart->updated_at = now()->subDays(61);
+        $oldUserCart->saveQuietly();
+        $oldUserCart->items()->create([
+            'product_variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $recentUser = User::factory()->create();
+        $recentUserCart = Cart::query()->create(['user_id' => $recentUser->id]);
+        $recentUserCart->updated_at = now()->subDays(30);
+        $recentUserCart->saveQuietly();
+
+        $this->artisan('carts:cleanup')
             ->assertSuccessful();
 
         $this->assertDatabaseMissing('carts', ['session_id' => 'old-session']);
         $this->assertDatabaseHas('carts', ['session_id' => 'recent-session']);
+        $this->assertDatabaseMissing('carts', ['user_id' => $oldUser->id]);
+        $this->assertDatabaseHas('carts', ['user_id' => $recentUser->id]);
     }
 }
