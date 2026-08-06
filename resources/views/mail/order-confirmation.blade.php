@@ -36,30 +36,30 @@
 @endif
 
 
-【　受　注　番　号　】{{ $order->order_number }}
+注文番号: {{ $order->order_number }}
 
-▼お客様情報
-================================
-【　お　　名　　前　】{{ $order->buyer_name }}@if ($buyerNameKana)（{{ $buyerNameKana }}）@endif 様
-【　メールアドレス　】{{ $order->buyer_email }}
-【　郵　便　番　号　】{{ $order->buyer_postal_code }}
-【　ご　　住　　所　】{{ $order->buyer_prefecture }}{{ $order->buyer_address_line1 }}{{ $order->buyer_address_line2 ? ' '.$order->buyer_address_line2 : '' }}
-【　電　話　番　号　】{{ $order->buyer_phone ?? '' }}
-【　携　帯　番　号　】{{ $order->buyer_mobile ?? '' }}
-【　注　　文　　日　】{{ $order->ordered_at->format('Y/m/d') }}
-【　決　済　方　法　】{{ $order->payment_method->label() }}
-================================
+■ お客様情報
+----------------------------------------
+注文日: {{ $order->ordered_at->format('Y/m/d') }}
+決済方法: {{ $order->payment_method->label() }}
+お名前: {{ $order->buyer_name }}@if ($buyerNameKana)（{{ $buyerNameKana }}）@endif 様
+メールアドレス: {{ $order->buyer_email }}
+電話番号: {{ $order->buyer_phone ?? '' }}
+携帯電話: {{ $order->buyer_mobile ?? '' }}
+郵便番号: {{ $order->buyer_postal_code }}
+ご住所: {{ $order->buyer_prefecture }}{{ $order->buyer_address_line1 }}{{ $order->buyer_address_line2 ? ' '.$order->buyer_address_line2 : '' }}
+----------------------------------------
 
-▼配送先情報
-================================
-【　お　　名　　前　】{{ $order->shipping_name }}@if ($order->shipping_name_kana)（{{ $order->shipping_name_kana }}）@endif 様
-【　郵　便　番　号　】{{ $order->shipping_postal_code }}
-【　ご　　住　　所　】{{ $order->shipping_prefecture }}{{ $order->shipping_address_line1 }}{{ $order->shipping_address_line2 ? ' '.$order->shipping_address_line2 : '' }}
-【　電　話　番　号　】{{ $order->shipping_phone }}
-【　配　送　会　社　】{{ $order->shipping_method_name }}
---------------------------------
-［　商　品　詳　細　］
---------------------------------
+■ 配送先情報
+----------------------------------------
+お名前: {{ $order->shipping_name }}@if ($order->shipping_name_kana)（{{ $order->shipping_name_kana }}）@endif 様
+郵便番号: {{ $order->shipping_postal_code }}
+ご住所: {{ $order->shipping_prefecture }}{{ $order->shipping_address_line1 }}{{ $order->shipping_address_line2 ? ' '.$order->shipping_address_line2 : '' }}
+電話番号: {{ $order->shipping_phone }}
+配送会社: {{ $order->shipping_method_name }}
+----------------------------------------
+
+■ 商品明細
 @foreach ($order->items as $item)
 @php
     $product = $item->productVariant?->product;
@@ -69,36 +69,35 @@
         $displayName .= '（'.$item->variant_label.'）';
     }
 @endphp
-【　商　品　Ｉ　Ｄ　】{{ $productId }}
-【　商　　品　　名　】{{ $displayName }}
-【　価　格　(税込)　】{{ number_format($order->displayItemUnitPrice($item)) }}円
-【　　数　　　量　　】{{ $item->quantity }}{{ config('shop.quantity_unit') }}
-【　　小　　　計　　】{{ number_format($order->displayItemSubtotal($item)) }}円
---------------------------------
+----------------------------------------
+商品ID: {{ $productId }}
+商品名: {{ $displayName }}
+数量: {{ $item->quantity }}{{ config('shop.quantity_unit') }}
+価格(税込): {{ number_format($order->displayItemUnitPrice($item)) }}円
+小計: {{ number_format($order->displayItemSubtotal($item)) }}円
 @endforeach
-［配　送　先　合　計］
---------------------------------
+----------------------------------------
+配送先合計
 @if ($order->discount > 0)
-【　　　割　　引　　】-{{ number_format($order->discount) }}円
+割引: -{{ number_format($order->discount) }}円
 @endif
-【　　送　　　料　　】{{ number_format($order->shipping_fee) }}円（税込）
-【配　送　先　合　計】{{ number_format($shippingDestinationTotal) }}円（税込）
-================================
+送料: {{ number_format($order->shipping_fee) }}円（税込）
+配送先合計: {{ number_format($shippingDestinationTotal) }}円（税込）
+----------------------------------------
 
-▼総合計
-================================
-【　合計　】{{ number_format($order->goodsTotalInclusive()) }}円（税込）
+■ 総合計
+----------------------------------------
+合計: {{ number_format($order->goodsTotalInclusive()) }}円（税込）
 @if ($order->discount > 0)
-【　割　引　】-{{ number_format($order->discount) }}円（税抜・反映済み）
+割引: -{{ number_format($order->discount) }}円（税抜・反映済み）
 @endif
-【　送　料　合　計　】{{ number_format($order->shipping_fee) }}円（税込）
-【決　済　手　数　料】{{ number_format($order->payment_fee) }}円（税込）
-【うち消費税（{{ $order->taxRatePercentLabel() }}）】{{ number_format($order->tax_amount) }}円
-【　総　　合　　計　】{{ number_format($order->total) }}円
-================================
-================================
-{{ config('shop.name') }}　{{ $shopUrl }}
+送料合計: {{ number_format($order->shipping_fee) }}円（税込）
+決済手数料: {{ number_format($order->payment_fee) }}円（税込）
+うち消費税（{{ $order->taxRatePercentLabel() }}）: {{ number_format($order->tax_amount) }}円
+総合計: {{ number_format($order->total) }}円
+----------------------------------------
+{{ config('shop.name') }}  {{ $shopUrl }}
 @if (config('shop.invoice_registration_number'))
 適格請求書発行事業者登録番号: {{ config('shop.invoice_registration_number') }}
 @endif
-================================
+----------------------------------------
