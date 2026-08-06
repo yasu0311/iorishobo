@@ -134,6 +134,8 @@ class SiteMetaTest extends TestCase
     #[Test]
     public function product_show_includes_product_og_meta(): void
     {
+        $this->seed(ConsumptionTaxSeeder::class);
+
         $category = Category::query()->create([
             'name' => '教科書',
             'slug' => '10',
@@ -148,6 +150,15 @@ class SiteMetaTest extends TestCase
             'base_price' => 1000,
             'stock_managed' => false,
             'is_published' => true,
+            'sort_order' => 1,
+        ]);
+
+        ProductVariant::query()->create([
+            'product_id' => $product->id,
+            'name' => $product->name,
+            'price' => 1000,
+            'stock' => 5,
+            'is_active' => true,
             'sort_order' => 1,
         ]);
 
@@ -170,5 +181,9 @@ class SiteMetaTest extends TestCase
         $response->assertSee('<meta name="description" content="テスト用の商品説明文です。">', false);
         $response->assertSee('fetchpriority="high"', false);
         $response->assertSee('loading="lazy"', false);
+        $response->assertSee('<script type="application/ld+json">', false);
+        $response->assertSee('"@type":"Product"', false);
+        $response->assertSee('"price":"1100"', false);
+        $response->assertSee('"availability":"https://schema.org/InStock"', false);
     }
 }

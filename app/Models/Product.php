@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 class Product extends Model
 {
@@ -144,6 +145,109 @@ class Product extends Model
         }
 
         return number_format($lowest).'円〜'.number_format($highest).'円';
+    }
+
+    /**
+     * schema.org Product 用の構造化データ（JSON-LD）。
+     *
+     * 価格は店頭と同じ税込。在庫・購入可否は offers.availability に反映する。
+     *
+     * @return array<string, mixed>
+     */
+    public function toJsonLd(): array
+    {
+        $url = route('products.show', $this->slug);
+        $description = Str::limit(strip_tags((string) ($this->short_description ?: $this->name)), 5000);
+
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Product',
+            'name' => $this->name,
+            'description' => $description,
+            'url' => $url,
+            'brand' => [
+                '@type' => 'Brand',
+                'name' => config('shop.name'),
+            ],
+        ];
+
+        $images = $this->jsonLdImages();
+        if ($images !== []) {
+            $data['image'] = count($images) === 1 ? $images[0] : $images;
+        }
+
+        $offers = $this->jsonLdOffers($url);
+        if ($offers !== null) {
+            $data['offers'] = $offers;
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function jsonLdImages(): array
+    {
+        $images = $this->relationLoaded('images')
+            ? $this->images
+            : $this->images()->get();
+
+        return $images
+            ->map(fn (ProductImage $image) => url($image->url()))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function jsonLdOffers(string $url): ?array
+    {
+        $tax = ConsumptionTax::current();
+        $low = $this->lowestPriceInclusive($tax);
+        $high = $this->highestPriceInclusive($tax);
+
+        if ($low === null) {
+            return null;
+        }
+
+        $availability = $this->hasPurchasableVariant()
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock';
+
+        $seller = [
+            '@type' => 'Organization',
+            'name' => config('shop.name'),
+        ];
+
+        if ($high !== null && $high !== $low) {
+            $variants = $this->relationLoaded('activeVariants')
+                ? $this->activeVariants
+                : $this->activeVariants()->get(['id']);
+
+            return [
+                '@type' => 'AggregateOffer',
+                'url' => $url,
+                'priceCurrency' => 'JPY',
+                'lowPrice' => (string) $low,
+                'highPrice' => (string) $high,
+                'offerCount' => $variants->count(),
+                'availability' => $availability,
+                'itemCondition' => 'https://schema.org/NewCondition',
+                'seller' => $seller,
+            ];
+        }
+
+        return [
+            '@type' => 'Offer',
+            'url' => $url,
+            'priceCurrency' => 'JPY',
+            'price' => (string) $low,
+            'availability' => $availability,
+            'itemCondition' => 'https://schema.org/NewCondition',
+            'seller' => $seller,
+        ];
     }
 
     /**

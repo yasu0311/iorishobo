@@ -10,6 +10,10 @@
     @section('og_image', url($product->mainImage->url()))
 @endif
 
+@section('head_meta')
+    <x-product-json-ld :product="$product" />
+@endsection
+
 @section('content')
     @if ($product->category)
         <p class="breadcrumb">
