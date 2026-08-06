@@ -186,4 +186,23 @@ class SiteMetaTest extends TestCase
         $response->assertSee('"price":"1100"', false);
         $response->assertSee('"availability":"https://schema.org/InStock"', false);
     }
+
+    #[Test]
+    public function product_list_canonical_and_search_noindex(): void
+    {
+        $this->get(route('products.index'))
+            ->assertOk()
+            ->assertSee('<link rel="canonical" href="'.e(url('/products')).'">', false)
+            ->assertDontSee('<meta name="robots" content="noindex">', false);
+
+        $this->get(route('products.index', ['page' => 2, 'utm_source' => 'test']))
+            ->assertOk()
+            ->assertSee('<link rel="canonical" href="'.e(url('/products').'?page=2').'">', false)
+            ->assertDontSee('utm_source', false);
+
+        $this->get(route('products.index', ['q' => '国語', 'page' => 2]))
+            ->assertOk()
+            ->assertSee('<meta name="robots" content="noindex">', false)
+            ->assertSee('<link rel="canonical" href="'.e(url('/products')).'">', false);
+    }
 }

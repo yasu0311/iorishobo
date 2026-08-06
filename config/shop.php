@@ -81,6 +81,7 @@ return [
     /*
     | プライベート／トランザクション系ルートに noindex を自動付与する。
     | ビューで @section('robots') があればそちらを優先する。
+    | 商品検索（products.index?q=）も App\Support\SeoMeta 側で noindex する。
     */
     'noindex_route_prefixes' => [
         'cart.',
