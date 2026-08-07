@@ -14,7 +14,7 @@ class EmailTemplateSeeder extends Seeder
                 'slug' => 'order-confirmation',
                 'label' => '注文確認メール',
                 'subject' => 'ご注文ありがとうございます',
-                'description' => '注文直後にお客様に送信。件名にはショップ名と注文番号が自動付与されます。本文のあとに決済方法別の案内（クレカ・代引・振込先）と注文詳細が自動挿入されます。',
+                'description' => '注文直後にお客様に送信。件名にはショップ名と注文番号が自動付与されます。本文のあとに決済方法別の案内（別テンプレート）と注文詳細が自動挿入されます。',
                 'body' => <<<'TXT'
 商品のご注文ありがとうございます。
 注文確認メールを差し上げます。
@@ -22,6 +22,35 @@ class EmailTemplateSeeder extends Seeder
 ※在庫状況によっては、発送まで１週間程度かかる可能性もございますので、あらかじめご了承ください。
 
 TXT
+            ],
+            [
+                'slug' => 'order-confirmation-payment-stripe',
+                'label' => '注文確認（クレジットカード案内）',
+                'subject' => '（件名は使用しません）',
+                'description' => '注文確認メール本文の直後に挿入されるクレジットカード決済の案内。件名は使われません。',
+                'body' => <<<'TXT'
+＜クレジットカード決済について＞
+商品を発送しますのでしばらくお待ち下さい。
+なお、セキュリティの関係でクレジットカード決済ができないこともございます。その場合は当店から改めてご連絡差し上げ、代金引換や銀行振込への変更のお願いをすることがございますのでご了承ください。
+TXT,
+            ],
+            [
+                'slug' => 'order-confirmation-payment-cod',
+                'label' => '注文確認（代金引換案内）',
+                'subject' => '（件名は使用しません）',
+                'description' => '注文確認メール本文の直後に挿入される代金引換の案内。件名は使われません。',
+                'body' => <<<'TXT'
+＜代金引換について＞
+商品を発送しますのでしばらくお待ち下さい。
+商品が届きましたら配達員に代金をお支払いください。
+TXT,
+            ],
+            [
+                'slug' => 'order-confirmation-payment-bank_transfer',
+                'label' => '注文確認（銀行振込案内）',
+                'subject' => '（件名は使用しません）',
+                'description' => '注文確認メール本文の直後に挿入される銀行振込の案内（振込先口座を含む）。件名は使われません。送信時に末尾へ「お振込金額」が自動で付きます。',
+                'body' => $this->bankTransferNoticeBody(),
             ],
             [
                 'slug' => 'order-payment-received',
@@ -100,5 +129,25 @@ TXT,
 
         // 管理者宛て通知は Blade 固定のため DB テンプレートは不要
         EmailTemplate::query()->where('slug', 'contact-admin')->delete();
+    }
+
+    private function bankTransferNoticeBody(): string
+    {
+        $account = config('shop.bank_account');
+        $shopName = (string) config('shop.name');
+
+        return implode("\n", [
+            '＜銀行振込（先払い）について＞',
+            '下記の振込先へお振込みください。',
+            '',
+            '商品代金＋送料の振込みをお願いいたします。',
+            '7日以内にお振込みください。',
+            '入金確認後に商品の発送をいたします。',
+            '',
+            '＜'.$shopName.'振込先＞',
+            trim(($account['bank_name'] ?? '').' '.($account['branch_name'] ?? '')),
+            trim(($account['account_type'] ?? '').' '.($account['account_number'] ?? '')),
+            '口座名義: '.($account['account_holder'] ?? ''),
+        ]);
     }
 }

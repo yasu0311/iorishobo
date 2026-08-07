@@ -140,12 +140,38 @@ class CheckoutTest extends TestCase
                 && $mail->hasBcc('shop@example.com')
                 && str_contains($html, '＜銀行振込（先払い）について＞')
                 && str_contains($html, '口座名義:')
-                && str_contains($html, '振込名義人')
                 && str_contains($html, '7日以内にお振込みください')
+                && str_contains($html, 'お振込金額:')
+                && ! str_contains($html, '振込名義人')
                 && ! str_contains($html, 'クレジットカード決済について')
                 && ! str_contains($html, '代金引換について');
         });
         Mail::assertSentCount(1);
+    }
+
+    #[Test]
+    public function confirmation_mail_uses_payment_notice_from_email_template(): void
+    {
+        \App\Models\EmailTemplate::query()
+            ->where('slug', 'order-confirmation-payment-cod')
+            ->update(['body' => "＜代金引換について＞\nカスタム代引案内です。"]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('cart.items.store'), [
+            'variant_id' => $this->variant->id,
+            'quantity' => 1,
+        ]);
+
+        $this->submitCheckout($user, $this->checkoutPayload('cod'))
+            ->assertRedirect(route('checkout.complete'));
+
+        Mail::assertSent(OrderConfirmationMail::class, function (OrderConfirmationMail $mail) {
+            $html = $mail->render();
+
+            return str_contains($html, 'カスタム代引案内です。')
+                && ! str_contains($html, '配達員に代金をお支払いください');
+        });
     }
 
     #[Test]

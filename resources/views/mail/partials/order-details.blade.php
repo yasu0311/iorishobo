@@ -6,6 +6,7 @@
     $trackingPlaceholder = $trackingPlaceholder ?? false;
     $showShippedAt = $showShippedAt ?? false;
 @endphp
+
 注文番号: {{ $order->order_number }}
 @if ($showShippedAt && $order->shipped_at)
 発送日時: {{ $order->shipped_at->format('Y-m-d H:i') }}

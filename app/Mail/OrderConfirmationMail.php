@@ -62,6 +62,7 @@ class OrderConfirmationMail extends Mailable
             with: [
                 'order' => $this->order,
                 'body' => $this->template->body,
+                'paymentNotice' => EmailTemplate::paymentNoticeForOrder($this->order),
             ],
         );
     }

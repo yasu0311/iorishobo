@@ -23,7 +23,9 @@
             <input type="text" id="subject" name="subject" value="{{ old('subject', $template->subject) }}" required>
             @error('subject') <p class="input-error">{{ $message }}</p> @enderror
             <p style="color: #6b7280; font-size: 0.875rem; margin-top: 0.35rem;">
-                @if (str_starts_with($template->slug, 'order-confirmation'))
+                @if (! $template->usesSubjectInEnvelope())
+                    このテンプレートは注文確認メール本文への差し込み専用です。件名は送信に使われません。
+                @elseif ($template->slug === 'order-confirmation')
                     送信時の件名: 【ショップ名】<strong>入力内容</strong>（注文番号: …）
                 @elseif (str_starts_with($template->slug, 'order-'))
                     送信時の件名: <strong>入力内容</strong>　ショップ名
@@ -39,6 +41,9 @@
             @error('body') <p class="input-error">{{ $message }}</p> @enderror
             <p style="color: #6b7280; font-size: 0.875rem; margin-top: 0.35rem;">
                 編集可能な案内文はここだけです。Blade変数（<code>@{{ $order }}</code> 等）は使えません。注文番号・明細・お問い合わせ内容などは本文の前後に自動で付きます。
+                @if ($template->appendsBankTransferAmount())
+                    送信時、本文の末尾に「お振込金額: （注文総合計）円」が自動で付きます。
+                @endif
             </p>
         </div>
 
